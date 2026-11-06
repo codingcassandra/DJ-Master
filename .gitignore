@@ -14,3 +14,12 @@
 .DS_Store
 .vs/
 .idea/
+
+# === Claude Code Game Studios (local, not shared) ===
+.claude/settings.local.json
+CLAUDE.local.md
+project.local.yaml
+production/session-logs/
+production/session-state/
+.claude/agent-memory/
+.claude/worktrees/
