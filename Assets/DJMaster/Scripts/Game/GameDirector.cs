@@ -24,13 +24,15 @@ namespace DJMaster
         public GameMode Mode { get; private set; }
         public GameMode ChosenMode { get; private set; } // what starts after the venue is picked
 
-        bool paused;
+        bool paused, focusLost, appPaused, appUnfocused;
         float lastScore;
         int replayIndex;
 
         void Start()
         {
             TrackLibrary.Prewarm();
+            BoardColors.LoadSettings();
+            board.gameObject.AddComponent<ColorSafeView>().Init(); // the panels and set builder live under the board too
 
             for (int i = 0; i < panel.actionButtons.Length; i++)
             {
@@ -53,8 +55,8 @@ namespace DJMaster
             builder.BackPressed += EnterTitle;
             builder.GoLivePressed += StartLive;
 
-            OVRManager.InputFocusLost += () => SetPaused(true);
-            OVRManager.InputFocusAcquired += () => SetPaused(false);
+            OVRManager.InputFocusLost += () => { focusLost = true; RefreshPause(); };
+            OVRManager.InputFocusAcquired += () => { focusLost = false; RefreshPause(); };
 
             EnterTitle();
             // Something to listen to straight away while you look around the menu.
@@ -62,8 +64,12 @@ namespace DJMaster
             board.B.deck.Load(1);
         }
 
-        void OnApplicationPause(bool pause) => SetPaused(pause);
-        void OnApplicationFocus(bool focus) { if (!Application.isEditor) SetPaused(!focus); }
+        void OnApplicationPause(bool pause) { appPaused = pause; RefreshPause(); }
+        void OnApplicationFocus(bool focus) { if (!Application.isEditor) { appUnfocused = !focus; RefreshPause(); } }
+
+        // Three separate signals can pause the game (system menu, headset off, app in the background),
+        // and they can arrive in any order, so it only resumes once all of them have cleared.
+        void RefreshPause() => SetPaused(focusLost || appPaused || appUnfocused);
 
         void SetPaused(bool p)
         {
@@ -102,7 +108,11 @@ namespace DJMaster
             startMenu.SetRows(
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
-                ("FREESTYLE", "Just play. No timer, no rules."));
+                ("FREESTYLE", "Just play. No timer, no rules."),
+                ("COLOR-BLIND", BoardColors.ColorSafe
+                    ? "ON: color-blind friendly colors, and every color has a shape. ◄ Deck A  ► Deck B  ● PLAY  ■ CUE  ♦ FX  ♥ CROWD"
+                    : "OFF: tap for color-blind friendly colors, with a shape on every color so nothing relies on color alone."));
+            startMenu.buttons[3].Lit = BoardColors.ColorSafe;
         }
 
         void ChooseVenue(GameMode next)
@@ -136,6 +146,7 @@ namespace DJMaster
             switch (Mode)
             {
                 case GameMode.Title:
+                    if (i == 3) { BoardColors.SetColorSafe(!BoardColors.ColorSafe); EnterTitle(); break; }
                     ChooseVenue(i == 0 ? GameMode.Learn : i == 1 ? GameMode.Build : GameMode.Freestyle);
                     break;
                 case GameMode.ChooseVenue:

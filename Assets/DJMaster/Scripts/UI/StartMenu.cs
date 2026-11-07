@@ -27,6 +27,7 @@ namespace DJMaster
         {
             for (int i = 0; i < buttons.Length; i++)
             {
+                buttons[i].Lit = false; // a row lit on one screen (like COLOR-BLIND) shouldn't stay lit on the next
                 bool on = i < rows.Length && rows[i].label != null;
                 buttons[i].gameObject.SetActive(on);
                 descriptions[i].gameObject.SetActive(on);

@@ -55,11 +55,15 @@ namespace DJMaster
                     var lp = Local(p);
                     if (!Inside(lp, margin)) continue;
 
-                    if (lp.y < hoverHeight && lp.y > 0) nextArmed = p;
                     bool fromAbove = p == armedBy || p.DirectPress;
+                    if (lp.y < hoverHeight && lp.y > 0) nextArmed = p;
+                    // A finger that came in from above stays armed while it pushes down through the surface,
+                    // so a slow poke still presses. After a press it has to come back above the surface first.
+                    else if (lp.y <= 0 && p == armedBy) nextArmed = p;
                     if (lp.y <= -pressDepth && fromAbove && Time.time - lastPress > cooldown)
                     {
                         pressedBy = p;
+                        nextArmed = null;
                         Engage(p);
                         lastPress = Time.time;
                         depth = pressDepth;

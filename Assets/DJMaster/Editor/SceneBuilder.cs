@@ -949,10 +949,13 @@ namespace DJMaster.EditorTools
             PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)32;
 
             var config = OVRProjectConfig.CachedProjectConfig;
-            config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.ControllersAndHands;
+            // The game has no controller input, so it's declared hands only, and tracked at the high rate
+            // so fingertip pokes and timing on the beat feel tight.
+            config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.HandsOnly;
+            config.handTrackingFrequency = OVRProjectConfig.HandTrackingFrequency.HIGH;
             config.insightPassthroughSupport = OVRProjectConfig.FeatureSupport.Supported;
             OVRProjectConfig.CommitProjectConfig(config);
-            Debug.Log("[DJMaster] Quest settings applied: hands + passthrough enabled. Now enable OpenXR + Meta XR in XR Plug-in Management (see README).");
+            Debug.Log("[DJMaster] Quest settings applied: hands only (high frequency) + passthrough enabled. Now enable OpenXR + Meta XR in XR Plug-in Management (see README).");
         }
 
         // ================= Batch-mode helpers =================

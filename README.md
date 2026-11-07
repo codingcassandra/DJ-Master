@@ -47,6 +47,10 @@ Every control has a color, and Learn mode opens with a quick quiz on it:
 | Yellow | FILTER, ECHO and PHONES: effects, and what only you hear |
 | Red | TAP and the SAMPLER pads (horn, cheer, siren, zap): for the crowd |
 
+**COLOR-BLIND mode** (on the start screen) swaps in a palette that stays distinct for every common type of color
+blindness, and gives every color a shape, on the board and in every lesson, so nothing relies on color alone:
+◄ Deck A, ► Deck B, ● PLAY, ■ CUE, ♦ FX and PHONES, ♥ CROWD. The setting is saved between sessions.
+
 ## What you learn
 
 The lessons follow the techniques chapter of Digital DJ Tips' free *Rock The Dancefloor* course
@@ -133,7 +137,7 @@ To regenerate the scene after changing the builder: **DJ Master > Build Scene**.
 ## Build to Quest
 
 1. **Unity Hub > Installs > 6000.6.4f1 > Add modules > Android Build Support** (include OpenJDK and Android SDK & NDK).
-2. **DJ Master > Configure Player Settings for Quest** (IL2CPP, ARM64, min API 32, package `com.djmaster.vr`, hand tracking + passthrough).
+2. **DJ Master > Configure Player Settings for Quest** (IL2CPP, ARM64, min API 32, package `com.djmaster.vr`, hands only at high tracking frequency + passthrough).
 3. **File > Build Profiles > Android > Switch Platform**.
 4. **Edit > Project Settings > XR Plug-in Management > Android tab:** check **OpenXR**, then under OpenXR enable the **Meta XR** feature group. Then open **Edit > Project Settings > Meta XR**, pick the Android tab and click **Fix All**.
 5. Put the Quest in developer mode, connect over USB, then **Build And Run**.

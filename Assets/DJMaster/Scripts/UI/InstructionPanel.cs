@@ -11,13 +11,20 @@ namespace DJMaster
         public int wrapChars = 52;
 
         string lastBody, lastTitle, lastStatus, lastFeedback;
+        bool lastColorSafe;
 
         public void Show(string titleText, string bodyText, string statusText = "", string feedbackText = "")
         {
-            if (titleText != lastTitle) { title.text = titleText; lastTitle = titleText; }
-            if (bodyText != lastBody) { body.text = TextUtil.Wrap(bodyText, wrapChars); lastBody = bodyText; }
-            if (statusText != lastStatus) { status.text = TextUtil.Wrap(statusText, wrapChars + 8); lastStatus = statusText; }
-            if (feedbackText != lastFeedback) { feedback.text = feedbackText; lastFeedback = feedbackText; }
+            // Color-blind mode changes how the same text is drawn, so redraw everything when it flips.
+            if (lastColorSafe != BoardColors.ColorSafe)
+            {
+                lastColorSafe = BoardColors.ColorSafe;
+                lastTitle = lastBody = lastStatus = lastFeedback = null;
+            }
+            if (titleText != lastTitle) { title.text = BoardColors.Display(titleText); lastTitle = titleText; }
+            if (bodyText != lastBody) { body.text = TextUtil.Wrap(BoardColors.Display(bodyText), wrapChars); lastBody = bodyText; }
+            if (statusText != lastStatus) { status.text = TextUtil.Wrap(BoardColors.Display(statusText), wrapChars + 8); lastStatus = statusText; }
+            if (feedbackText != lastFeedback) { feedback.text = BoardColors.Display(feedbackText); lastFeedback = feedbackText; }
         }
 
         // One label per button, left to right. Missing or null labels hide the button.
