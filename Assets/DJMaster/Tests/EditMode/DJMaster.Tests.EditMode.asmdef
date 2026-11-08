@@ -1,9 +1,20 @@
 {
   "name": "DJMaster.Tests.EditMode",
-  "references": ["DJMaster", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
-  "includePlatforms": ["Editor"],
-  "precompiledReferences": ["nunit.framework.dll"],
+  "references": [
+    "DJMaster",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "precompiledReferences": [
+    "nunit.framework.dll"
+  ],
   "overrideReferences": true,
-  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "defineConstraints": [
+    "UNITY_INCLUDE_TESTS"
+  ],
   "autoReferenced": false
 }

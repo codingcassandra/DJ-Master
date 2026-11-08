@@ -2,7 +2,7 @@ using System;
 
 namespace DJMaster
 {
-    public enum Genre { House, Techno, Disco }
+    public enum Genre { House, Techno, Disco, Electro, EDM, Synthwave }
 
     [Serializable]
     public struct TrackInfo
@@ -13,14 +13,24 @@ namespace DJMaster
         public int root;   // pitch class, 0 = C
         public Genre genre;
         public int seed;
+        // A real recording instead of a synthesized loop: Resources/Music/<clip>, a 16-bar excerpt that starts on beat 1.
+        public string clip;
+        public string license;
 
         public TrackInfo(string title, string artist, float bpm, int root, Genre genre, int seed)
         {
             this.title = title; this.artist = artist; this.bpm = bpm;
             this.root = root; this.genre = genre; this.seed = seed;
+            clip = null; license = null;
         }
 
-        public string Key => KeyNames[((root % 12) + 12) % 12] + "m";
+        public static TrackInfo Recording(string title, string artist, float bpm, Genre genre, string clip, string license = "CC0") =>
+            new(title, artist, bpm, 0, genre, 0) { clip = clip, license = license };
+
+        public bool IsRecording => !string.IsNullOrEmpty(clip);
+
+        // Synthesized tracks know their key; for recordings it isn't shown.
+        public string Key => IsRecording ? "" : KeyNames[((root % 12) + 12) % 12] + "m";
         static readonly string[] KeyNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     }
 

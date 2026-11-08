@@ -20,6 +20,12 @@ namespace DJMaster
         Vector3 lastLocal;
         float lastTouchStart = -10f;
 
+        protected override void OnDisable()
+        {
+            holder = null;
+            base.OnDisable();
+        }
+
         void Update()
         {
             if (holder != null)

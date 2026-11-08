@@ -29,6 +29,21 @@ namespace DJMaster
         // Tempo fader 0..1 (0.5 = center) to playback rate.
         public static float TempoRate(float fader01) => 1f + (Clamp01(fader01) - 0.5f) * 2f * TempoRange;
 
+        // The tempo fader position that gives a playback rate (the inverse of TempoRate). Not clamped,
+        // so callers can tell when a rate is out of the fader's range.
+        public static float TempoFaderFor(float rate) => 0.5f + (rate - 1f) / (2f * TempoRange);
+
+        // BPM from tap times in seconds: the average gap between taps. 0 until there are at least 3 steady taps.
+        public static float BpmFromTaps(System.Collections.Generic.IReadOnlyList<float> times)
+        {
+            if (times == null || times.Count < 3) return 0f;
+            float span = times[times.Count - 1] - times[0];
+            float avg = span / (times.Count - 1);
+            for (int i = 1; i < times.Count; i++)
+                if (Math.Abs(times[i] - times[i - 1] - avg) > avg * 0.25f) return 0f; // too uneven to trust
+            return avg > 0 ? 60f / avg : 0f;
+        }
+
         // Signed beat-phase offset of B relative to A, in beats, wrapped to [-0.5, 0.5).
         public static float PhaseOffset(double beatA, double beatB)
         {

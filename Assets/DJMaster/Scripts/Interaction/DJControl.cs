@@ -30,9 +30,21 @@ namespace DJMaster
             Touched = true;
         }
 
+        // Lets the PlayMode tests touch a control without a hand.
+        public void SimulateTouch() => AnyTouched?.Invoke(this);
+
         protected void Release(Pointer p)
         {
             if (p != null && p.Owner == this) p.Owner = null;
+            Touched = false;
+        }
+
+        // A control can be hidden mid-press (a menu button that closes its own menu). Hand the finger back,
+        // or every other control keeps seeing it as busy.
+        protected virtual void OnDisable()
+        {
+            foreach (var p in Pointers.All)
+                if (p.Owner == this) p.Owner = null;
             Touched = false;
         }
 

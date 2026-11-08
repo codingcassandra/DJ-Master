@@ -16,6 +16,12 @@ namespace DJMaster
         Pointer holder;
         float lastAngle;
 
+        protected override void OnDisable()
+        {
+            holder = null;
+            base.OnDisable();
+        }
+
         void Update()
         {
             float revs = 0f;

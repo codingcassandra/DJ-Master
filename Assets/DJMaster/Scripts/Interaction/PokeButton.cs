@@ -30,6 +30,12 @@ namespace DJMaster
             if (cap != null) capRest = cap.localPosition;
         }
 
+        protected override void OnDisable()
+        {
+            pressedBy = armedBy = null;
+            base.OnDisable();
+        }
+
         void Update()
         {
             const float margin = 0.006f;

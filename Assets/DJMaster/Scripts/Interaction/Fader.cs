@@ -26,6 +26,12 @@ namespace DJMaster
         float Across(Vector3 lp) => horizontal ? lp.z : lp.x;
         float CapPos => (value - 0.5f) * length;
 
+        protected override void OnDisable()
+        {
+            holder = null;
+            base.OnDisable();
+        }
+
         void Update()
         {
             if (holder != null)

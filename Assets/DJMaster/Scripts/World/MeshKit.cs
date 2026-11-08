@@ -35,6 +35,34 @@ namespace DJMaster
             return m;
         }
 
+        // A unit-radius UV sphere (low poly), for heads, hands and hair.
+        public static Mesh Sphere(int segments = 12, int rings = 8)
+        {
+            var verts = new System.Collections.Generic.List<Vector3>();
+            var tris = new System.Collections.Generic.List<int>();
+            for (int r = 0; r <= rings; r++)
+            {
+                float v = (float)r / rings * Mathf.PI;
+                for (int s = 0; s <= segments; s++)
+                {
+                    float u = (float)s / segments * Mathf.PI * 2;
+                    verts.Add(new Vector3(Mathf.Sin(v) * Mathf.Cos(u), Mathf.Cos(v), Mathf.Sin(v) * Mathf.Sin(u)));
+                }
+            }
+            for (int r = 0; r < rings; r++)
+                for (int s = 0; s < segments; s++)
+                {
+                    int a = r * (segments + 1) + s, b = a + segments + 1;
+                    tris.AddRange(new[] { a, a + 1, b, a + 1, b + 1, b });
+                }
+            var m = new Mesh { name = "Sphere" };
+            m.SetVertices(verts);
+            m.SetNormals(verts);
+            m.SetTriangles(tris, 0);
+            m.RecalculateBounds();
+            return m;
+        }
+
         // Open cone for light beams: apex at the origin, opening along +Z.
         public static Mesh Beam(int sides, float length, float endRadius)
         {

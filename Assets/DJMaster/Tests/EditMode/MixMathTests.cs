@@ -61,12 +61,40 @@ namespace DJMaster.Tests
         }
 
         [Test]
-        public void GigStars()
+        public void WrapIgnoresColorTags()
         {
-            Assert.AreEqual(0, GameDirector.Stars(100, 0));
-            Assert.AreEqual(1, GameDirector.Stars(1000, 0));
-            Assert.AreEqual(2, GameDirector.Stars(3000, 1));
-            Assert.AreEqual(3, GameDirector.Stars(5000, 3));
+            string tagged = $"tap {BoardColors.Green("PLAY")} on deck a";
+            string w = TextUtil.Wrap(tagged, 13);
+            Assert.AreEqual(tagged, w.Replace('\n', ' '), "tags must never be split");
+            foreach (var line in w.Split('\n')) Assert.LessOrEqual(TextUtil.VisibleLength(line), 13);
+            Assert.AreEqual("a\nb", TextUtil.Wrap("a\nb", 20), "existing line breaks are kept");
+        }
+
+        [Test]
+        public void SetStars()
+        {
+            SetPerformer.Result R(SetPerformer.Grade g) => new SetPerformer.Result { grade = g };
+            Assert.AreEqual(0, SetPerformer.Stars(new SetPerformer.Result[0]));
+            Assert.AreEqual(1, SetPerformer.Stars(new[] { R(SetPerformer.Grade.Rough), R(SetPerformer.Grade.Rough) }));
+            Assert.AreEqual(2, SetPerformer.Stars(new[] { R(SetPerformer.Grade.Good), R(SetPerformer.Grade.Good) }));
+            Assert.AreEqual(3, SetPerformer.Stars(new[] { R(SetPerformer.Grade.Perfect), R(SetPerformer.Grade.Perfect), R(SetPerformer.Grade.Good) }));
+        }
+
+        [Test]
+        public void TapTempo()
+        {
+            float gap = 60f / 128f;
+            Assert.AreEqual(0f, DJMath.BpmFromTaps(new[] { 0f, gap }), "needs at least 3 taps");
+            Assert.AreEqual(128f, DJMath.BpmFromTaps(new[] { 0f, gap, gap * 2, gap * 3 }), 0.01f);
+            Assert.AreEqual(0f, DJMath.BpmFromTaps(new[] { 0f, gap, gap * 3 }), "uneven taps are ignored");
+        }
+
+        [Test]
+        public void TempoFaderForIsTheInverseOfTempoRate()
+        {
+            foreach (float v in new[] { 0f, 0.3f, 0.5f, 0.9f, 1f })
+                Assert.AreEqual(v, DJMath.TempoFaderFor(DJMath.TempoRate(v)), 1e-5f);
+            Assert.Greater(DJMath.TempoFaderFor(1.1f), 1f, "10% is out of range");
         }
     }
 }

@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 
 namespace DJMaster.Tests
 {
-    // Plays DJ School start to finish (setting controls directly) to prove every step can be completed.
+    // Plays Learn mode start to finish (setting controls directly) to prove every step can be completed.
     public class FullLessonTest
     {
         [UnitySetUp]
@@ -30,11 +30,13 @@ namespace DJMaster.Tests
         public IEnumerator CompleteDJSchool()
         {
             var lessons = Object.FindAnyObjectByType<LessonDirector>();
-            var board = Object.FindAnyObjectByType<DJBoard>();
-            var panel = Object.FindAnyObjectByType<InstructionPanel>();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var menu = Object.FindAnyObjectByType<StartMenu>();
             var A = board.A.deck;
             var B = board.B.deck;
-            panel.actionButtons[0].SimulatePress();
+            menu.buttons[0].SimulatePress(); // LEARN
+            menu.buttons[1].SimulatePress(); // CLUB
+            menu.buttons[0].SimulatePress(); // lesson 1
             yield return WaitFor(() => lessons.Running && A.IsLoaded, 20f, "lesson start");
 
             int step = 0;
@@ -43,6 +45,15 @@ namespace DJMaster.Tests
                 step++;
                 yield return WaitFor(() => lessons.StepIndex == step || lessons.Finished, 6f, $"step {step} ({lessons.Current?.title})");
             }
+
+            // The color code quiz.
+            board.A.mid.SimulateTouch(); yield return Next();
+            board.B.jog.SimulateTouch(); yield return Next();
+            board.B.headphones.SimulatePress(); // pressing a button is a touch too...
+            board.B.headphones.SimulateTouch(); yield return Next();
+            board.A.cue.SimulateTouch(); yield return Next();
+            Assert.IsFalse(board.mixer.headphoneCue[1], "...and the quiz cleans up after itself");
+            yield return WaitFor(() => A.IsLoaded, 5f, "deck A ready");
 
             board.A.play.SimulatePress(); yield return Next();
             board.A.volume.SetValue(1f); yield return Next();

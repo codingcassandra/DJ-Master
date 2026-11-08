@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace DJMaster
@@ -6,7 +7,7 @@ namespace DJMaster
     public class DeckDisplay : MonoBehaviour
     {
         public Deck deck;
-        public TextMesh title, bpm, position;
+        public TextMeshPro title, bpm, position;
         public Renderer[] beatLights = new Renderer[4];
         public Transform phraseFill;     // scaled on X from 0..1 across the 16-bar loop
         public Renderer levelFill;
@@ -28,7 +29,7 @@ namespace DJMaster
                 lastTrack = deck.TrackIndex;
                 title.text = !deck.HasTrack ? "NO TRACK  -  tap LOAD"
                     : deck.IsLoading ? "LOADING..."
-                    : $"{deck.Track.title}\n<size=40>{deck.Track.artist}   {deck.Track.genre}   {deck.Track.Key}</size>";
+                    : $"{deck.Track.title}\n<size=85%>{deck.Track.artist}   {deck.Track.genre}   {(deck.Track.IsRecording ? deck.Track.license : deck.Track.Key)}</size>";
             }
 
             float b = Mathf.Round(deck.BPM * 10f) / 10f;
@@ -36,14 +37,15 @@ namespace DJMaster
             if (b != lastBpm || t != lastTempo)
             {
                 lastBpm = b; lastTempo = t;
-                bpm.text = deck.HasTrack ? $"{b:0.0} BPM  <size=40>{(t >= 0 ? "+" : "")}{t:0.0}%</size>" : "--- BPM";
+                bpm.text = deck.HasTrack ? $"{b:0.0} BPM  <size=62.5%>{(t >= 0 ? "+" : "")}{t:0.0}%</size>" : "--- BPM";
             }
 
             int bar = deck.Bar, beatInBar = deck.BeatInBar;
             if (bar != lastBar || beatInBar != lastBeatInBar)
             {
                 lastBar = bar; lastBeatInBar = beatInBar;
-                position.text = deck.IsLoaded ? $"BAR {bar + 1,2}/16   {SectionName(deck.Section)}" : "";
+                // Section names describe the synthesized arrangement, so recordings just show the bar.
+                position.text = deck.IsLoaded ? $"BAR {bar + 1,2}/16   {(deck.Track.IsRecording ? "" : SectionName(deck.Section))}" : "";
                 if (phraseFill != null) phraseFill.localScale = new Vector3(Mathf.Max(0.001f, (bar + 1) / 16f), 1, 1);
             }
 

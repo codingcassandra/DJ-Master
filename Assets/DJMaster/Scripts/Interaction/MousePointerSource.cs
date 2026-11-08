@@ -4,7 +4,7 @@ using UnityEngine.XR;
 namespace DJMaster
 {
     // Editor and desktop fallback: the mouse acts as a fingertip so the whole game can be tested without a headset.
-    //   Left click/drag  touch a control     Scroll  turn the knob under the cursor
+    //   Left click/drag  touch a control     Scroll  turn the knob under the cursor, or zoom anywhere else
     //   Right drag       look around
     [DefaultExecutionOrder(-100)]
     public class MousePointerSource : MonoBehaviour
@@ -14,6 +14,10 @@ namespace DJMaster
         [Tooltip("Without a headset the camera sits at the rig origin, so lift it to seated eye height.")]
         public Transform rigRoot;
         public float editorEyeHeight = 1.24f;
+        [Tooltip("Start looking down at the board rather than at the wall.")]
+        public float editorPitch = 34f;
+        public float editorFov = 58f;
+        public Vector2 zoomRange = new Vector2(30f, 80f);
 
         Pointer pointer;
         Plane dragPlane;
@@ -28,12 +32,14 @@ namespace DJMaster
 
         void Start()
         {
-            if (!XRActive && rigRoot != null) rigRoot.position += Vector3.up * editorEyeHeight;
+            if (XRActive) return;
+            if (rigRoot != null) rigRoot.position += Vector3.up * editorEyeHeight;
+            if (cam != null) cam.fieldOfView = editorFov;
             if (lookPivot != null)
             {
-                var e = lookPivot.localEulerAngles;
-                yaw = e.y;
-                pitch = e.x > 180 ? e.x - 360 : e.x;
+                yaw = lookPivot.localEulerAngles.y;
+                pitch = editorPitch;
+                lookPivot.localRotation = Quaternion.Euler(pitch, yaw, 0);
             }
         }
 
@@ -51,8 +57,13 @@ namespace DJMaster
             var ray = cam.ScreenPointToRay(Input.mousePosition);
 
             float scroll = Input.mouseScrollDelta.y;
-            if (scroll != 0 && Physics.Raycast(ray, out var wheelHit, 3f) && wheelHit.collider.GetComponentInParent<Knob>() is { } knob)
-                knob.Nudge(scroll * 0.05f);
+            if (scroll != 0)
+            {
+                if (Physics.Raycast(ray, out var wheelHit, 3f) && wheelHit.collider.GetComponentInParent<Knob>() is { } knob)
+                    knob.Nudge(scroll * 0.05f);
+                else // zoom, so small text can be read in a small Game view
+                    cam.fieldOfView = Mathf.Clamp(cam.fieldOfView - scroll * 3f, zoomRange.x, zoomRange.y);
+            }
 
             if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out var hit, 3f))
             {

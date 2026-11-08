@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace DJMaster
@@ -5,9 +6,9 @@ namespace DJMaster
     // The floating panel above the board: title, instructions and a status line, plus a row of buttons.
     public class InstructionPanel : MonoBehaviour
     {
-        public TextMesh title, body, status, feedback;
-        public PokeButton[] actionButtons = new PokeButton[3];
-        public TextMesh[] actionLabels = new TextMesh[3];
+        public TextMeshPro title, body, status, feedback;
+        public PokeButton[] actionButtons = new PokeButton[4];
+        public TextMeshPro[] actionLabels = new TextMeshPro[4];
         public int wrapChars = 52;
 
         string lastBody, lastTitle, lastStatus, lastFeedback;
@@ -20,13 +21,12 @@ namespace DJMaster
             if (feedbackText != lastFeedback) { feedback.text = feedbackText; lastFeedback = feedbackText; }
         }
 
-        // Pass null to hide a button.
-        public void SetActions(string a, string b, string c)
+        // One label per button, left to right. Missing or null labels hide the button.
+        public void SetActions(params string[] labels)
         {
-            string[] labels = { a, b, c };
             for (int i = 0; i < actionButtons.Length; i++)
             {
-                bool on = labels[i] != null;
+                bool on = i < labels.Length && labels[i] != null;
                 actionButtons[i].gameObject.SetActive(on);
                 if (on) actionLabels[i].text = labels[i];
             }

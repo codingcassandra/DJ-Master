@@ -41,6 +41,7 @@ namespace DJMaster
         float[] lowWas = { 0.5f, 0.5f };
         float[] lowCutAt = { -10f, -10f };
         bool inSync;
+        float echoTime;
 
         public void ResetScore()
         {
@@ -95,11 +96,16 @@ namespace DJMaster
             }
             trackTime += dom >= 0 ? dt : 0;
 
+            // Effects: less is more.
+            echoTime = a.Strip.echo || b.Strip.echo ? echoTime + dt : 0;
+            bool fxOveruse = echoTime > 20f;
+
             float freshness = Mathf.Clamp01(1.1f - Mathf.Max(0, trackTime - 60f) / 90f); // crowd tires of one track after a minute
             float target = dom < 0 ? 0.05f : 0.55f + 0.35f * freshness;
             if (bothAudible && inSync) target = Mathf.Max(target, 0.9f);
             if (Clashing) target = 0.15f;
             else if (bassClash) target = Mathf.Min(target, 0.45f);
+            if (fxOveruse) target = Mathf.Min(target, 0.5f);
             float rate = target < BeatBus.Energy ? 0.12f : 0.05f;
             BeatBus.Energy = Mathf.MoveTowards(BeatBus.Energy, target, dt * rate);
 
@@ -107,6 +113,7 @@ namespace DJMaster
                 : bassClash ? "Muddy bass: cut the LOW on one deck."
                 : silence > 1.5f ? "The dance floor is silent! Get a track playing."
                 : trackTime > 75f ? "The crowd wants something new. Mix in the other deck."
+                : fxOveruse ? "Less is more: switch the ECHO off and let the music breathe."
                 : "";
 
             // Bass drop: cutting a deck's low, then slamming it back on the downbeat of a bar.
@@ -130,7 +137,7 @@ namespace DJMaster
             if (shoutoutTimer <= 0) Shoutout = "";
         }
 
-        void Award(string message, int points)
+        public void Award(string message, int points)
         {
             Score += points;
             Shoutout = $"{message}  +{points}";

@@ -20,6 +20,7 @@ namespace DJMaster.Tests
         {
             foreach (var t in TrackLibrary.Tracks)
             {
+                if (t.IsRecording) continue;
                 float[] data = TrackSynth.Render(t);
                 float peak = 0; double sum = 0;
                 foreach (float s in data)

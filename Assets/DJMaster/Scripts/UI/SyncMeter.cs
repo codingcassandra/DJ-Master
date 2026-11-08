@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 namespace DJMaster
@@ -8,7 +9,7 @@ namespace DJMaster
     {
         public MixJudge judge;
         public Mixer mixer;
-        public TextMesh label;
+        public TextMeshPro label;
         public Transform needle;        // moves along local X
         public float halfWidth = 0.045f;
         public Renderer lockLight;
@@ -38,7 +39,7 @@ namespace DJMaster
             {
                 float d = Mathf.Round(judge.BpmDifference * 10f) / 10f;
                 string phaseWord = !both ? "" : judge.InSync ? "LOCKED" : phase > 0 ? "B AHEAD" : "B BEHIND";
-                text = $"BPM {(d > 0 ? "+" : "")}{d:0.0}\n<size=40>{phaseWord}</size>";
+                text = $"BPM {(d > 0 ? "+" : "")}{d:0.0}\n<size=62.5%>{phaseWord}</size>";
             }
             if (text != lastText) { label.text = text; lastText = text; }
 

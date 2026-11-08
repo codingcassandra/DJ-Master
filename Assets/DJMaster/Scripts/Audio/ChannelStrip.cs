@@ -2,7 +2,8 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    // One mixer channel: 3-band isolator EQ, a sweep filter (left = low-pass, right = high-pass) and gain.
+    // One mixer channel: 3-band isolator EQ, a sweep filter (left = low-pass, right = high-pass), gain, and a
+    // beat-synced ECHO. The echo sits after the fader, so pulling the fader down lets the echoes ring out ("echo out").
     // Sits on the deck's AudioSource and processes its output on the audio thread.
     public class ChannelStrip : MonoBehaviour
     {
@@ -11,6 +12,8 @@ namespace DJMaster
         [Range(0, 1)] public float high = 0.5f;
         [Range(0, 1)] public float filter = 0.5f;
         public float gain;          // final linear gain, written by Mixer
+        public bool echo;
+        public float echoSeconds = 0.35f; // set by the deck: three quarters of a beat
 
         public float Level { get; private set; } // smoothed output peak, for meters
 
@@ -21,10 +24,13 @@ namespace DJMaster
         int sampleRate;
         float lastGain, lastL = 1, lastM = 1, lastH = 1, lastFilter = -1;
         volatile float peak;
+        float[] echoBuffer; // interleaved stereo, 2 seconds
+        int echoPos;
 
         void Awake()
         {
             sampleRate = AudioSettings.outputSampleRate;
+            echoBuffer = new float[sampleRate * 2 * 2];
             for (int c = 0; c < 2; c++)
             {
                 lowBand[c].SetLowpass(sampleRate, LowCross, 0.707);
@@ -44,6 +50,9 @@ namespace DJMaster
             if (sampleRate == 0) return;
             float gL = DJMath.EqGain(low), gM = DJMath.EqGain(mid), gH = DJMath.EqGain(high);
             float g = gain, f = filter;
+            bool echoIn = echo;
+            int echoFrames = echoBuffer.Length / 2;
+            int delay = Mathf.Clamp((int)(echoSeconds * sampleRate), 1, echoFrames - 1);
 
             bool filterOn = Mathf.Abs(f - 0.5f) > 0.03f;
             if (filterOn && Mathf.Abs(f - lastFilter) > 0.002f)
@@ -75,10 +84,18 @@ namespace DJMaster
                     float y = lo * li + (x - lo - h) * mi + h * hi;
                     if (filterOn) y = filt[ch].Process(y);
                     y *= gi;
+                    if (ch == c) // the echo runs on the first two channels
+                    {
+                        int read = ((echoPos - delay + echoFrames) % echoFrames) * 2 + ch;
+                        float wet = echoBuffer[read];
+                        echoBuffer[echoPos * 2 + ch] = (echoIn ? y * 0.7f : 0f) + wet * 0.55f;
+                        y += wet;
+                    }
                     data[k] = y;
                     float a = y < 0 ? -y : y;
                     if (a > pk) pk = a;
                 }
+                echoPos = (echoPos + 1) % echoFrames;
             }
             lastGain = g; lastL = gL; lastM = gM; lastH = gH;
             if (pk > peak) peak = pk;

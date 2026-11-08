@@ -7,10 +7,9 @@ namespace DJMaster
     {
         public AudioSource uiSource;
         public AudioSource crowdSource;      // cheers and the air horn
-        public AudioSource ambienceSource;   // looping crowd murmur, volume follows crowd energy
 
         static Sfx instance;
-        AudioClip click, success, fail, cheer, horn, murmur;
+        AudioClip click, success, fail, cheer, horn, siren, zap;
         const int SR = 44100;
 
         void Awake()
@@ -25,14 +24,17 @@ namespace DJMaster
             fail = Make("fail", 0.35f, t => Mathf.Sign(Mathf.Sin(2 * Mathf.PI * (180 - t * 120) * t)) * 0.12f * (1 - t / 0.35f));
             cheer = MakeCheer();
             horn = MakeHorn();
-            murmur = MakeMurmur();
-            if (ambienceSource != null)
+            siren = Make("siren", 1.6f, t =>
             {
-                ambienceSource.clip = murmur;
-                ambienceSource.loop = true;
-                ambienceSource.volume = 0;
-                ambienceSource.Play();
-            }
+                float f = 700 + 450 * Mathf.Sin(2 * Mathf.PI * 3.2f * t);
+                return Mathf.Clamp(Mathf.Sin(2 * Mathf.PI * f * t) * 3f, -1, 1) * 0.22f * Mathf.Min(1, (1.6f - t) * 6);
+            });
+            zap = Make("zap", 0.75f, t =>
+            {
+                float local = t % 0.25f; // three "pew"s
+                float f = 2400 * Mathf.Exp(-local * 18) + 120;
+                return Mathf.Sign(Mathf.Sin(2 * Mathf.PI * f * local)) * Mathf.Exp(-local * 9) * 0.18f;
+            });
         }
 
         public static void Click() => Play(instance?.click, 0.6f, ui: true);
@@ -40,12 +42,17 @@ namespace DJMaster
         public static void Fail() => Play(instance?.fail, 0.6f, ui: true);
         public static void Cheer(float volume = 1f) => Play(instance?.cheer, volume, ui: false);
         public static void AirHorn() => Play(instance?.horn, 0.8f, ui: false);
+        public static void Siren() => Play(instance?.siren, 0.7f, ui: false);
+        public static void Zap() => Play(instance?.zap, 0.7f, ui: false);
 
-        public static void SetAmbience(float volume)
+        // The sampler pads, left to right.
+        public static readonly string[] SampleNames = { "HORN", "CHEER", "SIREN", "ZAP" };
+        public static void Sample(int i)
         {
-            if (instance == null || instance.ambienceSource == null) return;
-            var s = instance.ambienceSource;
-            s.volume = Mathf.MoveTowards(s.volume, volume, Time.deltaTime * 0.5f);
+            if (i == 0) AirHorn();
+            else if (i == 1) Cheer(0.9f);
+            else if (i == 2) Siren();
+            else Zap();
         }
 
         static void Play(AudioClip clip, float volume, bool ui)
@@ -129,25 +136,6 @@ namespace DJMaster
                 d[i] = Mathf.Clamp(lp * 2.2f, -1, 1) * blast * 0.5f;
             }
             var c = AudioClip.Create("airhorn", n, 1, SR, false);
-            c.SetData(d, 0);
-            return c;
-        }
-
-        static AudioClip MakeMurmur()
-        {
-            int n = 4 * SR;
-            var d = new float[n * 2];
-            var rng = new System.Random(11);
-            float l = 0, r = 0;
-            for (int i = 0; i < n; i++)
-            {
-                l += 0.05f * ((float)(rng.NextDouble() * 2 - 1) - l);
-                r += 0.05f * ((float)(rng.NextDouble() * 2 - 1) - r);
-                float edge = Mathf.Min(1, Mathf.Min(i, n - i) / 2000f); // fade the loop seam
-                d[i * 2] = l * 1.6f * edge;
-                d[i * 2 + 1] = r * 1.6f * edge;
-            }
-            var c = AudioClip.Create("murmur", n, 2, SR, false);
             c.SetData(d, 0);
             return c;
         }

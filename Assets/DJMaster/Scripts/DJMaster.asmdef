@@ -1,5 +1,8 @@
 {
   "name": "DJMaster",
-  "references": ["Oculus.VR"],
+  "references": [
+    "Oculus.VR",
+    "Unity.TextMeshPro"
+  ],
   "autoReferenced": true
 }
