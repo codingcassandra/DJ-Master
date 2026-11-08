@@ -31,9 +31,13 @@ No controllers needed. Every interaction is a fingertip poke, slide or spin.
 
 ![board](Docs/board.png)
 
-| Start screen | Build a set |
+| Start screen | Build a set (FREE MUSIC tab) |
 |---|---|
 | ![menu](Docs/menu.png) | ![build](Docs/build.png) |
+
+| DJ Vocab | Vocab quiz |
+|---|---|
+| ![vocab](Docs/vocab.png) | ![quiz](Docs/quiz.png) |
 
 *Editor renders. On Quest, the "room" view is your real room through passthrough.*
 
@@ -83,8 +87,9 @@ and a **cut** (hot cue to bar 1, then PLAY and crossfader together on a phrase l
 
 ## Build a set
 
-Tap a transition style, then tap songs in the crate to add them in order. Each song is mixed in with the style that was
-selected when you added it:
+Tap a transition style, then tap songs in the crate to add them in order. The crate has two tabs: **GAME TRACKS** (the
+eight synthesized songs) and **FREE MUSIC (CC0)** (eight real songs, below). You can mix both in one set, and LOAD in
+Freestyle cycles through all sixteen. Each song is mixed in with the style that was selected when you added it:
 
 | Style | How it's done | Graded on |
 |---|---|---|
@@ -104,6 +109,33 @@ bass clashes, silence and leaving the ECHO on for too long (less is more). Your 
 
 After the set, **LISTEN BACK** replays a recording of each transition, and a critique shows how much of your mixing
 time the beats were in sync, the seconds of clashing and silence, and the one thing to practise next.
+
+### Free music
+
+Real songs their artists released as **CC0 1.0 (public domain)** on [OpenGameArt.org](https://opengameart.org). Each is a
+16-bar section cut so beat 1 lands exactly on the first sample (checked to within 0.3 ms), looped seamlessly and
+loudness-matched to the game tracks, so SYNC, hot cues, beatmatching and grading work just as they do on the built-in songs.
+Full credits are in `Assets/DJMaster/Resources/Music/CREDITS.md`.
+
+| Song | Artist | BPM |
+|---|---|---|
+| [Funky House](https://opengameart.org/content/funky-house) | Of Far Different Nature | 128 |
+| [Vengeance Electro](https://opengameart.org/content/vengeance-electro) | Of Far Different Nature | 128 |
+| [Bouncer](https://opengameart.org/content/bouncer-0) | Of Far Different Nature | 128 |
+| [Liquid Flame](https://opengameart.org/content/liquid-flame) | Of Far Different Nature | 125 |
+| [Party Sector](https://opengameart.org/content/party-sector) | Joth | 120 |
+| [Slampe](https://opengameart.org/content/slampe-synthwave-house) | Fupi | 114 |
+| [Espelhar](https://opengameart.org/content/espelhar-loud-melodic-edm) | Fupi | 140 |
+| [Nosferatu's House Party](https://opengameart.org/content/nosferatus-house-party) | Cygnus | 140 |
+
+## DJ Vocab
+
+**DJ VOCAB** on the start screen lists 24 words every DJ uses, each with a one-line meaning that points at the real
+control on the board: BPM, beat, bar, phrase, deck, jog wheel, tempo, sync, cue, hot cue, channel fader, crossfader,
+EQ, filter, loop, echo, phones, tap, beatmatch, transition, bass swap, quick cut, drop and train wreck.
+
+**QUIZ ME** asks 10 questions. Each shows a meaning with the word blanked out and four words to pick from. The right
+answer lights green (and your pick red if it was wrong), and the best score is saved. Color-blind mode applies here too.
 
 ## Hand controls
 
@@ -152,7 +184,7 @@ Tip: set the Game view to **Play Maximized** so small text is easy to read.
 ## Tests
 
 - **EditMode (35):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap), synth loop length/levels/kick timing, text wrap with color tags, tap tempo, sync math, set lists (add, undo, save/load, tempo-gap advice), set stars, the color-blind palette and shapes, and the DJ vocab list and quiz clues.
-- **PlayMode (18):** loads the real scene and drives it with a simulated fingertip. Covers poking PLAY (and *not* triggering it from the side), fader drags, the fine-geared tempo fader, venue switching, menu > venue > color quiz, a full Learn run from step 1 to "LESSON COMPLETE", full runs of lessons 2 and 3, building and performing a set with a perfect phrase mix and quick cut, and a set with a perfect fade and echo out that checks the recordings and LISTEN BACK.
+- **PlayMode (18):** loads the real scene and drives it with a simulated fingertip. Covers poking PLAY (and *not* triggering it from the side), slow pokes pressing once, fader drags, the fine-geared tempo fader, knobs ignoring tracking blips, venue switching, the finger staying free after poking through the menu, menu > venue > color quiz, a full Learn run from step 1 to "LESSON COMPLETE", full runs of lessons 2 and 3, building and performing a set with a perfect phrase mix and quick cut, a set with a perfect fade and echo out that checks the recordings and LISTEN BACK, crossfader wiggling scoring only once, the color-blind toggle, the DJ Vocab list and a full quiz, every free song loading exactly on the beat grid, and the FREE MUSIC tab adding songs to a set.
 
 Run them from **Window > General > Test Runner**.
 
@@ -167,10 +199,13 @@ Assets/DJMaster/
                         MixJudge (crowd energy + score), DJBoard
   Scripts/UI/           BoardColors + ColorSafeView (the color code, color-blind mode), StartMenu, VocabPanel + DJVocab,
                         DeckDisplay, SyncMeter, InstructionPanel, SetBuilderPanel (all text is TextMeshPro)
-  Scripts/World/        EnvironmentManager (passthrough/club/festival), SeatedAnchor, Crowd (GPU-instanced), LightShow, MeshKit
+  Scripts/World/        EnvironmentManager (passthrough/club/festival), SeatedAnchor, LightShow, MeshKit,
+                        Crowd (GPU-instanced dancers with two-bone arms and legs, per-person looks)
   Resources/Music/      8 CC0 songs as beat-aligned 16-bar loops, plus CREDITS.md
   Shaders/              Additive + Glow (single-pass stereo safe), CrowdInstanced (per-person colors)
   Editor/SceneBuilder.cs  builds the entire scene from primitives
+  Editor/               SceneAutoRebuild (rebuilds a stale scene on Play), MusicImport (sample-accurate audio import),
+                        GameViewSharpness (full-resolution Game view)
 ```
 
 Built with the Meta XR Core SDK v207 (OVRCameraRig, OVRHand/OVRSkeleton with OpenXR hand skeletons, OVRPassthroughLayer).

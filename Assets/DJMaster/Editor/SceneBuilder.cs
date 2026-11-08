@@ -1059,6 +1059,7 @@ namespace DJMaster.EditorTools
             var menu = Object.FindAnyObjectByType<StartMenu>();
             menu.gameObject.SetActive(false); // rendered on its own below
             Vector3 eye = world.TransformPoint(new Vector3(0, 1.24f, 0));
+            Object.FindAnyObjectByType<SetBuilderPanel>().gameObject.SetActive(false); // only shown in Build mode
             foreach (var mode in new[] { EnvMode.Room, EnvMode.Club, EnvMode.Festival })
             {
                 SetPreviewMode(env, mode);
@@ -1066,7 +1067,6 @@ namespace DJMaster.EditorTools
                 RenderPreview($"Preview_{mode}_Crowd.png", eye, new Vector3(2, 0, 0), 90f, mode != EnvMode.Room);
             }
             SetPreviewMode(env, EnvMode.Room);
-            Object.FindAnyObjectByType<SetBuilderPanel>().gameObject.SetActive(false);
             RenderPreview("Preview_Board.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
