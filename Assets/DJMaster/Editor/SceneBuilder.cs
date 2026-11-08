@@ -531,17 +531,17 @@ namespace DJMaster.EditorTools
             var faceUser = Quaternion.Euler(-90, 0, 0);
             var purple = StartMenu.Purple;
 
-            Box("Back", t, new Vector3(0, -0.005f, 0.004f), new Vector3(0.62f, 0.37f, 0.006f), Unlit("MenuBack", new Color(0.035f, 0.01f, 0.06f)));
+            Box("Back", t, new Vector3(0, -0.015f, 0.004f), new Vector3(0.62f, 0.39f, 0.006f), Unlit("MenuBack", new Color(0.035f, 0.01f, 0.06f)));
             Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            Box("EdgeBottom", t, new Vector3(0, -0.19f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
+            Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             m.title = Text("Title", t, new Vector3(0, 0.165f, 0), 0.0042f, TextAnchor.UpperCenter, purple);
             m.subtitle = Text("Subtitle", t, new Vector3(0, 0.105f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
-            m.footer = Text("Footer", t, new Vector3(0, -0.16f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
+            m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
 
-            for (int i = 0; i < 4; i++)
+            for (int i = 0; i < StartMenu.Rows; i++)
             {
-                float y = 0.045f - i * 0.05f;
+                float y = 0.05f - i * 0.046f;
                 var b = MakeButton($"menu.{i}", "", t, new Vector3(-0.155f, y, -0.004f), new Vector2(0.22f, 0.04f), Unlit("Cap", Color.gray), purple,
                     out m.labels[i], faceUser, 0.0017f, Color.white);
                 b.offColor = new Color(0.3f, 0.1f, 0.5f);
@@ -1034,10 +1034,13 @@ namespace DJMaster.EditorTools
             PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)32;
 
             var config = OVRProjectConfig.CachedProjectConfig;
-            config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.ControllersAndHands;
+            // The game has no controller input, so it's declared hands only, and tracked at the high rate
+            // so fingertip pokes and timing on the beat feel tight.
+            config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.HandsOnly;
+            config.handTrackingFrequency = OVRProjectConfig.HandTrackingFrequency.HIGH;
             config.insightPassthroughSupport = OVRProjectConfig.FeatureSupport.Supported;
             OVRProjectConfig.CommitProjectConfig(config);
-            Debug.Log("[DJMaster] Quest settings applied: hands + passthrough enabled. Now enable OpenXR + Meta XR in XR Plug-in Management (see README).");
+            Debug.Log("[DJMaster] Quest settings applied: hands only (high frequency) + passthrough enabled. Now enable OpenXR + Meta XR in XR Plug-in Management (see README).");
         }
 
         // ================= Batch-mode helpers =================
@@ -1076,7 +1079,9 @@ namespace DJMaster.EditorTools
             menu.SetRows(
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
-                ("FREESTYLE", "Just play. No timer, no rules."));
+                ("FREESTYLE", "Just play. No timer, no rules."),
+                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
+                ("COLOR-BLIND", "OFF: tap for color-blind friendly colors, with a shape on every color so nothing relies on color alone."));
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime
             tint.SetColor("_Color", menu.buttons[0].offColor);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);

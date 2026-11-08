@@ -11,9 +11,10 @@ namespace DJMaster
         public static readonly Color Lavender = new Color(0.78f, 0.6f, 1f);
 
         public TextMeshPro title, subtitle, footer;
-        public PokeButton[] buttons = new PokeButton[4];
-        public TextMeshPro[] labels = new TextMeshPro[4];
-        public TextMeshPro[] descriptions = new TextMeshPro[4];
+        public const int Rows = 5;
+        public PokeButton[] buttons = new PokeButton[Rows];
+        public TextMeshPro[] labels = new TextMeshPro[Rows];
+        public TextMeshPro[] descriptions = new TextMeshPro[Rows];
         public int wrapChars = 40;
 
         public void Show(string titleText, string subtitleText, string footerText)
@@ -28,6 +29,7 @@ namespace DJMaster
         {
             for (int i = 0; i < buttons.Length; i++)
             {
+                buttons[i].Lit = false; // a row lit on one screen (like COLOR-BLIND) shouldn't stay lit on the next
                 bool on = i < rows.Length && rows[i].label != null;
                 buttons[i].Lit = false;
                 buttons[i].gameObject.SetActive(on);

@@ -54,9 +54,13 @@ namespace DJMaster
 
         public void AdjustHeight(float delta)
         {
-            heightOffset = Mathf.Clamp(heightOffset + delta, -0.2f, 0.2f);
+            // Move by what the limit allows, not the full step, so the board stops at the limit instead of
+            // drifting past it and jumping back on the next RECENTER.
+            float next = Mathf.Clamp(heightOffset + delta, -0.2f, 0.2f);
+            transform.position += Vector3.up * (next - heightOffset);
+            heightOffset = next;
             PlayerPrefs.SetFloat("boardHeight", heightOffset);
-            transform.position += Vector3.up * delta;
+            PlayerPrefs.Save();
         }
     }
 }

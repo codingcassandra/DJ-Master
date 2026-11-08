@@ -182,7 +182,7 @@ namespace DJMaster
             var s = steps[StepIndex];
             if (s.answers == null) return;
             if (Array.IndexOf(s.answers, c.id) >= 0) { quizHit = true; return; }
-            string touched = BoardColors.NameOf(c.id);
+            string touched = BoardColors.TaggedName(c.id); // drawn in its color, so color-blind mode adds its shape
             if (touched == "") return;
             Feedback = $"That one is {touched}. Find something {s.color}.";
             Sfx.Fail();

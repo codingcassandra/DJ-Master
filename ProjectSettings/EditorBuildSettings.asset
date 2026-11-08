@@ -9,4 +9,5 @@ EditorBuildSettings:
     path: Assets/Scenes/DJMaster.unity
     guid: 7685ba3c0bda144d09e7c38dc141bff5
   m_configObjects:
+    com.unity.xr.management.loader_settings: {fileID: 11400000, guid: 59615717d282e4dc0b2664570c4e2187, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 97e007023f2024409b960586ccc94e80, type: 2}

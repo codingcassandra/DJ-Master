@@ -9,8 +9,9 @@ It starts on its own black start screen with a purple menu: pick a mode, then wh
 | Mode | What you do |
 |---|---|
 | **Learn** | Three short guided lessons: 1 First Mix (the color code and your first beatmix), 2 Fade & Cut (the DJ loop, no beatmatching needed), 3 Sync, Loops & FX. |
-| **Build a set** | Choose 2-5 songs and the transition into each one, then perform the set live with a step-by-step checklist. Every transition is graded and recorded, and the set gets a critique. |
+| **Build a set** | Choose 2-5 songs from a crate of 16 (8 game tracks and 8 free CC0 songs) and the transition into each one, then perform the set live with a step-by-step checklist. Every transition is graded and recorded, and the set gets a critique. |
 | **Freestyle** | Just play. No timer, no rules. |
+| **DJ Vocab** | A list of 24 DJ words (BPM, phrase, cue, bass swap, train wreck...) with what each one means, and a QUIZ ME button for a 10-question multiple-choice quiz. Your best score is saved. |
 
 | Venue | |
 |---|---|
@@ -18,7 +19,9 @@ It starts on its own black start screen with a purple menu: pick a mode, then wh
 | **Club** | Lasers, a mirror ball, an LED wall and a packed dance floor. |
 | **Festival** | A night-time main stage with fireworks and a huge crowd. |
 
-The crowd reacts to your mixing in every venue, and the SCENE panel switches venues at any time.
+The crowd reacts to your mixing in every venue, and the SCENE panel switches venues at any time. Every dancer is their
+own person (build, skin tone, hair and outfit). They bounce at the knees and nod on the beat, and as the energy rises they
+go from grooving to hands in the air, fist pumps, jumps, phones and glow sticks.
 
 No controllers needed. Every interaction is a fingertip poke, slide or spin.
 
@@ -46,6 +49,10 @@ Every control has a color, and Learn mode opens with a quick quiz on it:
 | Orange | CUE, the HOT CUE pads (jump to bar 1, 5, 9 or 13) and LOOP |
 | Yellow | FILTER, ECHO and PHONES: effects, and what only you hear |
 | Red | TAP and the SAMPLER pads (horn, cheer, siren, zap): for the crowd |
+
+**COLOR-BLIND mode** (on the start screen) swaps in a palette that stays distinct for every common type of color
+blindness, and gives every color a shape, on the board and in every lesson, so nothing relies on color alone:
+◄ Deck A, ► Deck B, ● PLAY, ■ CUE, ♦ FX and PHONES, ♥ CROWD. The setting is saved between sessions.
 
 ## What you learn
 
@@ -118,22 +125,24 @@ The platters turn once per bar with their white marker pointing forward on beat 
 - **Hands-first:** everything works with hands alone. Nothing needs a controller.
 - **Seated, airplane-seat friendly:** the board snaps in front of you at desk height, with every control inside arm's reach. RECENTER and height buttons are always available.
 - **Bus-stop test:** cold start lands you on the menu with tracks preloading. One lesson is about 7 minutes and a 3-song set about 3. Taking the headset off or opening the system menu pauses audio and time, and the game resumes where you left off.
-- **Original, not a wrapper:** all eight tracks are synthesized at runtime by `TrackSynth` (house, techno and disco loops, arranged in DJ phrases). There is no licensed music, no streaming, and no third-party services.
+- **Original, not a wrapper:** the eight game tracks are synthesized at runtime by `TrackSynth` (house, techno and disco loops, arranged in DJ phrases). The eight FREE MUSIC songs are real tracks their artists released as **CC0 (public domain)** on OpenGameArt.org, each cut to a 16-bar loop that starts exactly on beat 1 and credited in `Assets/DJMaster/Resources/Music/CREDITS.md`. There is no licensed music, no streaming, and no third-party services.
 
 ## Run it in the editor (no headset)
 
 1. Open the project in **Unity 6000.6.4f1** and open `Assets/Scenes/DJMaster.unity`.
 2. Press Play. The view starts tilted down at the board, and the mouse acts as a fingertip:
    - **Left click / drag:** press buttons, drag faders, turn knobs (drag up/right), spin the jog wheels
-   - **Scroll wheel:** turn the knob under the cursor
+   - **Scroll wheel:** turn the knob under the cursor, or zoom in and out anywhere else
    - **Right drag:** look around
 
-To regenerate the scene after changing the builder: **DJ Master > Build Scene**.
+Pressing Play rebuilds the scene first if `SceneBuilder` has changed since the scene was built, and turns off the Game
+view's *Low Resolution Aspect Ratios* so text stays sharp. To rebuild by hand: **DJ Master > Build Scene**.
+Tip: set the Game view to **Play Maximized** so small text is easy to read.
 
 ## Build to Quest
 
 1. **Unity Hub > Installs > 6000.6.4f1 > Add modules > Android Build Support** (include OpenJDK and Android SDK & NDK).
-2. **DJ Master > Configure Player Settings for Quest** (IL2CPP, ARM64, min API 32, package `com.djmaster.vr`, hand tracking + passthrough).
+2. **DJ Master > Configure Player Settings for Quest** (IL2CPP, ARM64, min API 32, package `com.djmaster.vr`, hands only at high tracking frequency + passthrough).
 3. **File > Build Profiles > Android > Switch Platform**.
 4. **Edit > Project Settings > XR Plug-in Management > Android tab:** check **OpenXR**, then under OpenXR enable the **Meta XR** feature group. Then open **Edit > Project Settings > Meta XR**, pick the Android tab and click **Fix All**.
 5. Put the Quest in developer mode, connect over USB, then **Build And Run**.
@@ -142,8 +151,8 @@ To regenerate the scene after changing the builder: **DJ Master > Build Scene**.
 
 ## Tests
 
-- **EditMode (24):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap), synth loop length/levels/kick timing, text wrap with color tags, tap tempo, sync math, set lists (add, undo, save/load, tempo-gap advice), set stars.
-- **PlayMode (10):** loads the real scene and drives it with a simulated fingertip. Covers poking PLAY (and *not* triggering it from the side), fader drags, the fine-geared tempo fader, venue switching, menu > venue > color quiz, a full Learn run from step 1 to "LESSON COMPLETE", full runs of lessons 2 and 3, building and performing a set with a perfect phrase mix and quick cut, and a set with a perfect fade and echo out that checks the recordings and LISTEN BACK.
+- **EditMode (35):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap), synth loop length/levels/kick timing, text wrap with color tags, tap tempo, sync math, set lists (add, undo, save/load, tempo-gap advice), set stars, the color-blind palette and shapes, and the DJ vocab list and quiz clues.
+- **PlayMode (18):** loads the real scene and drives it with a simulated fingertip. Covers poking PLAY (and *not* triggering it from the side), fader drags, the fine-geared tempo fader, venue switching, menu > venue > color quiz, a full Learn run from step 1 to "LESSON COMPLETE", full runs of lessons 2 and 3, building and performing a set with a perfect phrase mix and quick cut, and a set with a perfect fade and echo out that checks the recordings and LISTEN BACK.
 
 Run them from **Window > General > Test Runner**.
 
@@ -156,9 +165,11 @@ Assets/DJMaster/
   Scripts/Interaction/  Pointer, HandPointerSource (index fingertip), MousePointerSource, PokeButton, Fader, Knob, JogWheel
   Scripts/Game/         GameDirector (menus and modes), LessonDirector (Learn), SetList + SetPerformer (Build a set / live show),
                         MixJudge (crowd energy + score), DJBoard
-  Scripts/UI/           BoardColors (the color code), DeckDisplay, SyncMeter, InstructionPanel, SetBuilderPanel
+  Scripts/UI/           BoardColors + ColorSafeView (the color code, color-blind mode), StartMenu, VocabPanel + DJVocab,
+                        DeckDisplay, SyncMeter, InstructionPanel, SetBuilderPanel (all text is TextMeshPro)
   Scripts/World/        EnvironmentManager (passthrough/club/festival), SeatedAnchor, Crowd (GPU-instanced), LightShow, MeshKit
-  Shaders/              Additive + Glow (single-pass stereo safe)
+  Resources/Music/      8 CC0 songs as beat-aligned 16-bar loops, plus CREDITS.md
+  Shaders/              Additive + Glow (single-pass stereo safe), CrowdInstanced (per-person colors)
   Editor/SceneBuilder.cs  builds the entire scene from primitives
 ```
 

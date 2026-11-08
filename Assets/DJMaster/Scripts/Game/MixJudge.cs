@@ -42,10 +42,12 @@ namespace DJMaster
         float[] lowCutAt = { -10f, -10f };
         bool inSync;
         float echoTime;
+        int awardedFrom = -1, awardedTo = -1; // the two tracks of the last transition that scored
 
         public void ResetScore()
         {
             Score = 0; Transitions = 0; trackTime = 0; silence = 0;
+            awardedFrom = awardedTo = -1;
             BeatBus.Energy = 0.45f;
             lastDominant = mixer.DominantDeck;
         }
@@ -87,9 +89,16 @@ namespace DJMaster
             {
                 if (dom >= 0 && lastDominant >= 0 && mixer.decks[lastDominant].IsPlaying && inSync)
                 {
-                    Transitions++;
-                    Award("SMOOTH TRANSITION!", 500);
-                    BeatBus.FireDrop();
+                    // Each pair of songs scores once, so wobbling the crossfader across the middle doesn't farm points.
+                    int from = mixer.decks[lastDominant].TrackIndex, to = mixer.decks[dom].TrackIndex;
+                    bool samePair = (from == awardedFrom && to == awardedTo) || (from == awardedTo && to == awardedFrom);
+                    if (!samePair)
+                    {
+                        awardedFrom = from; awardedTo = to;
+                        Transitions++;
+                        Award("SMOOTH TRANSITION!", 500);
+                        BeatBus.FireDrop();
+                    }
                 }
                 if (dom >= 0) trackTime = 0;
                 lastDominant = dom;

@@ -61,7 +61,7 @@ namespace DJMaster
             {
                 if (i >= DJVocab.Words.Length) { entries[i].text = ""; continue; }
                 var w = DJVocab.Words[i];
-                entries[i].text = TextUtil.Wrap($"<b><color=#FFFFFF>{w.term}</color></b>  {w.meaning}", wrapChars);
+                entries[i].text = TextUtil.Wrap(BoardColors.Display($"<b><color=#FFFFFF>{w.term}</color></b>  {w.meaning}"), wrapChars);
             }
         }
 
@@ -70,6 +70,7 @@ namespace DJMaster
 
         public void ShowList()
         {
+            FillList(); // picks up color-blind mode if it changed
             Quizzing = false;
             listRoot.SetActive(true);
             quizRoot.SetActive(false);
@@ -116,7 +117,7 @@ namespace DJMaster
                 answerLabels[i].text = DJVocab.Words[choices[i]].term;
             }
             progress.text = $"Question {QuestionIndex + 1} of {QuizLength}      Score: {Score}";
-            question.text = TextUtil.Wrap(DJVocab.Clue(DJVocab.Words[target]), questionWrapChars);
+            question.text = TextUtil.Wrap(BoardColors.Display(DJVocab.Clue(DJVocab.Words[target])), questionWrapChars);
             feedback.text = "";
             next.gameObject.SetActive(false);
         }
@@ -136,7 +137,7 @@ namespace DJMaster
                 answers[i].Lit = true;
             }
             string word = DJVocab.Words[choices[CorrectChoice]].term;
-            feedback.text = right ? BoardColors.Green("Correct!") : $"{BoardColors.Red("Not quite.")} It's {BoardColors.Green(word)}.";
+            feedback.text = BoardColors.Display(right ? BoardColors.Green("Correct!") : $"{BoardColors.Red("Not quite.")} It's {BoardColors.Green(word)}.");
             Sfx.Click();
             progress.text = $"Question {QuestionIndex + 1} of {QuizLength}      Score: {Score}";
             nextLabel.text = QuestionIndex + 1 < QuizLength ? "NEXT" : "SEE SCORE";

@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -37,11 +38,23 @@ namespace DJMaster
         static readonly ConcurrentDictionary<int, Task<float[]>> renders = new();
         static readonly Dictionary<int, AudioClip> clips = new();
         static readonly Dictionary<int, ResourceRequest> loads = new();
+        // Rendering all the songs at once spikes memory and CPU while you're on the menu, so only two run at a time.
+        static readonly SemaphoreSlim renderSlots = new(2);
 
-        // Synthesized tracks render in the background. Recordings have nothing to render (null result).
-        public static Task<float[]> Render(int index) =>
-            Tracks[index].IsRecording ? Task.FromResult<float[]>(null)
-                : renders.GetOrAdd(index, i => Task.Run(() => TrackSynth.Render(Tracks[i])));
+        static bool HasClip(int index) => clips.TryGetValue(index, out var c) && c != null;
+
+        // Main thread only. Synthesized tracks render in the background; recordings (and songs whose clip
+        // already exists) have nothing to render, so they return a finished task with no data.
+        public static Task<float[]> Render(int index)
+        {
+            if (Tracks[index].IsRecording || HasClip(index)) return Task.FromResult<float[]>(null);
+            return renders.GetOrAdd(index, i => Task.Run(async () =>
+            {
+                await renderSlots.WaitAsync();
+                try { return TrackSynth.Render(Tracks[i]); }
+                finally { renderSlots.Release(); }
+            }));
+        }
 
         // Start rendering and loading everything in the background so LOAD is instant later.
         public static void Prewarm()
@@ -88,6 +101,8 @@ namespace DJMaster
             var clip = AudioClip.Create(Tracks[index].title, data.Length / 2, 2, TrackSynth.SampleRate, false);
             clip.SetData(data, 0);
             clips[index] = clip;
+            // The clip keeps its own copy of the samples, so let go of the render's (about 11 MB per song).
+            renders.TryRemove(index, out _);
             return clip;
         }
     }

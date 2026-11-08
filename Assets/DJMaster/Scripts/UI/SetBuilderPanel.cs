@@ -139,9 +139,9 @@ namespace DJMaster
                 }
                 sb.Append($"{i + 1} {tracks[Set.songs[i]].title}\n");
             }
-            setText.text = sb.ToString();
-            info.text = TextUtil.Wrap($"{BoardColors.Yellow(SetList.Name(Style))}: {SetList.Describe(Style)}", 24);
-            status.text = message != "" ? message
+            setText.text = BoardColors.Display(sb.ToString());
+            info.text = TextUtil.Wrap(BoardColors.Display($"{BoardColors.Yellow(SetList.Name(Style))}: {SetList.Describe(Style)}"), 24);
+            status.text = message != "" ? BoardColors.Display(message)
                 : Set.Ready ? $"{Set.Count} songs, about {Set.Count * 45 / 60 + 1} min. Ready to GO LIVE!"
                 : $"Add {SetList.MinSongs - Set.Count} more song{(SetList.MinSongs - Set.Count == 1 ? "" : "s")} ({SetList.MaxSongs} max).";
         }

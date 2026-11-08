@@ -271,5 +271,132 @@ namespace DJMaster.Tests
             Assert.IsFalse(env.club.root.activeSelf);
             Assert.AreEqual(CameraClearFlags.SolidColor, env.cam.clearFlags);
         }
+
+        [UnityTest]
+        public IEnumerator SlowPokePressesOnce()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var deck = board.A.deck;
+            yield return WaitFor(() => deck.IsLoaded, 20f);
+            Assert.IsFalse(deck.IsPlaying);
+
+            // A real fingertip moves about a millimetre a frame on a careful poke, so it spends frames
+            // between the surface and the press depth.
+            finger.DirectPress = false;
+            finger.Active = true;
+            for (int mm = 15; mm >= -10; mm--)
+            {
+                finger.Position = board.A.play.transform.TransformPoint(new Vector3(0, mm * 0.001f, 0));
+                yield return null;
+            }
+            Assert.IsTrue(deck.IsPlaying, "a slow poke from above should press PLAY");
+
+            // Wobbling while still pushed in (as tracked fingers do) must not press it again.
+            float end = Time.time + 0.6f;
+            for (int i = 0; Time.time < end; i++)
+            {
+                finger.Position = board.A.play.transform.TransformPoint(new Vector3(0, i % 2 == 0 ? -0.002f : -0.009f, 0));
+                yield return null;
+            }
+            finger.Active = false;
+            yield return null;
+            Assert.IsTrue(deck.IsPlaying, "wobbling inside the button should not toggle PLAY again");
+        }
+
+        [UnityTest]
+        public IEnumerator KnobIgnoresTrackingBlipButDoubleTapStillResets()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var knob = board.A.low;
+            Vector3 At(float y, float z) => knob.transform.TransformPoint(new Vector3(0, y, z));
+
+            // Turn the LOW down.
+            finger.DirectPress = false;
+            finger.Active = true;
+            finger.Position = At(0.005f, 0);
+            yield return null; yield return null;
+            for (int i = 1; i <= 10; i++) { finger.Position = At(0.005f, -0.002f * i); yield return null; }
+            float turned = knob.value;
+            Assert.Less(turned, 0.3f, "sliding toward you should turn the knob down");
+
+            // Hand tracking drops out for one frame, then comes back on the same spot.
+            finger.Active = false;
+            yield return null;
+            finger.Active = true;
+            yield return null; yield return null;
+            Assert.AreEqual(turned, knob.value, 0.01f, "a tracking blip must not reset the knob to center");
+
+            // Keep turning, then lift off: that's not a tap.
+            for (int i = 1; i <= 5; i++) { finger.Position = At(0.005f, -0.02f + 0.002f * i); yield return null; }
+            finger.Position = At(0.06f, 0);
+            yield return new WaitForSeconds(0.4f);
+            Assert.AreNotEqual(0.5f, knob.value, "turning and lifting off should leave the knob where it is");
+
+            // A real double-tap still resets it.
+            finger.Position = At(0.005f, 0); yield return null; yield return null;
+            finger.Position = At(0.06f, 0); yield return null;
+            finger.Position = At(0.005f, 0); yield return null; yield return null;
+            Assert.AreEqual(0.5f, knob.value, 0.001f, "a double-tap should reset the knob to center");
+            finger.Active = false;
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator WigglingTheCrossfaderScoresOneTransition()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var judge = Object.FindAnyObjectByType<MixJudge>();
+            yield return WaitFor(() => board.A.deck.IsLoaded && board.B.deck.IsLoaded, 20f);
+
+            board.A.volume.SetValue(1f);
+            board.B.volume.SetValue(1f);
+            board.crossfader.SetValue(0f);
+            board.A.deck.Play();
+            board.B.deck.Play();
+            yield return null;
+            board.Sync(1);
+            yield return WaitFor(() => judge.InSync, 3f);
+            Assert.IsTrue(judge.InSync, "SYNC should line the two decks up");
+
+            yield return null;
+            judge.ResetScore();
+            for (int i = 0; i < 6; i++)
+            {
+                board.crossfader.SetValue(i % 2 == 0 ? 1f : 0f);
+                yield return null; yield return null;
+            }
+            Assert.AreEqual(1, judge.Transitions, "the same two songs should only score one transition");
+        }
+
+        [UnityTest]
+        public IEnumerator ColorBlindToggle_RecolorsBoardAndAddsShapes_ThenRestores()
+        {
+            var menu = Object.FindAnyObjectByType<StartMenu>();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            if (BoardColors.ColorSafe) { menu.buttons[4].SimulatePress(); yield return null; } // start from the normal look
+
+            Color normalPlay = board.A.play.onColor;
+            var playLabel = board.A.play.GetComponentInChildren<TMPro.TextMeshPro>(true);
+            Assert.AreEqual("PLAY", playLabel.text);
+
+            menu.buttons[4].SimulatePress(); // COLOR-BLIND on the start screen
+            yield return null;
+            Assert.IsTrue(BoardColors.ColorSafe);
+            Assert.IsTrue(menu.buttons[4].Lit, "the COLOR-BLIND row should light up when it's on");
+            Assert.AreNotEqual(normalPlay, board.A.play.onColor, "PLAY should switch to the color-blind palette");
+            Assert.AreEqual("● PLAY", playLabel.text);
+            Assert.AreEqual("◄ LOAD", board.A.load.GetComponentInChildren<TMPro.TextMeshPro>(true).text);
+            foreach (char shape in "◄►●■♦♥")
+                Assert.IsTrue(playLabel.font.HasCharacter(shape, searchFallbacks: true, tryAddCharacter: true), $"the label font can't draw {shape}");
+
+            menu.buttons[4].SimulatePress();
+            yield return null;
+            Assert.IsFalse(BoardColors.ColorSafe);
+            Assert.AreEqual(normalPlay, board.A.play.onColor, "turning it off should restore the original colors");
+            Assert.AreEqual("PLAY", playLabel.text);
+        }
     }
 }

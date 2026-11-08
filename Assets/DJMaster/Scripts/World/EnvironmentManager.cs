@@ -46,6 +46,7 @@ namespace DJMaster
         {
             Mode = mode;
             PlayerPrefs.SetInt("env", (int)mode);
+            PlayerPrefs.Save();
             Apply();
             if (!MenuScreen && mode != EnvMode.Room && BeatBus.Playing) Sfx.Cheer(0.5f);
             Changed?.Invoke(mode);
