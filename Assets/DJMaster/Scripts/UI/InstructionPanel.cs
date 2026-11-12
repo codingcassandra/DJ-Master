@@ -16,7 +16,7 @@ namespace DJMaster
 
         public void Show(string titleText, string bodyText, string statusText = "", string feedbackText = "")
         {
-            // Color-blind mode changes how the same text is drawn, so redraw everything when it flips.
+            // Color-blind mode changes how the text looks, so we redraw everything when it's turned on or off
             if (lastColorSafe != BoardColors.ColorSafe)
             {
                 lastColorSafe = BoardColors.ColorSafe;

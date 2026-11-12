@@ -1034,8 +1034,8 @@ namespace DJMaster.EditorTools
             PlayerSettings.Android.minSdkVersion = (AndroidSdkVersions)32;
 
             var config = OVRProjectConfig.CachedProjectConfig;
-            // The game has no controller input, so it's declared hands only, and tracked at the high rate
-            // so fingertip pokes and timing on the beat feel tight.
+            // No controllers in this game, so we set it to hands only and track at the high rate
+            // so finger pokes and hitting the beat feel tight
             config.handTrackingSupport = OVRProjectConfig.HandTrackingSupport.HandsOnly;
             config.handTrackingFrequency = OVRProjectConfig.HandTrackingFrequency.HIGH;
             config.insightPassthroughSupport = OVRProjectConfig.FeatureSupport.Supported;

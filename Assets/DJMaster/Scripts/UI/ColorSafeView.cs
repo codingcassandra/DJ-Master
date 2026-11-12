@@ -4,9 +4,9 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    // Applies color-blind mode to everything under this object: the safe palette on every color-coded button, ring,
-    // skirt and label, and each control's shape in front of its label (e.g. "● PLAY"). It works from the colors baked
-    // into the scene, so the scene doesn't need rebuilding. Call Init once after adding it.
+    // Turns on color-blind mode for everything under this object: the safe colors on every color coded button, ring,
+    // skirt and label, and each control's shape in front of its label (like "● PLAY"). It goes off the colors already
+    // in the scene, so we don't have to rebuild the scene. Call Init once after adding it
     public class ColorSafeView : MonoBehaviour
     {
         class ButtonColors { public PokeButton button; public Color on, off; public BoardColors.Family family; public float brightness; }
@@ -32,7 +32,7 @@ namespace DJMaster
 
         void Collect()
         {
-            // Renderers that other scripts recolor every frame are left to them.
+            // Skip renderers that other scripts recolor every frame, they handle it
             var skip = new HashSet<Renderer>();
             foreach (var c in GetComponentsInChildren<DJControl>(true))
             {
@@ -70,7 +70,7 @@ namespace DJMaster
             foreach (var tm in GetComponentsInChildren<TextMeshPro>(true))
             {
                 var colorFamily = BoardColors.FamilyOf(tm.color, out float k);
-                // Only the fixed labels of color-coded board controls get a shape; panel and crate buttons change text at runtime.
+                // Only the fixed labels on color coded board controls get a shape, panel and crate buttons change their text while playing
                 var control = tm.GetComponentInParent<DJControl>(true);
                 var shape = control != null ? BoardColors.FamilyOf(control.id) : BoardColors.Family.None;
                 if (string.IsNullOrEmpty(tm.text)) shape = BoardColors.Family.None;
@@ -117,7 +117,7 @@ namespace DJMaster
                 if (l.shape == BoardColors.Family.None) continue;
                 if (safe)
                 {
-                    // Shrink a little so the extra shape still fits on small pads.
+                    // Make it a bit smaller so the shape still fits on the small pads
                     int len = l.text.Length;
                     l.mesh.fontSize = l.size * Mathf.Max(0.75f, len / (len + 2f));
                     l.mesh.text = $"{BoardColors.Shape(l.shape)} {l.text}";

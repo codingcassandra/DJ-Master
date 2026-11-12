@@ -53,6 +53,7 @@ namespace DJMaster
             recenterButton.Pressed += anchor.Recenter;
             raiseButton.Pressed += () => anchor.AdjustHeight(0.02f);
             lowerButton.Pressed += () => anchor.AdjustHeight(-0.02f);
+            anchor.gameObject.AddComponent<DeskSnap>().Init(anchor, environment); // in MY ROOM the board goes on your real desk
             lessons.Completed += ChooseLesson;
             performer.Completed += ShowResults;
             builder.BackPressed += EnterTitle;
@@ -71,8 +72,8 @@ namespace DJMaster
         void OnApplicationPause(bool pause) { appPaused = pause; RefreshPause(); }
         void OnApplicationFocus(bool focus) { if (!Application.isEditor) { appUnfocused = !focus; RefreshPause(); } }
 
-        // Three separate signals can pause the game (system menu, headset off, app in the background),
-        // and they can arrive in any order, so it only resumes once all of them have cleared.
+        // 3 different things can pause the game (system menu, headset off, app in the background)
+        // and they can come in any order, so we only unpause when all of them are cleared
         void RefreshPause() => SetPaused(focusLost || appPaused || appUnfocused);
 
         void SetPaused(bool p)
