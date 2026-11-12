@@ -181,10 +181,10 @@ namespace DJMaster
 
             if (Looping && Source.isPlaying)
             {
-                // Beats played since the loop start, allowing for the track wrapping round its end.
+                // Beats played since the loop started, counting the track wrapping back to the start
                 double rel = Beat - loopStart;
                 if (rel < -1) rel += TrackSynth.TotalBeats;
-                // Jump back by whole loop lengths, so the beat never drifts, even after a long frame.
+                // Jump back by whole loops so the beat never drifts, even after a slow frame
                 if (rel >= LoopBeats) { SeekBeat(loopStart + rel % LoopBeats); LoopRepeats++; }
             }
             jogBend = Mathf.MoveTowards(jogBend, 0, Time.deltaTime * 2f);

@@ -35,8 +35,8 @@ namespace DJMaster
                 Vector2 flat = new Vector2(lp.x, lp.z);
                 if (!holder.Active || lp.y > 0.045f || lp.y < -0.035f || flat.magnitude > radius + 0.05f)
                 {
-                    // Only a short, still touch that ends with the finger lifting off counts as a tap. Hand tracking
-                    // dropping out for a moment also lets go of the knob, and that must never count toward a double-tap.
+                    // Only a short, still touch where the finger lifts off counts as a tap. If hand tracking drops out
+                    // for a sec it also lets go of the knob, and that should never count toward a double-tap
                     bool liftedOff = holder.Active || holder.DirectPress;
                     bool tap = liftedOff && Time.time - touchStart < 0.3f && Mathf.Abs(value - valueAtTouch) < 0.03f;
                     lastTapEnd = tap ? Time.time : -10f;

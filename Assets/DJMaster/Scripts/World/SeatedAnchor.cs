@@ -14,6 +14,7 @@ namespace DJMaster
         [Tooltip("Height of the board surface above the venue floor, in the world's local space.")]
         public float boardHeight = 0.82f;
         public float boardForward = 0.40f;
+        public event System.Action Recentered; // DeskSnap listens to this so in MY ROOM the board goes on your real desk
 
         float heightOffset;
         bool placed;
@@ -50,12 +51,13 @@ namespace DJMaster
             transform.rotation = yaw;
             transform.position = boardWorld - yaw * new Vector3(0, boardHeight, boardForward);
             placed = true;
+            Recentered?.Invoke();
         }
 
         public void AdjustHeight(float delta)
         {
-            // Move by what the limit allows, not the full step, so the board stops at the limit instead of
-            // drifting past it and jumping back on the next RECENTER.
+            // Only move as far as the limit lets us, not the full step, so the board stops at the limit and doesn't
+            // go past it and jump back on the next RECENTER
             float next = Mathf.Clamp(heightOffset + delta, -0.2f, 0.2f);
             transform.position += Vector3.up * (next - heightOffset);
             heightOffset = next;

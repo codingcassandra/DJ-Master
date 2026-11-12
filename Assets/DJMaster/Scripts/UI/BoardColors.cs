@@ -8,8 +8,8 @@ namespace DJMaster
     //   BLUE = Deck A (left)   PINK = Deck B (right)   GREEN = PLAY   ORANGE = CUE and the hot cue pads
     //   YELLOW = headphones and FILTER (things only you hear / effects)   RED = TAP and the sampler pads (for the crowd)
     //
-    // COLOR-BLIND mode (on the start menu) swaps in the Okabe-Ito palette, which stays distinct for every common type
-    // of color blindness, and gives every color a shape, on the board and in the lesson text, so nothing relies on color:
+    // COLOR-BLIND mode (on the start menu) switches to the Okabe-Ito colors, which you can tell apart with every common
+    // type of color blindness, and gives each color a shape on the board and in the lesson text, so nothing is color only:
     //   ◄ Deck A   ► Deck B   ● PLAY   ■ CUE   ♦ FX and PHONES   ♥ CROWD
     public static class BoardColors
     {
@@ -22,7 +22,7 @@ namespace DJMaster
         public static readonly Color Fx = new Color(1f, 0.9f, 0.15f);
         public static readonly Color Crowd = new Color(1f, 0.15f, 0.1f);
 
-        // Indexed by Family.
+        // One per Family, same order
         static readonly Color[] Standard = { Color.clear, DeckA, DeckB, Play, Cue, Fx, Crowd };
         static readonly Color[] Safe =
         {
@@ -40,7 +40,7 @@ namespace DJMaster
 
         const string PrefKey = "colorSafe";
 
-        // True while color-blind mode is on.
+        // True when color-blind mode is on
         public static bool ColorSafe { get; private set; }
         public static event Action Changed;
 
@@ -54,14 +54,14 @@ namespace DJMaster
             if (changed) Changed?.Invoke();
         }
 
-        // The color a family is drawn in right now.
+        // The color we draw a family in right now
         public static Color Of(Family f) => (ColorSafe ? Safe : Standard)[(int)f];
 
-        // The shape for a family, e.g. "●" for PLAY.
+        // The shape for a family, like "●" for PLAY
         public static string Shape(Family f) => Shapes[(int)f];
 
-        // Text built with the helpers below, as it should appear on screen: unchanged normally, and in color-blind
-        // mode with the safe colors and each color's shape after the words, e.g. "PLAY ●".
+        // Text made with the helpers below, the way it shows on screen. Normally it stays the same, in color-blind
+        // mode it gets the safe colors and each color's shape after the words, like "PLAY ●"
         public static string Display(string text)
         {
             if (!ColorSafe || string.IsNullOrEmpty(text)) return text;
@@ -73,8 +73,8 @@ namespace DJMaster
             });
         }
 
-        // Which family a color baked into the scene belongs to, allowing for the dimmed versions the board uses
-        // (button rings at 70%, knob skirts at 60%). `brightness` is that dimming, 1 for the full color.
+        // Which family a color from the scene belongs to, counting the dimmer versions the board uses
+        // (button rings at 70%, knob skirts at 60%). brightness is how dim it is, 1 for the full color
         public static Family FamilyOf(Color c, out float brightness)
         {
             brightness = 0f;
@@ -102,7 +102,7 @@ namespace DJMaster
 
         public static string Tag(string s, Color c) => $"<color=#{ColorUtility.ToHtmlStringRGB(c)}>{s}</color>";
 
-        // The color family of a control, from its id ("A.low", "B.cue", "airhorn"...).
+        // The color family of a control, from its id ("A.low", "B.cue", "airhorn"...)
         public static Family FamilyOf(string id)
         {
             if (string.IsNullOrEmpty(id)) return Family.None;
@@ -129,7 +129,7 @@ namespace DJMaster
             _ => "",
         };
 
-        // The color name, drawn in its color (so Display can add the shape), or "" for controls outside the code.
+        // The color name drawn in its color (so Display can add the shape), or "" if the control isn't color coded
         public static string TaggedName(string id)
         {
             var f = FamilyOf(id);

@@ -47,8 +47,8 @@ namespace DJMaster
         // The last `seconds` of the mix as a stereo clip, or null if nothing has been recorded.
         public AudioClip Snapshot(float seconds)
         {
-            // The audio thread waits on this lock, so only the copy happens inside it. Allocating the buffer
-            // and building the clip happen outside, otherwise the mix can drop out right after a transition.
+            // The audio thread waits on this lock, so we only do the copy inside it. Making the buffer and the clip
+            // happens outside, if not the mix can cut out right after a transition
             int frames = (int)Mathf.Min(seconds * sampleRate, Mathf.Min(System.Threading.Interlocked.Read(ref written), ring.Length / 2));
             if (frames <= 0) return null;
             var data = new float[frames * 2];

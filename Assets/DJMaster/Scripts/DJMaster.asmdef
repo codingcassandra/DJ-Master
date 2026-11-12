@@ -2,7 +2,15 @@
   "name": "DJMaster",
   "references": [
     "Oculus.VR",
-    "Unity.TextMeshPro"
+    "Unity.TextMeshPro",
+    "meta.xr.mrutilitykit"
   ],
-  "autoReferenced": true
+  "autoReferenced": true,
+  "versionDefines": [
+    {
+      "name": "com.meta.xr.mrutilitykit",
+      "expression": "",
+      "define": "DJ_MRUK"
+    }
+  ]
 }

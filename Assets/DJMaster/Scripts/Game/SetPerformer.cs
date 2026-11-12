@@ -199,7 +199,7 @@ namespace DJMaster
 
             if (InFinale)
             {
-                // SongIndex already moved on, so Out is now the last song, the one that's playing.
+                // SongIndex already moved on, so Out is the last song, the one playing now
                 FinaleLeft = finaleBars * TrackSynth.BeatsPerBar * 60f / Mathf.Max(60f, Out.BPM);
                 return;
             }

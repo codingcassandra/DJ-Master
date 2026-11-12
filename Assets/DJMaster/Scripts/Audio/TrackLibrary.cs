@@ -101,7 +101,7 @@ namespace DJMaster
             var clip = AudioClip.Create(Tracks[index].title, data.Length / 2, 2, TrackSynth.SampleRate, false);
             clip.SetData(data, 0);
             clips[index] = clip;
-            // The clip keeps its own copy of the samples, so let go of the render's (about 11 MB per song).
+            // The clip has its own copy of the samples, so we drop the render's copy (about 11 MB per song)
             renders.TryRemove(index, out _);
             return clip;
         }

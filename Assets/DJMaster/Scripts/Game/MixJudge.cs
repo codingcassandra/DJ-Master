@@ -89,7 +89,7 @@ namespace DJMaster
             {
                 if (dom >= 0 && lastDominant >= 0 && mixer.decks[lastDominant].IsPlaying && inSync)
                 {
-                    // Each pair of songs scores once, so wobbling the crossfader across the middle doesn't farm points.
+                    // Each pair of songs only scores once, so wiggling the crossfader back and forth doesn't farm points
                     int from = mixer.decks[lastDominant].TrackIndex, to = mixer.decks[dom].TrackIndex;
                     bool samePair = (from == awardedFrom && to == awardedTo) || (from == awardedTo && to == awardedFrom);
                     if (!samePair)
