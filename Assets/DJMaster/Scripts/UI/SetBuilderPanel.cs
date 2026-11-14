@@ -118,9 +118,10 @@ namespace DJMaster
                 crateButtons[i].Lit = Set.songs.Contains(track);
                 var t = tracks[track];
                 if (crateLabels[i] != null)
+                    // Song name big, the small print under it stays the size it was so it still fits the button
                     crateLabels[i].text = t.IsRecording
-                        ? $"{t.title}\n<size=80%>{t.bpm:0} BPM  {t.artist}</size>"
-                        : $"{t.title}\n{t.bpm:0} BPM {t.genre.ToString().ToUpper()}";
+                        ? $"{t.title}\n<size=64%>{t.bpm:0} BPM  {t.artist}</size>"
+                        : $"{t.title}\n<size=80%>{t.bpm:0} BPM {t.genre.ToString().ToUpper()}</size>";
             }
             if (gameTab != null) gameTab.Lit = Page == 0;
             if (freeTab != null) freeTab.Lit = Page == 1;

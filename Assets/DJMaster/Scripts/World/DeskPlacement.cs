@@ -24,17 +24,26 @@ namespace DJMaster
             }
         }
 
-        // Board size, same as the one SceneBuilder makes: the body is 0.78 wide and its bottom is 0.051 under the
-        // board's origin. It goes 0.215 toward you and about 0.31 away from you (the screens at the back).
-        public const float BoardBottom = 0.051f;
-        public const float BoardHalfWidth = 0.39f;
-        public const float BoardFront = 0.215f;
-        public const float BoardBack = 0.31f;
-        // Keep the front edge a little in from the table edge so it doesn't hang off
-        public const float EdgeGap = 0.04f;
+        // Board size in meters, same as the one SceneBuilder makes (drawn at 70%): the body is 0.546 wide and its
+        // bottom is 0.036 under the board's origin. It goes 0.189 toward you (with the button ledge) and about
+        // 0.24 away from you (the screens at the back).
+        public const float BoardBottom = 0.036f;
+        public const float BoardHalfWidth = 0.273f;
+        public const float BoardFront = 0.189f;
+        public const float BoardBack = 0.24f;
+        // The front edge lines up with the table edge, so the board is as close to you as the table lets it be
+        public const float EdgeGap = 0f;
 
-        // Comfy seated reach, measured flat from your head to the middle of the board
-        public const float MinReach = 0.25f, MaxReach = 0.9f;
+        // Not closer than this, measured flat from your head to the middle of the board
+        public const float MinReach = 0.25f;
+        // Every control has to be inside two feet of your eyes, like in an airplane seat
+        public const float MaxReach = 0.61f;
+        // The controls furthest from you, from the middle of the board: the far edge of the jog wheels and the HI knobs
+        static readonly Vector3[] FarControls =
+        {
+            new Vector3(-0.186f, 0.008f, 0.13f), new Vector3(0.186f, 0.008f, 0.13f),
+            new Vector3(-0.039f, 0.014f, 0.144f), new Vector3(0.039f, 0.014f, 0.144f),
+        };
         // How far under your eyes the board can be. Never above them.
         public const float MinDrop = 0.2f, MaxDrop = 0.9f;
         // Smaller than this is probably a stool or a bad scan, bigger is probably not a real table
@@ -97,7 +106,7 @@ namespace DJMaster
             // Slide it sideways to line up with you, but keep it on the table
             float slack = Mathf.Max(0f, halfLong - BoardHalfWidth);
             float across = Mathf.Clamp(Vector3.Dot(toHead, side), -slack, slack);
-            // Front edge just in from the table edge. If the table isn't deep enough we center it instead.
+            // Front edge on the table edge. If the table isn't deep enough we center it instead.
             float toward = Mathf.Max(halfDepth - EdgeGap - BoardFront, (BoardBack - BoardFront) / 2f);
             Vector3 board = table.center + side * across + outward * toward;
             board.y = surfaceY;
@@ -105,11 +114,17 @@ namespace DJMaster
             Vector3 toBoard = board - headPos;
             toBoard.y = 0;
             float reach = toBoard.magnitude;
-            if (reach < MinReach || reach > MaxReach) return false;
+            if (reach < MinReach) return false;
             float facing = Vector3.Dot(toBoard / reach, look);
             if (facing < MinFacing || Vector3.Dot(boardFwd, look) < MinFacing || Vector3.Dot(toBoard, boardFwd) <= 0) return false;
 
-            rootRot = Quaternion.LookRotation(boardFwd, Vector3.up);
+            var rot = Quaternion.LookRotation(boardFwd, Vector3.up);
+            // If the table's near edge is too far away you'd have to lean in for the far controls, so we skip it
+            // and the board stays in front of you instead
+            foreach (var c in FarControls)
+                if (Vector3.Distance(headPos, board + rot * c) > MaxReach) return false;
+
+            rootRot = rot;
             rootPos = board - rootRot * new Vector3(0, boardHeight, boardForward);
             score = reach + (1f - facing);
             return true;

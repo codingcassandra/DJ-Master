@@ -312,12 +312,13 @@ namespace DJMaster.Tests
             var knob = board.A.low;
             Vector3 At(float y, float z) => knob.transform.TransformPoint(new Vector3(0, y, z));
 
-            // Turn the LOW down
+            // Turn the LOW down. The knob is in board units and the board is drawn smaller now, so the same
+            // finger move is a longer slide in its own units
             finger.DirectPress = false;
             finger.Active = true;
             finger.Position = At(0.005f, 0);
             yield return null; yield return null;
-            for (int i = 1; i <= 10; i++) { finger.Position = At(0.005f, -0.002f * i); yield return null; }
+            for (int i = 1; i <= 10; i++) { finger.Position = At(0.005f, -0.003f * i); yield return null; }
             float turned = knob.value;
             Assert.Less(turned, 0.3f, "sliding toward you should turn the knob down");
 
@@ -329,7 +330,7 @@ namespace DJMaster.Tests
             Assert.AreEqual(turned, knob.value, 0.01f, "a tracking blip must not reset the knob to center");
 
             // Keep turning, then lift off, that's not a tap
-            for (int i = 1; i <= 5; i++) { finger.Position = At(0.005f, -0.02f + 0.002f * i); yield return null; }
+            for (int i = 1; i <= 5; i++) { finger.Position = At(0.005f, -0.03f + 0.003f * i); yield return null; }
             finger.Position = At(0.06f, 0);
             yield return new WaitForSeconds(0.4f);
             Assert.AreNotEqual(0.5f, knob.value, "turning and lifting off should leave the knob where it is");
