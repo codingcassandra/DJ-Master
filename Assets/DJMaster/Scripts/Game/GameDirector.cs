@@ -152,7 +152,8 @@ namespace DJMaster
                 ("1 FIRST MIX", Done(0) + "The color code, the beat, and your first beatmix. About 7 minutes."),
                 ("2 FADE & CUT", Done(1) + "The DJ loop, fades and cuts. No beatmatching needed. About 4 minutes."),
                 ("3 SYNC & FX", Done(2) + "Tap tempo, SYNC, an 8-bar mix, loops and echo. About 5 minutes."),
-                ("MENU", ""));
+                ("BACK", ""),
+                ("HOME", ""));
         }
 
         void MenuAction(int i)
@@ -172,7 +173,8 @@ namespace DJMaster
                     else StartFreestyle();
                     break;
                 case GameMode.ChooseLesson:
-                    if (i == 3) EnterTitle();
+                    if (i == 3) ChooseVenue(GameMode.Learn); // BACK goes one screen back, to where you picked the venue
+                    else if (i == 4) EnterTitle();
                     else StartLearn(i);
                     break;
             }
@@ -183,8 +185,9 @@ namespace DJMaster
             switch (Mode)
             {
                 case GameMode.Learn:
-                    if (i == 0) ChooseLesson();
-                    else if (i == 1) lessons.Skip();
+                    if (i == 0) EnterTitle(); // HOME is always the first button, in every mode
+                    else if (i == 1) ChooseLesson();
+                    else if (i == 2) lessons.Skip();
                     else StartLearn(lessons.LessonIndex);
                     break;
                 case GameMode.Live:
@@ -209,7 +212,7 @@ namespace DJMaster
         {
             performer.Stop();
             SetMode(GameMode.Learn);
-            panel.SetActions("LESSONS", "SKIP STEP", "RESTART");
+            panel.SetActions("HOME", "LESSONS", "SKIP STEP", "RESTART");
             lessons.Begin(lesson);
         }
 
@@ -249,7 +252,7 @@ namespace DJMaster
             if (!builder.Set.Ready) { StartBuild(); return; }
             lessons.Stop();
             SetMode(GameMode.Live);
-            panel.SetActions("MENU", "RESTART", "END SET");
+            panel.SetActions("HOME", "RESTART", "END SET");
             performer.Begin(builder.Set);
         }
 
@@ -258,7 +261,7 @@ namespace DJMaster
             lessons.Stop();
             performer.Stop();
             SetMode(GameMode.Freestyle);
-            panel.SetActions("MENU");
+            panel.SetActions("HOME");
             judge.ResetScore();
         }
 
@@ -271,7 +274,7 @@ namespace DJMaster
             BeatBus.FireDrop();
             replayIndex = 0;
             replaying = "";
-            panel.SetActions("MENU", "PLAY AGAIN", "EDIT SET", "LISTEN BACK");
+            panel.SetActions("HOME", "PLAY AGAIN", "EDIT SET", "LISTEN BACK");
         }
 
         void Update()

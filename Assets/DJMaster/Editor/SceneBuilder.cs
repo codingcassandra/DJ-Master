@@ -568,7 +568,7 @@ namespace DJMaster.EditorTools
                 tm.text = label;
                 return b;
             }
-            p.back = Action(0, "BACK", Color.white);
+            p.back = Action(0, "HOME", Color.white); // takes you to the start menu, same as HOME everywhere else
             p.undo = Action(1, "UNDO", Color.white);
             p.clear = Action(2, "CLEAR", Color.white);
             p.goLive = Action(3, "GO LIVE", BoardColors.Play);
@@ -636,7 +636,7 @@ namespace DJMaster.EditorTools
                 return b;
             }
             v.quizButton = Btn("vocab.quiz", "QUIZ ME", new Vector3(0, Top - 0.085f, 0), new Vector2(0.22f, 0.04f), out v.quizButtonLabel);
-            v.menuButton = Btn("vocab.menu", "MENU", new Vector3(W / 2 - 0.075f, Top - 0.04f, 0), new Vector2(0.11f, 0.035f), out _, 0.0013f);
+            v.menuButton = Btn("vocab.menu", "HOME", new Vector3(W / 2 - 0.075f, Top - 0.04f, 0), new Vector2(0.11f, 0.035f), out _, 0.0013f);
             v.info = Text("Info", t, new Vector3(0, Top - 0.125f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
 
             // The list: 12 words per column.

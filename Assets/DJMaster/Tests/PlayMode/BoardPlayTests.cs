@@ -399,5 +399,78 @@ namespace DJMaster.Tests
             Assert.AreEqual(normalPlay, board.A.play.onColor, "turning it off should restore the original colors");
             Assert.AreEqual("PLAY", playLabel.text);
         }
+
+        [UnityTest]
+        public IEnumerator HomeButton_FromEveryMode_GoesToStartMenu()
+        {
+            var game = Object.FindAnyObjectByType<GameDirector>();
+            var menu = Object.FindAnyObjectByType<StartMenu>(FindObjectsInactive.Include);
+            var panel = Object.FindAnyObjectByType<InstructionPanel>(FindObjectsInactive.Include);
+            var builder = Object.FindAnyObjectByType<SetBuilderPanel>(FindObjectsInactive.Include);
+            var vocab = Object.FindAnyObjectByType<VocabPanel>(FindObjectsInactive.Include);
+            var performer = Object.FindAnyObjectByType<SetPerformer>(FindObjectsInactive.Include);
+
+            IEnumerator Home(PokeButton home, string from)
+            {
+                home.SimulatePress();
+                yield return null;
+                Assert.AreEqual(GameMode.Title, game.Mode, $"HOME from {from} should go to the start menu");
+            }
+
+            // Learn: LEARN, MY ROOM, lesson 1
+            menu.buttons[0].SimulatePress(); menu.buttons[0].SimulatePress(); menu.buttons[0].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.Learn, game.Mode);
+            yield return Home(panel.actionButtons[0], "a lesson");
+
+            // Freestyle
+            menu.buttons[2].SimulatePress(); menu.buttons[0].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.Freestyle, game.Mode);
+            yield return Home(panel.actionButtons[0], "Freestyle");
+
+            // Build a set
+            menu.buttons[1].SimulatePress(); menu.buttons[0].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.Build, game.Mode);
+            yield return Home(builder.back, "Build a set");
+
+            // Live, then the results screen
+            menu.buttons[1].SimulatePress(); menu.buttons[0].SimulatePress();
+            builder.Set.Clear();
+            builder.AddSong(0);
+            builder.AddSong(1);
+            builder.goLive.SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.Live, game.Mode);
+            yield return Home(panel.actionButtons[0], "a live set");
+
+            menu.buttons[1].SimulatePress(); menu.buttons[0].SimulatePress();
+            builder.goLive.SimulatePress();
+            yield return null;
+            performer.Finish();
+            yield return null;
+            Assert.AreEqual(GameMode.LiveResults, game.Mode);
+            yield return Home(panel.actionButtons[0], "the results");
+
+            // DJ Vocab
+            menu.buttons[3].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.Vocab, game.Mode);
+            yield return Home(vocab.menuButton, "DJ Vocab");
+
+            // Lesson list: BACK goes one screen back, HOME goes all the way
+            menu.buttons[0].SimulatePress(); menu.buttons[0].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.ChooseLesson, game.Mode);
+            menu.buttons[3].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.ChooseVenue, game.Mode, "BACK on the lesson list should go to the venue picker");
+            menu.buttons[3].SimulatePress();
+            yield return null;
+            Assert.AreEqual(GameMode.Title, game.Mode, "BACK on the venue picker should go to the start menu");
+            menu.buttons[0].SimulatePress(); menu.buttons[0].SimulatePress();
+            yield return Home(menu.buttons[4], "the lesson list");
+        }
     }
 }
