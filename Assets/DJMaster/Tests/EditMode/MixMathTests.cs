@@ -96,5 +96,37 @@ namespace DJMaster.Tests
                 Assert.AreEqual(v, DJMath.TempoFaderFor(DJMath.TempoRate(v)), 1e-5f);
             Assert.Greater(DJMath.TempoFaderFor(1.1f), 1f, "10% is out of range");
         }
+
+        [Test]
+        public void OneSyncRuleAHandCanHit()
+        {
+            Assert.IsTrue(MixJudge.BeatsLocked(0.3f, 0.06f), "a match done by hand counts");
+            Assert.IsTrue(MixJudge.BeatsLocked(-0.3f, -0.06f));
+            Assert.IsFalse(MixJudge.BeatsLocked(0.5f, 0f), "tempo too far off");
+            Assert.IsFalse(MixJudge.BeatsLocked(0f, 0.1f), "kicks too far apart");
+            // Locked has to still sound like one kick at club tempos
+            foreach (float bpm in new[] { 120f, 128f, 140f })
+                Assert.Less(MixJudge.SyncBeats * 60000f / bpm, 40f, $"{bpm} BPM");
+        }
+
+        [Test]
+        public void TempoStepOnlyWhenTheFaderCanReach()
+        {
+            Assert.IsTrue(SetPerformer.CanMatchTempo(128f, 124f));
+            Assert.IsTrue(SetPerformer.CanMatchTempo(128f, 122f));
+            Assert.IsFalse(SetPerformer.CanMatchTempo(140f, 128f), "Espelhar into Funky House is about 9% apart");
+            Assert.IsFalse(SetPerformer.CanMatchTempo(113.99998f, 128f), "Slampe into a 128 song is 12% apart");
+        }
+
+        [Test]
+        public void TapOnBeatAllowsForTheLag()
+        {
+            float bpm = 128f, spb = 60f / bpm, lag = 0.1f;
+            Assert.IsTrue(LessonDirector.IsOnBeat(8 + lag / spb, bpm, lag), "tapping right when you hear the kick");
+            Assert.IsTrue(LessonDirector.IsOnBeat(8 + (lag + 0.1f) / spb, bpm, lag), "a bit late is fine");
+            Assert.IsTrue(LessonDirector.IsOnBeat(8 + (lag - 0.1f) / spb, bpm, lag), "a bit early is fine");
+            Assert.IsFalse(LessonDirector.IsOnBeat(8 + (lag + 0.15f) / spb, bpm, lag), "too late");
+            Assert.IsFalse(LessonDirector.IsOnBeat(8.5, bpm, 0f), "between two kicks");
+        }
     }
 }
