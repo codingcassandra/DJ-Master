@@ -14,6 +14,8 @@ namespace DJMaster
         public TextMeshPro info;
         public PokeButton quizButton, menuButton;
         public TextMeshPro quizButtonLabel;
+        [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
+        public Transform corner;
 
         [Header("Word list")]
         public GameObject listRoot;
@@ -41,6 +43,8 @@ namespace DJMaster
         readonly List<int> order = new();
         readonly int[] choices = new int[4];
         System.Random rng = new();
+        string questionRaw = "", feedbackRaw = "";
+        int picked = -1;
 
         void Awake()
         {
@@ -53,6 +57,18 @@ namespace DJMaster
             }
             next.Pressed += () => { if (Finished) StartQuiz(); else if (Answered) NextQuestion(); };
             FillList();
+        }
+
+        void OnEnable() => BoardColors.Changed += Recolor;
+        void OnDisable() => BoardColors.Changed -= Recolor;
+
+        // Color-blind mode was switched from the corner button: redraw what's showing in the new colors and shapes
+        void Recolor()
+        {
+            if (!Quizzing) { FillList(); return; }
+            if (Finished) return;
+            question.text = TextUtil.Wrap(BoardColors.Display(questionRaw), questionWrapChars);
+            if (Answered) { MarkAnswers(); feedback.text = BoardColors.Display(feedbackRaw); }
         }
 
         public void FillList()
@@ -117,8 +133,10 @@ namespace DJMaster
                 answerLabels[i].text = DJVocab.Words[choices[i]].term;
             }
             progress.text = $"Question {QuestionIndex + 1} of {QuizLength}      Score: {Score}";
-            question.text = TextUtil.Wrap(BoardColors.Display(DJVocab.Clue(DJVocab.Words[target])), questionWrapChars);
-            feedback.text = "";
+            questionRaw = DJVocab.Clue(DJVocab.Words[target]);
+            question.text = TextUtil.Wrap(BoardColors.Display(questionRaw), questionWrapChars);
+            feedback.text = feedbackRaw = "";
+            picked = -1;
             next.gameObject.SetActive(false);
         }
 
@@ -128,20 +146,31 @@ namespace DJMaster
             Answered = true;
             bool right = i == CorrectChoice;
             if (right) Score++;
-            var correct = answers[CorrectChoice];
-            correct.onColor = BoardColors.Play;
-            correct.Lit = true;
-            if (!right)
-            {
-                answers[i].onColor = BoardColors.Crowd;
-                answers[i].Lit = true;
-            }
+            picked = i;
+            MarkAnswers();
             string word = DJVocab.Words[choices[CorrectChoice]].term;
-            feedback.text = BoardColors.Display(right ? BoardColors.Green("Correct!") : $"{BoardColors.Red("Not quite.")} It's {BoardColors.Green(word)}.");
+            feedbackRaw = right ? BoardColors.Green("Correct!") : $"{BoardColors.Red("Not quite.")} It's {BoardColors.Green(word)}.";
+            feedback.text = BoardColors.Display(feedbackRaw);
             Sfx.Click();
             progress.text = $"Question {QuestionIndex + 1} of {QuizLength}      Score: {Score}";
             nextLabel.text = QuestionIndex + 1 < QuizLength ? "NEXT" : "SEE SCORE";
             next.gameObject.SetActive(true);
+        }
+
+        // The right word lights green and a wrong pick lights red. In color-blind mode they get the PLAY and
+        // CROWD shapes too, so you don't need to see the colors to know which is which
+        void MarkAnswers()
+        {
+            bool safe = BoardColors.ColorSafe;
+            for (int a = 0; a < answers.Length; a++)
+            {
+                bool correct = a == CorrectChoice, wrong = a == picked && !correct;
+                var family = correct ? BoardColors.Family.Play : BoardColors.Family.Crowd;
+                answers[a].onColor = BoardColors.Of(family);
+                answers[a].Lit = correct || wrong;
+                string term = DJVocab.Words[choices[a]].term;
+                answerLabels[a].text = safe && (correct || wrong) ? $"{BoardColors.Shape(family)} {term}" : term;
+            }
         }
 
         void ShowResult()

@@ -17,6 +17,8 @@ namespace DJMaster
         public PokeButton gameTab, freeTab;
         [Tooltip("Plays each song as you add it.")]
         public Deck preview;
+        [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
+        public Transform corner;
 
         public SetList Set { get; private set; } = new();
         public TransitionStyle Style { get; private set; }
@@ -55,7 +57,13 @@ namespace DJMaster
             };
         }
 
-        void OnEnable() => Refresh();
+        void OnEnable()
+        {
+            BoardColors.Changed += Refresh; // the corner COLOR-BLIND button can flip it while you're building
+            Refresh();
+        }
+
+        void OnDisable() => BoardColors.Changed -= Refresh;
 
         public void AddSong(int track)
         {

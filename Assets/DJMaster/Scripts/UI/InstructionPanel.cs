@@ -10,6 +10,8 @@ namespace DJMaster
         public PokeButton[] actionButtons = new PokeButton[4];
         public TextMeshPro[] actionLabels = new TextMeshPro[4];
         public int wrapChars = 52;
+        [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
+        public Transform corner;
 
         string lastBody, lastTitle, lastStatus, lastFeedback;
         bool lastColorSafe;
