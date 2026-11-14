@@ -83,5 +83,21 @@ namespace DJMaster.Tests
             Assert.AreEqual(BoardColors.Family.None, BoardColors.FamilyOf("panel.action0"));
             Assert.AreEqual("GREEN", BoardColors.NameOf("A.play"));
         }
+
+        [Test]
+        public void ColorQuiz_EveryControlOfTheColorCounts()
+        {
+            foreach (var id in new[] { "A.high", "A.jog", "A.load", "A.sync", "A.volume", "A.tempo" })
+                Assert.IsTrue(LessonDirector.IsQuizAnswer("BLUE", id), id);
+            foreach (var id in new[] { "B.low", "B.load", "B.sync", "B.tempo" })
+                Assert.IsTrue(LessonDirector.IsQuizAnswer("PINK", id), id);
+            foreach (var id in new[] { "A.filter", "B.headphones", "A.echo", "B.echo" })
+                Assert.IsTrue(LessonDirector.IsQuizAnswer("YELLOW", id), id);
+            foreach (var id in new[] { "A.cue", "B.hotcue3", "A.loop", "B.loop" })
+                Assert.IsTrue(LessonDirector.IsQuizAnswer("ORANGE", id), id);
+            Assert.IsFalse(LessonDirector.IsQuizAnswer("BLUE", "A.play"), "PLAY is green");
+            Assert.IsFalse(LessonDirector.IsQuizAnswer("BLUE", "B.low"));
+            Assert.IsFalse(LessonDirector.IsQuizAnswer("BLUE", "panel.action0"));
+        }
     }
 }

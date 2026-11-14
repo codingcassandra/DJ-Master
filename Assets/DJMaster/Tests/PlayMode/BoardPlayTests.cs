@@ -248,7 +248,7 @@ namespace DJMaster.Tests
             StringAssert.Contains("PINK", lessons.Feedback);
             Assert.AreEqual(0, lessons.StepIndex);
 
-            board.A.low.SimulateTouch();
+            board.A.sync.SimulateTouch(); // any BLUE control counts, not only the knobs
             yield return WaitFor(() => lessons.StepIndex == 1, 4f);
             Assert.AreEqual(1, lessons.StepIndex);
         }

@@ -59,15 +59,17 @@ namespace DJMaster.Tests
             board.A.volume.SetValue(1f); yield return Next();
             board.crossfader.SetValue(0f); yield return Next();
 
+            // Tap when a player would hear the kick: the lesson takes the audio and hand lag off each tap
+            double Heard() => A.Beat - LessonDirector.TapLag * A.BPM / 60.0;
             for (int i = 0; i < 4; i++)
             {
-                yield return WaitFor(() => DJMath.DistanceToBeat(A.Beat) < 0.05f && A.Beat % 1.0 < 0.5, 3f, "beat");
+                yield return WaitFor(() => DJMath.DistanceToBeat(Heard()) < 0.05f && Heard() % 1.0 < 0.5, 3f, "beat");
                 board.tap.SimulatePress();
                 yield return new WaitForSeconds(0.3f);
             }
             yield return Next();
 
-            yield return WaitFor(() => { double bar = A.Beat / 4; return (int)bar % 4 == 0 && bar % 1.0 < 0.03; }, 12f, "phrase line");
+            yield return WaitFor(() => { double bar = Heard() / 4; return (int)bar % 4 == 0 && bar % 1.0 < 0.03; }, 12f, "phrase line");
             board.tap.SimulatePress(); yield return Next();
 
             board.B.load.SimulatePress(); yield return Next();

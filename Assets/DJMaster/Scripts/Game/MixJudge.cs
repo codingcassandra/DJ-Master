@@ -35,6 +35,16 @@ namespace DJMaster
 
         public event Action<string, int> Bonus; // message, points
 
+        // One "in sync" rule for everything: the SYNC lights, the sync meter, the lessons and the live checklist.
+        // Tempo within 0.35 BPM is about 6 mm either way on the TEMPO fader, so a finger can hit it, and the beats
+        // only drift about 3 ms a second at 128 BPM, so one good nudge lasts most of a phrase.
+        // Kicks within 0.07 beat is 33 ms at 128 BPM (35 ms at 120, 32 ms at 130). That still sounds like one
+        // kick, and a short spin on the jog can land in it.
+        public const float SyncBpm = 0.35f;
+        public const float SyncBeats = 0.07f;
+        public static bool BeatsLocked(float bpmDifference, float phaseOffset) =>
+            Mathf.Abs(bpmDifference) < SyncBpm && Mathf.Abs(phaseOffset) < SyncBeats;
+
         int lastDominant = -1;
         int lastBeat = -1, lastBar = -1;
         float silence, trackTime, shoutoutTimer;
@@ -63,7 +73,7 @@ namespace DJMaster
             // Sync between the decks
             BpmDifference = b.BPM - a.BPM;
             PhaseOffset = a.IsLoaded && b.IsLoaded ? DJMath.PhaseOffset(a.Beat, b.Beat) : 0f;
-            inSync = a.IsPlaying && b.IsPlaying && Mathf.Abs(BpmDifference) < 0.25f && Mathf.Abs(PhaseOffset) < 0.07f;
+            inSync = a.IsPlaying && b.IsPlaying && BeatsLocked(BpmDifference, PhaseOffset);
             bool bothAudible = gA > 0.2f && gB > 0.2f;
             Clashing = bothAudible && !inSync;
             bool bassClash = bothAudible && a.Strip.low > 0.35f && b.Strip.low > 0.35f;

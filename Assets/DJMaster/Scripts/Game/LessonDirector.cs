@@ -25,7 +25,7 @@ namespace DJMaster
             public string praise = "Nice!";
             public Action enter;
             public Action onTap;      // what the TAP pad does during this step
-            public string[] answers;  // color quiz: touching any of these controls completes the step
+            public string[] answers;  // color quiz: the controls the hint points at (any control of the color counts)
             public string color;      // color quiz: the color being asked for
             public Action tick;       // per-frame logic for steps that judge timing
         }
@@ -181,22 +181,52 @@ namespace DJMaster
             if (!Running || praiseTimer > 0) return;
             var s = steps[StepIndex];
             if (s.answers == null) return;
-            if (Array.IndexOf(s.answers, c.id) >= 0) { quizHit = true; return; }
+            if (IsQuizAnswer(s.color, c.id)) { quizHit = true; return; }
             string touched = BoardColors.TaggedName(c.id); // drawn in its color, so color-blind mode adds its shape
             if (touched == "") return;
             Feedback = $"That one is {touched}. Find something {s.color}.";
             Sfx.Fail();
         }
 
+        // Color quiz: any control drawn in the color counts, so we never say "That one is BLUE" about a blue control.
+        public static bool IsQuizAnswer(string color, string id) => BoardColors.NameOf(id) == color;
+
+        // Tapping along: how far off the kick a tap can be, in seconds either way. 120 ms is fair for a fingertip
+        // and still well under half a beat even at 140 BPM, so four in a row means you really found the kick.
+        public const float TapWindow = 0.12f;
+        // How late a tap on the kick shows up, on top of the audio buffers: hand tracking plus the 7 mm press.
+        // Tune this on the Quest with the tap log below.
+        public const float HandLag = 0.05f;
+
+        // We hear the kick after the audio buffers play out, so a tap right on it lands late. This is how late.
+        public static float TapLag
+        {
+            get
+            {
+                AudioSettings.GetDSPBufferSize(out int length, out int buffers);
+                int rate = AudioSettings.outputSampleRate;
+                return (rate > 0 ? (float)length * buffers / rate : 0f) + HandLag;
+            }
+        }
+
+        // Where the song was when the player heard it, for a tap at this playhead beat
+        static double HeardBeat(double beat, float bpm, float lag) => beat - lag * Mathf.Max(60f, bpm) / 60f;
+
+        // True if a tap at this playhead beat was on the kick, once we take off the lag.
+        public static bool IsOnBeat(double beat, float bpm, float lag) =>
+            DJMath.DistanceToBeat(HeardBeat(beat, bpm, lag)) * 60f / Mathf.Max(60f, bpm) < TapWindow;
+
         void TapOnBeat()
         {
-            if (DJMath.DistanceToBeat(A.Beat) < 0.2f) { tapStreak++; Feedback = new string('*', tapStreak) + "  on beat!"; }
+            float lag = TapLag;
+            if (Debug.isDebugBuild) Debug.Log($"Tap {DJMath.PhaseOffset(Math.Round(A.Beat), A.Beat) * 60000f / Mathf.Max(60f, A.BPM):0} ms from the beat (lag {lag * 1000f:0} ms)");
+            if (IsOnBeat(A.Beat, A.BPM, lag)) { tapStreak++; Feedback = new string('*', tapStreak) + "  on beat!"; }
             else { tapStreak = 0; Feedback = "Off the beat. Listen for the kick drum and try again."; Sfx.Fail(); }
         }
 
         void TapOnPhrase()
         {
-            double bar = A.Beat / TrackSynth.BeatsPerBar;
+            double bar = HeardBeat(A.Beat, A.BPM, TapLag) / TrackSynth.BeatsPerBar;
             int nearestBar = (int)Math.Round(bar) % TrackSynth.Bars;
             bool onBarLine = DJMath.DistanceToBeat(bar) < 0.07f; // within about a quarter beat
             if (onBarLine && nearestBar % 4 == 0) { tapOnLine = true; return; }
@@ -322,7 +352,7 @@ namespace DJMaster
                 text = $"A beatmix has three parts: tempo, beats and phrase. Part 1: {deckA} runs at 128 BPM but {deckB} is slower. Slide {deckB}'s TEMPO fader up until both BPM readouts match.",
                 hint = "TEMPO is the long slider on the far right edge. Small moves! Watch the BPM difference shrink to 0.0.",
                 highlight = new[] { "B.tempo" },
-                done = () => B.IsPlaying && Mathf.Abs(B.BPM - A.BPM) < 0.35f,
+                done = () => B.IsPlaying && Mathf.Abs(B.BPM - A.BPM) < MixJudge.SyncBpm,
                 hold = 1f,
                 praise = "Tempos matched!",
             });
@@ -332,7 +362,7 @@ namespace DJMaster
                 text = $"Same speed, but the kicks don't land together. Spin {deckB}'s {pink} jog wheel to nudge it until the SYNC light turns green and both platter markers point the same way.",
                 hint = "Spin clockwise to catch up, counter-clockwise to hold back. Short gentle spins.",
                 highlight = new[] { "B.jog" },
-                done = () => A.IsPlaying && B.IsPlaying && Mathf.Abs(B.BPM - A.BPM) < 0.6f && Mathf.Abs(DJMath.PhaseOffset(A.Beat, B.Beat)) < 0.07f,
+                done = () => A.IsPlaying && B.IsPlaying && MixJudge.BeatsLocked(B.BPM - A.BPM, DJMath.PhaseOffset(A.Beat, B.Beat)), // same rule as the SYNC light
                 hold = 1.5f,
                 praise = "Locked in! That's beatmatching, the core DJ skill.",
             });

@@ -96,8 +96,8 @@ namespace DJMaster
                 ch.loop.Lit = ch.deck.Looping && (ch.deck.Beat % 1.0) < 0.5;
                 ch.echo.Lit = ch.deck.Strip.echo;
                 var other = channels[1 - i].deck;
-                ch.sync.Lit = ch.deck.IsPlaying && other.IsPlaying && Mathf.Abs(ch.deck.BPM - other.BPM) < 0.1f
-                              && Mathf.Abs(DJMath.PhaseOffset(other.Beat, ch.deck.Beat)) < 0.03f;
+                ch.sync.Lit = ch.deck.IsPlaying && other.IsPlaying
+                              && MixJudge.BeatsLocked(ch.deck.BPM - other.BPM, DJMath.PhaseOffset(other.Beat, ch.deck.Beat));
                 for (int k = 0; k < ch.hotCues.Length; k++) ch.hotCues[k].Lit = ch.deck.IsLoaded && ch.deck.Bar / 4 == k; // the phrase you're in
             }
             mixer.crossfader = crossfader.value;

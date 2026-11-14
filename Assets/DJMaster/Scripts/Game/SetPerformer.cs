@@ -199,6 +199,8 @@ namespace DJMaster
 
             if (InFinale)
             {
+                // The old song is gone, so we switch its ECHO off here too, or the finale says "less is more" for a good echo out
+                board.channels[freed].deck.Strip.echo = false;
                 // SongIndex already moved on, so Out is the last song, the one playing now
                 FinaleLeft = finaleBars * TrackSynth.BeatsPerBar * 60f / Mathf.Max(60f, Out.BPM);
                 return;
@@ -282,8 +284,11 @@ namespace DJMaster
             void Add(string text, Func<bool> done, params string[] ids) => Tasks.Add(new Task { text = text, done = done, highlight = ids });
             void Phones() => Add($"Preview it: press {inName}'s {BoardColors.Yellow("PHONES")}, then {BoardColors.Green("PLAY")}.",
                 () => mixer.headphoneCue[n] && In.IsPlaying || mixer.CrowdGain(n) > 0.15f, $"{N}.headphones", $"{N}.play");
-            void Tempo() => Add($"Slide {inName}'s TEMPO until its BPM matches {outName}.", () => In.IsLoaded && Mathf.Abs(In.BPM - Out.BPM) < 0.35f, $"{N}.tempo");
-            void Sync() => Add($"Line up the kicks: nudge {inName}'s JOG (or press SYNC) until SYNC turns green.", () => judge.InSync, $"{N}.jog", $"{N}.sync");
+            // More than 8% apart the TEMPO fader can't get there, so we leave out the steps nobody could finish.
+            // The grade still sees the clash, and the critique already flags the tempo jump.
+            bool canMatch = CanMatchTempo(Out.BPM, TrackLibrary.Tracks[NextTrack].bpm);
+            void Tempo() { if (canMatch) Add($"Slide {inName}'s TEMPO until its BPM matches {outName}.", () => In.IsLoaded && Mathf.Abs(In.BPM - Out.BPM) < MixJudge.SyncBpm, $"{N}.tempo"); }
+            void Sync() { if (canMatch) Add($"Line up the kicks: nudge {inName}'s JOG (or press SYNC) until SYNC turns green.", () => judge.InSync, $"{N}.jog", $"{N}.sync"); }
             void Fader() => Add($"Raise {inName}'s channel fader all the way.", () => inCh.volume.value > 0.85f, $"{N}.volume");
             void Middle() => Add("On a phrase line (bar 1, 5, 9 or 13), crossfader to the middle.", XfMiddle, "crossfader");
             void CrossOver() => Add($"Finish: crossfader all the way to {inName}.", XfToIn, "crossfader");
@@ -324,7 +329,7 @@ namespace DJMaster
                     break;
                 default:
                     Phones(); Tempo(); Sync(); Fader(); Middle();
-                    Add("Let both songs play together for one phrase: about 8 bars.", () => synced * Mathf.Max(60f, Out.BPM) / 60f / TrackSynth.BeatsPerBar >= 7.5f);
+                    if (canMatch) Add("Let both songs play together for one phrase: about 8 bars.", () => synced * Mathf.Max(60f, Out.BPM) / 60f / TrackSynth.BeatsPerBar >= 7.5f);
                     CrossOver();
                     break;
             }
@@ -349,6 +354,13 @@ namespace DJMaster
                 : worst != null && worst.grade < Grade.Perfect ? $"{SetList.Name(worst.style)}: {worst.note}"
                 : Results.Count < Set.Count - 1 ? "Play the whole set through to the last song."
                 : "Headliner material. Try a longer set with different transitions!";
+        }
+
+        // True if the new song's TEMPO fader can get it close enough to the playing BPM to count as matched.
+        public static bool CanMatchTempo(float playingBpm, float newTrackBpm)
+        {
+            float closest = Mathf.Clamp(playingBpm, newTrackBpm * DJMath.TempoRate(0f), newTrackBpm * DJMath.TempoRate(1f));
+            return Mathf.Abs(closest - playingBpm) < MixJudge.SyncBpm;
         }
 
         public static int Stars(IReadOnlyList<Result> results)
