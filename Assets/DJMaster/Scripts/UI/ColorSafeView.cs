@@ -49,6 +49,8 @@ namespace DJMaster
                 if (m.lockLight != null) skip.Add(m.lockLight);
                 if (m.energyFill != null) skip.Add(m.energyFill);
             }
+            foreach (var m in GetComponentsInChildren<LevelMeter>(true))
+                foreach (var r in m.lights) if (r != null) skip.Add(r);
 
             foreach (var b in GetComponentsInChildren<PokeButton>(true))
             {

@@ -90,6 +90,8 @@ namespace DJMaster
                 board.A.volume.SetValue(1f);
                 board.crossfader.SetValue(0f);
                 B.Load(LessonIndex == 1 ? 3 : 4); // Sundial (122, too slow to beatmix) / Glass Arcade (126)
+                // Lesson 2 teaches gain staging: Deck B's GAIN starts low, so its song comes in much quieter than Deck A's.
+                if (LessonIndex == 1) board.B.gain.SetValue(LowGainStart);
             }
             Running = true;
             Finished = false;
@@ -438,6 +440,9 @@ namespace DJMaster
             return onBar && nearest % 4 == 0;
         }
 
+        // Where lesson 2 leaves Deck B's GAIN: -9 dB, so its peaks stay in the green.
+        public const float LowGainStart = 0.125f;
+
         bool XfMiddle => board.crossfader.value > 0.3f && board.crossfader.value < 0.7f;
 
         // Lesson 2: the DJ loop, the FADE and the CUT. Deck A plays Neon Tides (128); Deck B has Sundial (122) loaded.
@@ -460,6 +465,23 @@ namespace DJMaster
                 highlight = new[] { "B.play" },
                 done = () => B.IsPlaying,
                 praise = "That's previewing.",
+            });
+            steps.Add(new Step
+            {
+                title = "Set your gain",
+                text = $"Step one of every mix: match the levels. Songs are made at different volumes. Watch the light meters beside the channel faders: {deckA}'s peaks bounce in the yellow, {deckB}'s barely leave the green. Turn {deckB}'s GAIN, the top knob, up until its peaks reach the yellow too. Never the red: red means it's distorting.",
+                hint = "GAIN is the knob above HI on Deck B's side of the mixer. Small moves, then wait a second for the meter to settle.",
+                highlight = new[] { "B.gain" },
+                tick = () =>
+                {
+                    var zone = DJMath.LevelZone(B.Strip.PeakHold);
+                    Feedback = B.Strip.ClipTime > 0 || zone == DJMath.Zone.Red ? "Too hot! That's the red. Back it off a little."
+                        : zone == DJMath.Zone.Low ? (board.B.gain.value > LowGainStart + 0.02f ? "Louder... keep going until you see yellow." : "")
+                        : "That's the level. Hold it there.";
+                },
+                done = () => B.IsPlaying && B.Strip.ClipTime == 0 && DJMath.LevelZone(B.Strip.PeakHold) == DJMath.Zone.Good,
+                hold = 1.5f,
+                praise = "Levels matched. The crowd won't hear a jump in volume.",
             });
             steps.Add(new Step
             {

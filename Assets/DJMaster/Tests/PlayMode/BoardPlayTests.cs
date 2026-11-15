@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections;
 using NUnit.Framework;
 using UnityEngine;
@@ -270,6 +271,45 @@ namespace DJMaster.Tests
             yield return null;
             Assert.IsFalse(env.club.root.activeSelf);
             Assert.AreEqual(CameraClearFlags.SolidColor, env.cam.clearFlags);
+        }
+
+        [UnityTest]
+        public IEnumerator GainKnobDrivesTheMeterAndTheCrowdHearsTheRed()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var judge = Object.FindAnyObjectByType<MixJudge>();
+            var ch = board.A;
+            yield return WaitFor(() => ch.deck.IsLoaded, 20f);
+            ch.deck.Play();
+            ch.volume.SetValue(1f);
+            board.crossfader.SetValue(0f);
+            yield return WaitFor(() => ch.deck.Strip.PeakHold > 0.3f, 5f);
+            Assert.AreEqual(DJMath.Zone.Good, DJMath.LevelZone(ch.deck.Strip.PeakHold), "at 0 dB the song peaks in the yellow");
+            var meter = Object.FindObjectsByType<LevelMeter>().First(m => m.strip == ch.deck.Strip);
+            Assert.AreEqual(8, meter.lights.Length);
+
+            // Drag the GAIN knob up with a fingertip: +12 dB pushes it into the red
+            finger.DirectPress = false;
+            finger.Active = true;
+            var knob = ch.gain;
+            for (int i = 0; i <= 30; i++)
+            {
+                finger.Position = knob.transform.TransformPoint(new Vector3(0, -0.005f, i * 0.002f));
+                yield return null;
+            }
+            finger.Active = false;
+            yield return null;
+            Assert.Greater(knob.value, 0.95f, "sliding away from you turns GAIN up");
+            yield return WaitFor(() => judge.TooLoudDeck == 0, 4f);
+            Assert.AreEqual(0, judge.TooLoudDeck, "the crowd hears Deck A distorting");
+            StringAssert.Contains("GAIN down", judge.Warning);
+
+            // Way down: too quiet
+            knob.SetValue(0f);
+            yield return WaitFor(() => judge.TooQuietDeck == 0, 8f);
+            Assert.AreEqual(0, judge.TooQuietDeck, "-12 dB is too quiet for the dance floor");
+            StringAssert.Contains("GAIN up", judge.Warning);
         }
 
         [UnityTest]

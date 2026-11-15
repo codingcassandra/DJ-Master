@@ -234,16 +234,20 @@ namespace DJMaster.EditorTools
                 // Mixer channel
                 float mx = side * 0.055f;
                 float labelX = side * 0.095f;
-                ch.high = MakeKnob($"{p}.high", t, new Vector3(mx, 0.02f, 0.205f), capMat, white, color);
-                ch.mid = MakeKnob($"{p}.mid", t, new Vector3(mx, 0.02f, 0.165f), capMat, white, color);
-                ch.low = MakeKnob($"{p}.low", t, new Vector3(mx, 0.02f, 0.125f), capMat, white, color);
-                ch.filter = MakeKnob($"{p}.filter", t, new Vector3(mx, 0.02f, 0.075f), capMat, white, BoardColors.Fx);
-                Label(t, "HI", new Vector3(labelX, 0.001f, 0.205f), 0.001f, LabelColor);
-                Label(t, "MID", new Vector3(labelX, 0.001f, 0.165f), 0.001f, LabelColor);
-                Label(t, "LOW", new Vector3(labelX, 0.001f, 0.125f), 0.001f, LabelColor);
-                Label(t, "FILTER", new Vector3(labelX, 0.001f, 0.075f), 0.0009f, LabelColor);
+                // Top to bottom like a real mixer channel: GAIN (trim), the 3-band EQ, then the FILTER.
+                ch.gain = MakeKnob($"{p}.gain", t, new Vector3(mx, 0.02f, 0.205f), capMat, white, color);
+                ch.high = MakeKnob($"{p}.high", t, new Vector3(mx, 0.02f, 0.165f), capMat, white, color);
+                ch.mid = MakeKnob($"{p}.mid", t, new Vector3(mx, 0.02f, 0.125f), capMat, white, color);
+                ch.low = MakeKnob($"{p}.low", t, new Vector3(mx, 0.02f, 0.085f), capMat, white, color);
+                ch.filter = MakeKnob($"{p}.filter", t, new Vector3(mx, 0.02f, 0.045f), capMat, white, BoardColors.Fx);
+                Label(t, "GAIN", new Vector3(labelX, 0.001f, 0.205f), 0.0009f, LabelColor);
+                Label(t, "HI", new Vector3(labelX, 0.001f, 0.165f), 0.001f, LabelColor);
+                Label(t, "MID", new Vector3(labelX, 0.001f, 0.125f), 0.001f, LabelColor);
+                Label(t, "LOW", new Vector3(labelX, 0.001f, 0.085f), 0.001f, LabelColor);
+                Label(t, "FILTER", new Vector3(labelX, 0.001f, 0.045f), 0.0009f, LabelColor);
                 ch.headphones = MakeButton($"{p}.headphones", p, t, new Vector3(side * 0.017f, 0.008f, 0.16f), new Vector2(0.024f, 0.018f), capMat, BoardColors.Fx);
-                ch.echo = MakeButton($"{p}.echo", "ECHO", t, new Vector3(mx, 0.008f, 0.033f), new Vector2(0.03f, 0.016f), capMat, BoardColors.Fx);
+                ch.echo = MakeButton($"{p}.echo", "ECHO", t, new Vector3(mx, 0.008f, 0.011f), new Vector2(0.03f, 0.016f), capMat, BoardColors.Fx);
+                MakeLevelMeter($"{p}.meter", t, new Vector3(side * 0.03f, 0f, -0.075f), deck.GetComponent<ChannelStrip>());
                 ch.volume = MakeFader($"{p}.volume", "", t, new Vector3(mx, 0f, -0.075f), 0.085f, false, slotMat, capMat, 0f);
                 Label(t, p, new Vector3(mx, 0.001f, -0.133f), 0.0018f, color);
 
@@ -323,6 +327,22 @@ namespace DJMaster.EditorTools
                 Label(go.transform, label, horizontal ? new Vector3(0, 0.001f, 0.022f) : new Vector3(0, 0.001f, -length * 0.5f - 0.014f), 0.0011f, LabelColor);
             AddCollider(go, new Vector3(0, -0.004f, 0), horizontal ? new Vector3(length + 0.02f, 0.008f, 0.03f) : new Vector3(0.03f, 0.008f, length + 0.02f));
             return f;
+        }
+
+        // 8 little lights in a column beside the channel fader, the loudest at the far end.
+        static LevelMeter MakeLevelMeter(string id, Transform parent, Vector3 pos, ChannelStrip strip)
+        {
+            var go = new GameObject(id);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            var m = go.AddComponent<LevelMeter>();
+            m.strip = strip;
+            Box("Back", go.transform, new Vector3(0, 0.0005f, 0), new Vector3(0.009f, 0.001f, 0.078f), Unlit("Slot", new Color(0.01f, 0.01f, 0.012f)));
+            m.lights = new Renderer[DJMath.MeterDb.Length];
+            for (int i = 0; i < m.lights.Length; i++)
+                m.lights[i] = Box($"Light{i}", go.transform, new Vector3(0, 0.0012f, -0.0335f + i * 0.0096f), new Vector3(0.006f, 0.0008f, 0.0072f),
+                    Unlit("MeterLight", Color.gray)).GetComponent<Renderer>();
+            return m;
         }
 
         static Knob MakeKnob(string id, Transform parent, Vector3 pos, Material capMat, Material white, Color ringColor)

@@ -209,6 +209,7 @@ namespace DJMaster
             var ch = board.channels[freed];
             ch.tempo.SetValue(0.5f);
             ch.volume.SetValue(0f);
+            ch.gain?.SetValue(0.5f);
             ch.high.SetValue(0.5f); ch.mid.SetValue(0.5f); ch.low.SetValue(0.5f); ch.filter.SetValue(0.5f);
             mixer.headphoneCue[freed] = false;
             ch.deck.Strip.echo = false;
