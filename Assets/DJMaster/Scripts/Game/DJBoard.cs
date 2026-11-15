@@ -35,6 +35,8 @@ namespace DJMaster
         public string SyncMessage => Time.time - syncMessageAt < 4f ? syncMessage : "";
         string syncMessage = "";
         float syncMessageAt = -10f;
+        // How many SYNC presses actually did something, so a live set can tell if a transition used it
+        public int SyncPresses { get; private set; }
 
         public DJControl[] AllControls { get; private set; }
 
@@ -111,7 +113,9 @@ namespace DJMaster
             var me = channels[i];
             var other = channels[1 - i].deck;
             syncMessageAt = Time.time;
+            if (!SkillLevels.Rules.syncAllowed) { syncMessage = "No SYNC in Advanced: match TEMPO and JOG by ear."; Sfx.Fail(); return; }
             if (!me.deck.IsLoaded || !other.IsLoaded) { syncMessage = "Load both decks first."; return; }
+            SyncPresses++;
             float fader = DJMath.TempoFaderFor(other.BPM / me.deck.Track.bpm);
             syncMessage = fader < 0 || fader > 1 ? "Too far apart to sync: the tempo fader only reaches 8%." : "";
             me.tempo.SetValue(fader);

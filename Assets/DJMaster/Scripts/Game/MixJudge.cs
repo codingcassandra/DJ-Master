@@ -40,8 +40,9 @@ namespace DJMaster
         // only drift about 3 ms a second at 128 BPM, so one good nudge lasts most of a phrase.
         // Kicks within 0.07 beat is 33 ms at 128 BPM (35 ms at 120, 32 ms at 130). That still sounds like one
         // kick, and a short spin on the jog can land in it.
-        public const float SyncBpm = 0.35f;
-        public const float SyncBeats = 0.07f;
+        // Those are Intermediate's numbers, the other levels loosen or tighten them (see SkillLevels).
+        public static float SyncBpm => SkillLevels.Rules.syncBpm;
+        public static float SyncBeats => SkillLevels.Rules.syncBeats;
         public static bool BeatsLocked(float bpmDifference, float phaseOffset) =>
             Mathf.Abs(bpmDifference) < SyncBpm && Mathf.Abs(phaseOffset) < SyncBeats;
 
@@ -125,7 +126,8 @@ namespace DJMaster
             if (Clashing) target = 0.15f;
             else if (bassClash) target = Mathf.Min(target, 0.45f);
             if (fxOveruse) target = Mathf.Min(target, 0.5f);
-            float rate = target < BeatBus.Energy ? 0.12f : 0.05f;
+            var rules = SkillLevels.Rules;
+            float rate = target < BeatBus.Energy ? rules.crowdDrop : rules.crowdRise;
             BeatBus.Energy = Mathf.MoveTowards(BeatBus.Energy, target, dt * rate);
 
             Warning = Clashing ? "TRAINWRECK! The beats are clashing. Match the tempo or pull a fader down."
@@ -151,15 +153,17 @@ namespace DJMaster
                 lowWas[i] = low;
             }
 
-            Score += BeatBus.Energy * BeatBus.Energy * dt * 20f * (Clashing ? 0 : 1);
+            if (rules.scored) Score += BeatBus.Energy * BeatBus.Energy * dt * 20f * (Clashing ? 0 : 1);
             shoutoutTimer -= dt;
             if (shoutoutTimer <= 0) Shoutout = "";
         }
 
         public void Award(string message, int points)
         {
-            Score += points;
-            Shoutout = $"{message}  +{points}";
+            // Solo has no score, but we still cheer the moment
+            bool scored = SkillLevels.Rules.scored;
+            if (scored) Score += points;
+            Shoutout = scored ? $"{message}  +{points}" : message;
             shoutoutTimer = 2.5f;
             Sfx.Cheer(0.8f);
             Bonus?.Invoke(message, points);

@@ -4,6 +4,27 @@ namespace DJMaster.Tests
 {
     public class MixMathTests
     {
+        // The sync rule and the tap window follow the skill level now, so these check Intermediate (the game as it was)
+        // whatever level the editor has saved, then put the save back.
+        bool hadLevel;
+        int savedLevel;
+
+        [SetUp]
+        public void PlayAtIntermediate()
+        {
+            hadLevel = UnityEngine.PlayerPrefs.HasKey(SkillLevels.PrefKey);
+            savedLevel = UnityEngine.PlayerPrefs.GetInt(SkillLevels.PrefKey, 0);
+            SkillLevels.Set(SkillLevel.Intermediate);
+        }
+
+        [TearDown]
+        public void PutTheLevelBack()
+        {
+            if (hadLevel) UnityEngine.PlayerPrefs.SetInt(SkillLevels.PrefKey, savedLevel);
+            else UnityEngine.PlayerPrefs.DeleteKey(SkillLevels.PrefKey);
+            SkillLevels.Reload();
+        }
+
         [Test]
         public void CrossfaderIsConstantPower()
         {

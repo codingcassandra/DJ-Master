@@ -333,6 +333,7 @@ namespace DJMaster.EditorTools
             yield return "set";           // SetBuilderPanel, the saved set list
             yield return "colorSafe";     // BoardColors, color-blind mode
             yield return "vocabQuizBest"; // DJVocab, best quiz score
+            yield return "skillLevel";    // SkillLevels, beginner / intermediate / advanced / solo
             for (int i = 0; i < LessonDirector.LessonNames.Length; i++) yield return LessonDirector.DoneKey(i);
         }
 
