@@ -16,6 +16,8 @@ namespace DJMaster
         public TextMeshPro[] labels = new TextMeshPro[Rows];
         public TextMeshPro[] descriptions = new TextMeshPro[Rows];
         public int wrapChars = 40;
+        [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
+        public Transform corner;
 
         public void Show(string titleText, string subtitleText, string footerText)
         {

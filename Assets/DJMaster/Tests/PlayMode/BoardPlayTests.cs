@@ -374,25 +374,25 @@ namespace DJMaster.Tests
         [UnityTest]
         public IEnumerator ColorBlindToggle_RecolorsBoardAndAddsShapes_ThenRestores()
         {
-            var menu = Object.FindAnyObjectByType<StartMenu>();
+            var colorBlind = Object.FindAnyObjectByType<SystemButtons>(FindObjectsInactive.Include).colorBlind;
             var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
-            if (BoardColors.ColorSafe) { menu.buttons[4].SimulatePress(); yield return null; } // start from the normal look
+            if (BoardColors.ColorSafe) { colorBlind.SimulatePress(); yield return null; } // start from the normal look
 
             Color normalPlay = board.A.play.onColor;
             var playLabel = board.A.play.GetComponentInChildren<TMPro.TextMeshPro>(true);
             Assert.AreEqual("PLAY", playLabel.text);
 
-            menu.buttons[4].SimulatePress(); // COLOR-BLIND on the start screen
+            colorBlind.SimulatePress(); // COLOR-BLIND in the corner of the start screen
             yield return null;
             Assert.IsTrue(BoardColors.ColorSafe);
-            Assert.IsTrue(menu.buttons[4].Lit, "the COLOR-BLIND row should light up when it's on");
+            Assert.IsTrue(colorBlind.Lit, "the COLOR-BLIND button should light up when it's on");
             Assert.AreNotEqual(normalPlay, board.A.play.onColor, "PLAY should switch to the color-blind palette");
             Assert.AreEqual("● PLAY", playLabel.text);
             Assert.AreEqual("◄ LOAD", board.A.load.GetComponentInChildren<TMPro.TextMeshPro>(true).text);
             foreach (char shape in "◄►●■♦♥")
                 Assert.IsTrue(playLabel.font.HasCharacter(shape, searchFallbacks: true, tryAddCharacter: true), $"the label font can't draw {shape}");
 
-            menu.buttons[4].SimulatePress();
+            colorBlind.SimulatePress();
             yield return null;
             Assert.IsFalse(BoardColors.ColorSafe);
             Assert.AreEqual(normalPlay, board.A.play.onColor, "turning it off should restore the original colors");

@@ -23,6 +23,8 @@ namespace DJMaster
         public EnvironmentManager environment;
         public SeatedAnchor anchor;
         public PokeButton roomButton, clubButton, festivalButton, recenterButton, raiseButton, lowerButton;
+        [Tooltip("HOME and COLOR-BLIND, moved onto whichever panel is showing.")]
+        public SystemButtons systemButtons;
 
         public GameMode Mode { get; private set; }
         public GameMode ChosenMode { get; private set; } // what starts after the venue is picked
@@ -56,8 +58,10 @@ namespace DJMaster
             anchor.gameObject.AddComponent<DeskSnap>().Init(anchor, environment); // in MY ROOM the board goes on your real desk
             lessons.Completed += ChooseLesson;
             performer.Completed += ShowResults;
-            builder.BackPressed += EnterTitle;
+            builder.BackPressed += () => ChooseVenue(GameMode.Build);
             vocab.MenuPressed += EnterTitle;
+            systemButtons.home.Pressed += EnterTitle;
+            systemButtons.colorBlind.Pressed += () => BoardColors.SetColorSafe(!BoardColors.ColorSafe);
             builder.GoLivePressed += StartLive;
 
             OVRManager.InputFocusLost += () => { focusLost = true; RefreshPause(); };
@@ -98,6 +102,10 @@ namespace DJMaster
             bool building = mode == GameMode.Build;
             panel.gameObject.SetActive(!building && !menu);
             builder.gameObject.SetActive(building);
+
+            // The same HOME / COLOR-BLIND tab on the corner of whatever is showing. No HOME on the start menu itself
+            var corner = mode == GameMode.Vocab ? vocab.corner : menu ? startMenu.corner : building ? builder.corner : panel.corner;
+            systemButtons.MountOn(corner, mode != GameMode.Title);
         }
 
         void EnterTitle()
@@ -115,11 +123,7 @@ namespace DJMaster
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
                 ("FREESTYLE", "Just play. No timer, no rules."),
-                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
-                ("COLOR-BLIND", BoardColors.ColorSafe
-                    ? "ON: color-blind friendly colors, and every color has a shape. ◄ Deck A  ► Deck B  ● PLAY  ■ CUE  ♦ FX  ♥ CROWD"
-                    : "OFF: tap for color-blind friendly colors, with a shape on every color so nothing relies on color alone."));
-            startMenu.buttons[4].Lit = BoardColors.ColorSafe;
+                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."));
         }
 
         // Every DJ word with its meaning, plus a quiz.
@@ -152,7 +156,7 @@ namespace DJMaster
                 ("1 FIRST MIX", Done(0) + "The color code, the beat, and your first beatmix. About 7 minutes."),
                 ("2 FADE & CUT", Done(1) + "The DJ loop, fades and cuts. No beatmatching needed. About 4 minutes."),
                 ("3 SYNC & FX", Done(2) + "Tap tempo, SYNC, an 8-bar mix, loops and echo. About 5 minutes."),
-                ("MENU", ""));
+                ("BACK", ""));
         }
 
         void MenuAction(int i)
@@ -161,7 +165,6 @@ namespace DJMaster
             {
                 case GameMode.Title:
                     if (i == 3) ShowVocab();
-                    else if (i == 4) { BoardColors.SetColorSafe(!BoardColors.ColorSafe); EnterTitle(); }
                     else ChooseVenue(i == 0 ? GameMode.Learn : i == 1 ? GameMode.Build : GameMode.Freestyle);
                     break;
                 case GameMode.ChooseVenue:
@@ -172,7 +175,7 @@ namespace DJMaster
                     else StartFreestyle();
                     break;
                 case GameMode.ChooseLesson:
-                    if (i == 3) EnterTitle();
+                    if (i == 3) ChooseVenue(GameMode.Learn);
                     else StartLearn(i);
                     break;
             }
@@ -188,19 +191,14 @@ namespace DJMaster
                     else StartLearn(lessons.LessonIndex);
                     break;
                 case GameMode.Live:
-                    if (i == 0) EnterTitle();
-                    else if (i == 1) StartLive();
+                    if (i == 1) StartLive();
                     else performer.Finish();
                     break;
                 case GameMode.LiveResults:
                     if (i != 3) recorder.StopReplay();
-                    if (i == 0) EnterTitle();
-                    else if (i == 1) StartLive();
+                    if (i == 1) StartLive();
                     else if (i == 2) StartBuild();
                     else ListenBack();
-                    break;
-                case GameMode.Freestyle:
-                    EnterTitle();
                     break;
             }
         }
@@ -249,7 +247,7 @@ namespace DJMaster
             if (!builder.Set.Ready) { StartBuild(); return; }
             lessons.Stop();
             SetMode(GameMode.Live);
-            panel.SetActions("MENU", "RESTART", "END SET");
+            panel.SetActions(null, "RESTART", "END SET");
             performer.Begin(builder.Set);
         }
 
@@ -258,7 +256,7 @@ namespace DJMaster
             lessons.Stop();
             performer.Stop();
             SetMode(GameMode.Freestyle);
-            panel.SetActions("MENU");
+            panel.SetActions();
             judge.ResetScore();
         }
 
@@ -271,7 +269,7 @@ namespace DJMaster
             BeatBus.FireDrop();
             replayIndex = 0;
             replaying = "";
-            panel.SetActions("MENU", "PLAY AGAIN", "EDIT SET", "LISTEN BACK");
+            panel.SetActions(null, "PLAY AGAIN", "EDIT SET", "LISTEN BACK");
         }
 
         void Update()
