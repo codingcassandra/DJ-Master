@@ -14,6 +14,8 @@ namespace DJMaster
 {
     // In MY ROOM we use the room scan from Meta's MR Utility Kit to put the board on your real desk
     // If there's no scan, no table or no permission, the board just stays where SeatedAnchor puts it
+    // We only ask for the room scan once you're actually in the booth in MY ROOM, never on the start screen,
+    // so the permission popup comes right after you pick MY ROOM, when the venue picker has told you why
     // If the MRUK package isn't there this does nothing
     public class DeskSnap : MonoBehaviour
     {
@@ -35,6 +37,7 @@ namespace DJMaster
             environment = env;
             anchor.Recentered += OnRecentered;
             environment.Changed += OnModeChanged;
+            environment.MenuScreenChanged += OnMenuScreenChanged;
 #endif
         }
 
@@ -42,7 +45,17 @@ namespace DJMaster
         void OnDestroy()
         {
             if (anchor != null) anchor.Recentered -= OnRecentered;
-            if (environment != null) environment.Changed -= OnModeChanged;
+            if (environment != null)
+            {
+                environment.Changed -= OnModeChanged;
+                environment.MenuScreenChanged -= OnMenuScreenChanged;
+            }
+        }
+
+        // Stepping into the booth after picking a venue
+        void OnMenuScreenChanged(bool menu)
+        {
+            if (!menu) OnModeChanged(environment.Mode);
         }
 
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -58,6 +71,7 @@ namespace DJMaster
         // SeatedAnchor just put the board in front of you, in MY ROOM we move it onto the desk if we can
         void OnRecentered()
         {
+            if (environment.MenuScreen) return; // the board isn't showing, and we don't ask on the start screen
             if (environment.Mode != EnvMode.Room) { onDesk = false; return; }
             if (ready) onDesk = Snap();
             else TryLoad();
@@ -65,6 +79,9 @@ namespace DJMaster
 
         void OnModeChanged(EnvMode mode)
         {
+            // The saved venue gets applied at startup and the venue picker sets it before you leave the menu,
+            // neither of those should pop up the permission. We go once you're in the booth
+            if (environment.MenuScreen) return;
             if (mode == EnvMode.Room)
             {
                 if (ready) onDesk = Snap();

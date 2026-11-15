@@ -140,7 +140,7 @@ namespace DJMaster
             string what = next == GameMode.Learn ? "LEARN" : next == GameMode.Build ? "BUILD A SET" : "FREESTYLE";
             startMenu.Show("WHERE DO YOU WANT TO PLAY?", $"Mode: {what}", "You can switch anytime with the SCENE panel next to the booth.");
             startMenu.SetRows(
-                ("MY ROOM", "Mixed reality: the booth appears in your real surroundings."),
+                ("MY ROOM", "Your real room. We'll ask for your room scan so the board can sit on your desk."),
                 ("CLUB", "A dark club with lasers, a mirror ball and a packed dance floor."),
                 ("FESTIVAL", "A night-time main stage with fireworks and a huge crowd."),
                 ("BACK", ""));

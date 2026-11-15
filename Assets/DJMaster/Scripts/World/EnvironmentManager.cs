@@ -31,15 +31,20 @@ namespace DJMaster
 
         public EnvMode Mode { get; private set; }
         // The start screen: plain black everywhere, no passthrough, no venue.
-        public bool MenuScreen { get; private set; }
+        // The game opens on it, so it starts true: that way nothing that waits for the booth (like the room scan) runs at startup
+        public bool MenuScreen { get; private set; } = true;
         public event Action<EnvMode> Changed;
+        // Fires when you step from the start screen into the booth (false) or back out (true)
+        public event Action<bool> MenuScreenChanged;
 
         void Start() => SetMode((EnvMode)PlayerPrefs.GetInt("env", (int)EnvMode.Room));
 
         public void SetMenuScreen(bool on)
         {
+            bool changed = on != MenuScreen;
             MenuScreen = on;
             Apply();
+            if (changed) MenuScreenChanged?.Invoke(on);
         }
 
         public void SetMode(EnvMode mode)
