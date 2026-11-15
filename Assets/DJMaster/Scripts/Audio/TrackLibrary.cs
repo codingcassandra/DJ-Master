@@ -25,12 +25,15 @@ namespace DJMaster
             new("Afterglow Avenue", "Lumen Kid",       125f, 11, Genre.House,  707),
             new("Pulse Garden",     "Mira Okafor",     127f, 3,  Genre.Techno, 808),
 
-            TrackInfo.Recording("Funky House",        "Of Far Different Nature", 128f,       Genre.House,     "funky-house"),
-            TrackInfo.Recording("Vengeance Electro",  "Of Far Different Nature", 128f,       Genre.Electro,   "vengeance-electro"),
-            TrackInfo.Recording("Bouncer",            "Of Far Different Nature", 128f,       Genre.House,     "bouncer-0"),
-            TrackInfo.Recording("Liquid Flame",       "Of Far Different Nature", 125f,       Genre.House,     "liquid-flame"),
-            TrackInfo.Recording("Party Sector",       "Joth",                    120f,       Genre.Techno,    "party-sector"),
-            TrackInfo.Recording("Slampe",             "Fupi",                    113.99998f, Genre.Synthwave, "slampe-synthwave-house"),
+            // Keys for the recordings are estimated from the audio (chroma + key profiles), double check by ear.
+            // Party Sector has no clear third so it could be F#m. Espelhar and Nosferatu's Party came out too
+            // close to call (Espelhar leans G or Bm, Nosferatu leans Em), so they stay unknown for now
+            TrackInfo.Recording("Funky House",        "Of Far Different Nature", 128f,       Genre.House,     "funky-house",               root: 4),  // Em
+            TrackInfo.Recording("Vengeance Electro",  "Of Far Different Nature", 128f,       Genre.Electro,   "vengeance-electro",         root: 9),  // Am
+            TrackInfo.Recording("Bouncer",            "Of Far Different Nature", 128f,       Genre.House,     "bouncer-0",                 root: 9),  // Am
+            TrackInfo.Recording("Liquid Flame",       "Of Far Different Nature", 125f,       Genre.House,     "liquid-flame",              root: 9),  // Am
+            TrackInfo.Recording("Party Sector",       "Joth",                    120f,       Genre.Techno,    "party-sector",              root: 6, major: true), // F#
+            TrackInfo.Recording("Slampe",             "Fupi",                    113.99998f, Genre.Synthwave, "slampe-synthwave-house",    root: 0, major: true), // C
             TrackInfo.Recording("Espelhar",           "Fupi",                    140f,       Genre.EDM,       "espelhar-loud-melodic-edm"),
             TrackInfo.Recording("Nosferatu's Party",  "Cygnus",                  140f,       Genre.House,     "nosferatus-house-party"),
 
