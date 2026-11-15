@@ -15,8 +15,14 @@ namespace DJMaster
     // In MY ROOM we use the room scan from Meta's MR Utility Kit to put the board on your real desk
     // If there's no scan, no table or no permission, the board just stays where SeatedAnchor puts it
     // If the MRUK package isn't there this does nothing
+    // We only ask for the room scan permission the first time you're actually in MY ROOM (not on the start screen)
     public class DeskSnap : MonoBehaviour
     {
+        public const string AskingMessage = "Allow room scan so the board can sit on your real desk";
+
+        // A line the game panel can show while the permission popup is up, "" the rest of the time
+        public string Message { get; private set; } = "";
+
 #if DJ_MRUK
         SeatedAnchor anchor;
         EnvironmentManager environment;
@@ -24,7 +30,7 @@ namespace DJMaster
         bool ready, busy, onDesk;
 #if UNITY_ANDROID && !UNITY_EDITOR
         bool asked;
-        volatile bool granted;
+        volatile bool granted, denied;
 #endif
 #endif
 
@@ -35,6 +41,7 @@ namespace DJMaster
             environment = env;
             anchor.Recentered += OnRecentered;
             environment.Changed += OnModeChanged;
+            environment.MenuScreenChanged += OnMenuScreenChanged;
 #endif
         }
 
@@ -42,15 +49,28 @@ namespace DJMaster
         void OnDestroy()
         {
             if (anchor != null) anchor.Recentered -= OnRecentered;
-            if (environment != null) environment.Changed -= OnModeChanged;
+            if (environment != null)
+            {
+                environment.Changed -= OnModeChanged;
+                environment.MenuScreenChanged -= OnMenuScreenChanged;
+            }
         }
+
+        bool InMyRoom => environment.Mode == EnvMode.Room && !environment.MenuScreen;
 
 #if UNITY_ANDROID && !UNITY_EDITOR
         void Update()
         {
-            // The permission answer can come in off the main thread, so we load from here
+            // The permission answer can come in off the main thread, so we deal with it from here
+            if (denied)
+            {
+                denied = false;
+                Message = "";
+                Debug.Log("[DJMaster] No room scan permission, board stays in front of you");
+            }
             if (!granted) return;
             granted = false;
+            Message = "";
             Load();
         }
 #endif
@@ -78,9 +98,19 @@ namespace DJMaster
             }
         }
 
+        // Leaving the start screen while MY ROOM is picked is when we really need the room
+        void OnMenuScreenChanged(bool menu)
+        {
+            if (menu || environment.Mode != EnvMode.Room) return;
+            if (ready) onDesk = Snap();
+            else TryLoad();
+        }
+
         void TryLoad()
         {
             if (ready || busy) return;
+            // No popup at cold start or on the menu, only once you're standing in MY ROOM
+            if (!InMyRoom) return;
             // In the editor without a headset there's no room to scan, the stand-in desk is enough
             if (!XRSettings.isDeviceActive) return;
 #if UNITY_ANDROID && !UNITY_EDITOR
@@ -89,9 +119,10 @@ namespace DJMaster
                 // We only ask once, if they say no the board stays in front of them
                 if (asked) return;
                 asked = true;
+                Message = AskingMessage;
                 var callbacks = new PermissionCallbacks();
                 callbacks.PermissionGranted += _ => granted = true;
-                callbacks.PermissionDenied += _ => Debug.Log("[DJMaster] No room scan permission, board stays in front of you");
+                callbacks.PermissionDenied += _ => denied = true;
                 Permission.RequestUserPermission(OVRPermissionsRequester.ScenePermission, callbacks);
                 return;
             }

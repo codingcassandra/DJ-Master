@@ -33,13 +33,17 @@ namespace DJMaster
         // The start screen: plain black everywhere, no passthrough, no venue.
         public bool MenuScreen { get; private set; }
         public event Action<EnvMode> Changed;
+        // Fires when you go onto or off the start screen. DeskSnap waits for this so it only asks for the room scan once you're really in MY ROOM
+        public event Action<bool> MenuScreenChanged;
 
         void Start() => SetMode((EnvMode)PlayerPrefs.GetInt("env", (int)EnvMode.Room));
 
         public void SetMenuScreen(bool on)
         {
+            bool changed = MenuScreen != on;
             MenuScreen = on;
             Apply();
+            if (changed) MenuScreenChanged?.Invoke(on);
         }
 
         public void SetMode(EnvMode mode)
