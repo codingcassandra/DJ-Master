@@ -10,7 +10,8 @@ namespace DJMaster
         public string title;
         public string artist;
         public float bpm;
-        public int root;   // pitch class, 0 = C
+        public int root;   // pitch class, 0 = C. Recordings use -1 when we don't know the key
+        public bool major; // the synthesized tracks are all minor
         public Genre genre;
         public int seed;
         // A real recording instead of a synthesized loop: Resources/Music/<clip>, a 16-bar excerpt that starts on beat 1.
@@ -21,16 +22,19 @@ namespace DJMaster
         {
             this.title = title; this.artist = artist; this.bpm = bpm;
             this.root = root; this.genre = genre; this.seed = seed;
-            clip = null; license = null;
+            clip = null; license = null; major = false;
         }
 
-        public static TrackInfo Recording(string title, string artist, float bpm, Genre genre, string clip, string license = "CC0") =>
-            new(title, artist, bpm, 0, genre, 0) { clip = clip, license = license };
+        public static TrackInfo Recording(string title, string artist, float bpm, Genre genre, string clip, string license = "CC0",
+            int root = -1, bool major = false) =>
+            new(title, artist, bpm, root, genre, 0) { clip = clip, license = license, major = major };
 
         public bool IsRecording => !string.IsNullOrEmpty(clip);
 
-        // Synthesized tracks know their key; for recordings it isn't shown.
-        public string Key => IsRecording ? "" : KeyNames[((root % 12) + 12) % 12] + "m";
+        // Synthesized tracks always know their key, recordings only if we filled it in
+        public bool HasKey => !IsRecording || root >= 0;
+        public int PitchClass => ((root % 12) + 12) % 12;
+        public string Key => HasKey ? KeyNames[PitchClass] + (major ? "" : "m") : "";
         static readonly string[] KeyNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     }
 
