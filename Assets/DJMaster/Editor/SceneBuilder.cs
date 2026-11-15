@@ -410,10 +410,10 @@ namespace DJMaster.EditorTools
             d.title = Text("Title", go.transform, new Vector3(-0.095f, 0.041f, 0), 0.0014f, TextAnchor.UpperLeft, Color.white);
             d.bpm = Text("BPM", go.transform, new Vector3(-0.095f, 0.0f, 0), 0.0019f, TextAnchor.MiddleLeft, color);
             d.position = Text("Position", go.transform, new Vector3(-0.095f, -0.021f, 0), 0.0014f, TextAnchor.MiddleLeft, LabelColor);
-            d.countdown = Text("Countdown", go.transform, new Vector3(0.087f, -0.0335f, 0), 0.0012f, TextAnchor.MiddleRight, LabelColor); // beside the beat lights
+            d.countdown = Text("Countdown", go.transform, new Vector3(0.087f, -0.0335f, 0), 0.0016f, TextAnchor.MiddleRight, LabelColor); // beside the beat lights
             d.beatLights = new Renderer[4];
             for (int i = 0; i < 4; i++)
-                d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.086f + i * 0.022f, -0.034f, 0), new Vector3(0.018f, 0.006f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>();
+                d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.089f + i * 0.014f, -0.034f, 0), new Vector3(0.011f, 0.006f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>(); // narrow, to leave room for the countdown
             Box("PhraseBack", go.transform, new Vector3(0, -0.041f, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
             var pivot = new GameObject("PhrasePivot").transform;
             pivot.SetParent(go.transform, false);
