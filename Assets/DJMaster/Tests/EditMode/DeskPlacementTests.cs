@@ -97,7 +97,9 @@ namespace DJMaster.Tests
             var tables = new[] { Desk(0, 0.75f, -0.55f), Desk(0, 0.75f, 0.85f), Desk(0, 0.75f, 0.55f), Desk(0, 0.75f, 3f) };
             Assert.IsTrue(DeskPlacement.PickBest(Head, Vector3.forward, tables, BoardHeight, BoardForward, out var root, out var rot));
             var board = root + rot * new Vector3(0, BoardHeight, BoardForward);
-            Assert.AreEqual(0.55f - (DeskPlacement.BoardBack - DeskPlacement.BoardFront) / 2f, board.z, 1e-4f);
+            // The 0.6 m deep desk at z 0.55: front edge EdgeGap in from the table's near edge, or centered if that's further
+            float toward = Mathf.Max(0.3f - DeskPlacement.EdgeGap - DeskPlacement.BoardFront, (DeskPlacement.BoardBack - DeskPlacement.BoardFront) / 2f);
+            Assert.AreEqual(0.55f - toward, board.z, 1e-4f);
         }
 
         [Test]

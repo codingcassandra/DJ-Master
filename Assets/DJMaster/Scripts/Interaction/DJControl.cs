@@ -21,7 +21,18 @@ namespace DJMaster
 
         MaterialPropertyBlock block;
 
-        protected Vector3 Local(Pointer p) => transform.InverseTransformPoint(p.Position);
+        // Where the finger is in this control's space. Across the surface (x, z) it's in the control's own units, so it
+        // lines up with the art even when the board is drawn smaller. Height (y) is in real metres, so how far you
+        // have to push and how close counts as hovering feel the same at any board size
+        protected Vector3 Local(Pointer p)
+        {
+            var lp = transform.InverseTransformPoint(p.Position);
+            lp.y *= transform.lossyScale.y;
+            return lp;
+        }
+
+        // How big one of this control's units is in real metres (1 unless the board is scaled)
+        protected float UnitSize => transform.lossyScale.x;
 
         protected void Engage(Pointer p)
         {
