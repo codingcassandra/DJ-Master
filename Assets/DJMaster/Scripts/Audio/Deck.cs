@@ -24,10 +24,12 @@ namespace DJMaster
         public float TempoPercent => (Rate - 1f) * 100f;
         public float BPM => HasTrack ? Track.bpm * Rate : 0f;
 
-        // Position in beats since the start of the loop (0 .. TotalBeats).
-        public double Beat => IsLoaded ? Source.timeSamples * (double)Track.bpm / (60.0 * clip.frequency) : 0;
-        public int Bar => (int)(Beat / TrackSynth.BeatsPerBar) % TrackSynth.Bars;          // 0-based
-        public int BeatInBar => (int)Beat % TrackSynth.BeatsPerBar;                         // 0-based
+        // Position in beats from the song's first downbeat (its beatgrid). Our songs start on beat 1, so for them this
+        // runs 0 .. TotalBeats; a song with a lead-in is negative until its first downbeat.
+        public double Beat => IsLoaded ? (Source.timeSamples / (double)clip.frequency - Track.firstBeat) * Track.bpm / 60.0 : 0;
+        public int Bar => Mod((int)Math.Floor(Beat / TrackSynth.BeatsPerBar), TrackSynth.Bars);  // 0-based
+        public int BeatInBar => Mod((int)Math.Floor(Beat), TrackSynth.BeatsPerBar);              // 0-based
+        static int Mod(int a, int n) => ((a % n) + n) % n;
         public TrackSynth.Section Section => TrackSynth.SectionOfBar(Bar);
 
         // LOOP repeats the current 4-bar phrase until it's switched off.
@@ -42,7 +44,7 @@ namespace DJMaster
         AudioClip clip;
         bool pendingPlay;
         float jogBend;   // set every frame the jog wheel is touched
-        int lastWholeBeat = -1;
+        int lastWholeBeat = int.MinValue; // none yet (beats before a lead-in are negative)
 
         void Awake()
         {
@@ -60,7 +62,7 @@ namespace DJMaster
             Source.clip = null;
             clip = null;
             pendingPlay = false;
-            lastWholeBeat = -1;
+            lastWholeBeat = int.MinValue; // none yet (beats before a lead-in are negative)
             Looping = false;
             TrackIndex = ((index % TrackLibrary.Tracks.Length) + TrackLibrary.Tracks.Length) % TrackLibrary.Tracks.Length;
             TrackLibrary.Render(TrackIndex);
@@ -111,7 +113,8 @@ namespace DJMaster
             if (!IsLoaded) return;
             Source.Pause();
             Source.timeSamples = 0;
-            lastWholeBeat = -1;
+            if (Track.firstBeat > 0) SeekBeat(0); // a song with a lead-in waits on its first downbeat
+            lastWholeBeat = int.MinValue;
             Looping = false;
         }
 
@@ -128,7 +131,7 @@ namespace DJMaster
         public void SeekBeat(double beat)
         {
             if (!IsLoaded) return;
-            long samples = (long)Math.Ceiling(beat * 60.0 / Track.bpm * clip.frequency - 1e-6) % clip.samples; // land on or just after the beat: 114 BPM isn't a whole number of samples per beat
+            long samples = (long)Math.Ceiling((Track.firstBeat + beat * 60.0 / Track.bpm) * clip.frequency - 1e-6) % clip.samples; // land on or just after the beat: 114 BPM isn't a whole number of samples per beat
             if (samples < 0) samples += clip.samples;
             Source.timeSamples = (int)samples;
         }
@@ -148,7 +151,7 @@ namespace DJMaster
         {
             if (!IsLoaded) return;
             SeekBeat(bar * TrackSynth.BeatsPerBar + (Source.isPlaying ? Beat % TrackSynth.BeatsPerBar : 0));
-            lastWholeBeat = -1;
+            lastWholeBeat = int.MinValue; // none yet (beats before a lead-in are negative)
             Looping = false;
         }
 
@@ -191,7 +194,7 @@ namespace DJMaster
 
             if (Source.isPlaying)
             {
-                int whole = (int)Beat;
+                int whole = (int)Math.Floor(Beat);
                 if (whole != lastWholeBeat)
                 {
                     lastWholeBeat = whole;

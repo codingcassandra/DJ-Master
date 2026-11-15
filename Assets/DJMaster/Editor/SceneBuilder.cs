@@ -121,7 +121,11 @@ namespace DJMaster.EditorTools
             var performer = directors.AddComponent<SetPerformer>();
             performer.board = board; performer.mixer = mixer; performer.judge = judge; performer.recorder = recorder;
 
+            var grid = directors.AddComponent<GridEditor>();
+            grid.board = board;
+
             var game = directors.AddComponent<GameDirector>();
+            game.gridEditor = grid;
             game.board = board; game.mixer = mixer; game.judge = judge; game.lessons = lessons;
             game.performer = performer; game.builder = builder; game.recorder = recorder; game.startMenu = startMenu; game.vocab = vocab;
             game.builtFrom = SourceHash();

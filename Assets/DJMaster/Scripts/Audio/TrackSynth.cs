@@ -16,13 +16,19 @@ namespace DJMaster
         // A real recording instead of a synthesized loop: Resources/Music/<clip>, a 16-bar excerpt that starts on beat 1.
         public string clip;
         public string license;
+        // The beatgrid: seconds from the start of the audio to a downbeat ("the one"). Our songs start right on beat 1,
+        // so it's 0 for them. Songs you add get theirs from BeatDetector and the tap-the-one screen.
+        public float firstBeat;
 
         public TrackInfo(string title, string artist, float bpm, int root, Genre genre, int seed)
         {
             this.title = title; this.artist = artist; this.bpm = bpm;
             this.root = root; this.genre = genre; this.seed = seed;
-            clip = null; license = null;
+            clip = null; license = null; firstBeat = 0;
         }
+
+        // What a saved beatgrid is stored under
+        public string GridId => IsRecording ? clip : title;
 
         public static TrackInfo Recording(string title, string artist, float bpm, Genre genre, string clip, string license = "CC0") =>
             new(title, artist, bpm, 0, genre, 0) { clip = clip, license = license };
