@@ -1197,7 +1197,7 @@ namespace DJMaster.EditorTools
             for (int i = 0; i < menu.levelButtons.Length; i++)
             {
                 var lv = new MaterialPropertyBlock();
-                lv.SetColor("_Color", i == 0 ? menu.levelButtons[i].onColor : menu.levelButtons[i].offColor); // BEGINNER picked
+                lv.SetColor("_Color", i == (int)SkillLevel.Intermediate ? menu.levelButtons[i].onColor : menu.levelButtons[i].offColor); // the default level
                 menu.levelButtons[i].capRenderer.SetPropertyBlock(lv);
             }
             boardGo.SetActive(false);

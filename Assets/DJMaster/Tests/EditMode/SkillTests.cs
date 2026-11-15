@@ -16,16 +16,16 @@ namespace DJMaster.Tests
         }
 
         [Test]
-        public void LevelIsSavedAndDefaultsToBeginner()
+        public void PickerUsesTheSharedSavedLevel()
         {
             Skill.Reset();
-            Assert.AreEqual(SkillLevel.Beginner, Skill.Current);
+            Assert.AreEqual(SkillLevel.Intermediate, Skill.Current, "nothing saved: the game as it always was");
             Skill.Current = SkillLevel.Advanced;
-            Skill.Reset(); // forget the cache... and the save
-            Assert.AreEqual(SkillLevel.Beginner, Skill.Current);
-            Skill.Current = SkillLevel.Solo;
-            Assert.AreEqual(SkillLevel.Solo, Skill.Parse(UnityEngine.PlayerPrefs.GetInt("skillLevel", -1)), "written to PlayerPrefs");
-            Assert.AreEqual(SkillLevel.Beginner, Skill.Parse(99), "an unknown saved value falls back to beginner");
+            Assert.AreEqual(SkillLevel.Advanced, SkillLevels.Current, "the picker sets the level the rules use");
+            Assert.IsFalse(SkillLevels.Rules.checklist);
+            SkillLevels.Reload();
+            Assert.AreEqual(SkillLevel.Advanced, Skill.Current, "saved between sessions");
+            Assert.AreEqual("ADVANCED", Skill.Name(SkillLevel.Advanced));
         }
 
         [Test]

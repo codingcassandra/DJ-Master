@@ -54,7 +54,7 @@ namespace DJMaster.Tests
             var system = Object.FindAnyObjectByType<SystemButtons>(FindObjectsInactive.Include);
 
             Assert.IsTrue(menu.levelRow.activeSelf, "the picker is on the title screen");
-            Assert.IsTrue(menu.levelButtons[0].Lit, "BEGINNER until you pick");
+            Assert.IsTrue(menu.levelButtons[(int)SkillLevel.Intermediate].Lit, "INTERMEDIATE until you pick");
 
             // ADVANCED opens BUILD A SET, and the picker hides on the next screen
             yield return Poke(menu.levelButtons[(int)SkillLevel.Advanced]);
@@ -63,14 +63,14 @@ namespace DJMaster.Tests
             Assert.AreEqual(GameMode.Build, game.ChosenMode);
             Assert.IsFalse(menu.levelRow.activeSelf);
             StringAssert.Contains("Level: ADVANCED", menu.subtitle.text);
-            Assert.AreEqual(SkillLevel.Advanced, Skill.Parse(PlayerPrefs.GetInt("skillLevel", -1)), "saved between sessions");
+            Assert.AreEqual((int)SkillLevel.Advanced, PlayerPrefs.GetInt(SkillLevels.PrefKey, -1), "saved between sessions");
 
             // Back home, it's still lit
             system.home.SimulatePress();
             Assert.AreEqual(GameMode.Title, game.Mode);
             Assert.IsTrue(menu.levelRow.activeSelf);
             Assert.IsTrue(menu.levelButtons[(int)SkillLevel.Advanced].Lit);
-            Assert.IsFalse(menu.levelButtons[0].Lit);
+            Assert.IsFalse(menu.levelButtons[(int)SkillLevel.Intermediate].Lit);
 
             // SOLO opens FREESTYLE, with the level on the panel
             yield return Poke(menu.levelButtons[(int)SkillLevel.Solo]);
