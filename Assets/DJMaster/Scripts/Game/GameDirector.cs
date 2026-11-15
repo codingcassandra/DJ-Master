@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab }
+    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily }
 
     // Top-level flow: on the black start screen, pick a mode (Learn / Build a set / Freestyle / DJ Vocab) and where to play
     // (your room, a club or a festival), then step into the booth. Also wires up the scene and comfort buttons.
@@ -30,6 +30,8 @@ namespace DJMaster
         public GameMode ChosenMode { get; private set; } // what starts after the venue is picked
 
         bool paused, focusLost, appPaused, appUnfocused;
+        // The live set running now is today's daily challenge (not a set from BUILD A SET)
+        bool dailyRun, dailyCounted, dailyUnlocked;
         float lastScore;
         int replayIndex;
 
@@ -117,14 +119,34 @@ namespace DJMaster
             board.B.deck.Pause();
             SetMode(GameMode.Title);
             int best = PlayerPrefs.GetInt("bestSet", 0);
-            startMenu.Show("DJ MASTER", "Learn to DJ with just your hands",
-                best > 0 ? $"Best live set: {best} pts" : LessonDirector.IsDone(0) ? "" : "New to DJing? Start with LEARN.");
+            int today = DailyChallenge.Today;
+            var daily = DailyChallenge.Progress;
+            int streak = daily.StreakOn(today);
+            string footer = streak > 0 ? $"Daily streak: {streak} day{(streak == 1 ? "" : "s")} in a row" : "";
+            if (best > 0) footer += (footer != "" ? "     " : "") + $"Best live set: {best} pts";
+            if (footer == "" && !LessonDirector.IsDone(0)) footer = "New to DJing? Start with LEARN.";
+            startMenu.Show("DJ MASTER", "Learn to DJ with just your hands", footer);
             startMenu.SetRows(
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
                 ("FREESTYLE", "Just play. No timer, no rules."),
-                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."));
+                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
+                ("DAILY", DailyRow(today, daily)));
+            startMenu.buttons[4].Lit = !daily.PassedOn(today); // a new challenge is waiting
         }
+
+        // The DAILY row on the title menu: today's challenge, your best grade today and what the streak unlocks.
+        static string DailyRow(int today, DailyProgress p)
+        {
+            string text = $"Today: {DailyChallenge.ForDay(today).Title}.";
+            int grade = p.BestGradeOn(today);
+            if (grade >= 0) text += $" Your best: {GradeName((SetPerformer.Grade)grade)}.";
+            if (!DailyChallenge.BonusUnlocked)
+                text += $" {DailyChallenge.UnlockStreak} days in a row unlocks a bonus song.";
+            return text;
+        }
+
+        static string GradeName(SetPerformer.Grade g) => g == SetPerformer.Grade.Perfect ? "PERFECT" : g == SetPerformer.Grade.Good ? "GOOD" : "ROUGH";
 
         // Every DJ word with its meaning, plus a quiz.
         void ShowVocab()
@@ -137,7 +159,7 @@ namespace DJMaster
         {
             ChosenMode = next;
             SetMode(GameMode.ChooseVenue);
-            string what = next == GameMode.Learn ? "LEARN" : next == GameMode.Build ? "BUILD A SET" : "FREESTYLE";
+            string what = next == GameMode.Learn ? "LEARN" : next == GameMode.Build ? "BUILD A SET" : next == GameMode.Daily ? "DAILY CHALLENGE" : "FREESTYLE";
             startMenu.Show("WHERE DO YOU WANT TO PLAY?", $"Mode: {what}", "You can switch anytime with the SCENE panel next to the booth.");
             startMenu.SetRows(
                 ("MY ROOM", "Your real room. We'll ask for your room scan so the board can sit on your desk."),
@@ -165,6 +187,7 @@ namespace DJMaster
             {
                 case GameMode.Title:
                     if (i == 3) ShowVocab();
+                    else if (i == 4) ChooseVenue(GameMode.Daily);
                     else ChooseVenue(i == 0 ? GameMode.Learn : i == 1 ? GameMode.Build : GameMode.Freestyle);
                     break;
                 case GameMode.ChooseVenue:
@@ -172,6 +195,7 @@ namespace DJMaster
                     environment.SetMode(i == 0 ? EnvMode.Room : i == 1 ? EnvMode.Club : EnvMode.Festival);
                     if (ChosenMode == GameMode.Learn) ChooseLesson();
                     else if (ChosenMode == GameMode.Build) StartBuild();
+                    else if (ChosenMode == GameMode.Daily) StartDaily();
                     else StartFreestyle();
                     break;
                 case GameMode.ChooseLesson:
@@ -191,12 +215,12 @@ namespace DJMaster
                     else StartLearn(lessons.LessonIndex);
                     break;
                 case GameMode.Live:
-                    if (i == 1) StartLive();
+                    if (i == 1) Restart();
                     else performer.Finish();
                     break;
                 case GameMode.LiveResults:
                     if (i != 3) recorder.StopReplay();
-                    if (i == 1) StartLive();
+                    if (i == 1) Restart();
                     else if (i == 2) StartBuild();
                     else ListenBack();
                     break;
@@ -242,9 +266,27 @@ namespace DJMaster
             board.B.deck.Pause();
         }
 
+        void Restart()
+        {
+            if (dailyRun) StartDaily();
+            else StartLive();
+        }
+
+        // Today's challenge: one transition between two songs, played as a 2-song live set.
+        void StartDaily()
+        {
+            lessons.Stop();
+            dailyRun = true;
+            dailyCounted = dailyUnlocked = false;
+            SetMode(GameMode.Live);
+            panel.SetActions(null, "RESTART", "END SET");
+            performer.Begin(DailyChallenge.ForDay(DailyChallenge.Today).ToSet());
+        }
+
         void StartLive()
         {
             if (!builder.Set.Ready) { StartBuild(); return; }
+            dailyRun = false;
             lessons.Stop();
             SetMode(GameMode.Live);
             panel.SetActions(null, "RESTART", "END SET");
@@ -264,12 +306,23 @@ namespace DJMaster
         {
             SetMode(GameMode.LiveResults);
             lastScore = judge.Score;
-            if (lastScore > PlayerPrefs.GetInt("bestSet", 0)) { PlayerPrefs.SetInt("bestSet", (int)lastScore); PlayerPrefs.Save(); }
+            if (dailyRun)
+            {
+                // Only a finished transition counts. A set ended before the mix has nothing to grade
+                if (performer.Results.Count > 0)
+                {
+                    var grade = performer.Results[0].grade;
+                    int before = DailyChallenge.Progress.StreakOn(DailyChallenge.Today);
+                    dailyUnlocked = DailyChallenge.Record(grade);
+                    dailyCounted = DailyChallenge.Progress.StreakOn(DailyChallenge.Today) > before;
+                }
+            }
+            else if (lastScore > PlayerPrefs.GetInt("bestSet", 0)) { PlayerPrefs.SetInt("bestSet", (int)lastScore); PlayerPrefs.Save(); }
             Sfx.Cheer(1f);
             BeatBus.FireDrop();
             replayIndex = 0;
             replaying = "";
-            panel.SetActions(null, "PLAY AGAIN", "EDIT SET", "LISTEN BACK");
+            panel.SetActions(null, dailyRun ? "TRY AGAIN" : "PLAY AGAIN", dailyRun ? null : "EDIT SET", "LISTEN BACK");
         }
 
         void Update()
@@ -278,6 +331,18 @@ namespace DJMaster
         }
 
         static string Title(int track) => TrackLibrary.Tracks[track].title;
+
+        // The top of the results for a daily challenge: passed or not, the streak, and any unlock.
+        string DailyResult(System.Collections.Generic.List<SetPerformer.Result> results)
+        {
+            int streak = DailyChallenge.Progress.StreakOn(DailyChallenge.Today);
+            string days = $"{streak} day{(streak == 1 ? "" : "s")} in a row";
+            string line = results.Count == 0 ? "You ended it before the mix. TRY AGAIN!"
+                : results[0].grade == SetPerformer.Grade.Rough ? $"Not quite: you need GOOD or better to pass. TRY AGAIN! Streak: {days}."
+                : dailyCounted ? BoardColors.Green($"Passed! Streak: {days}.") : $"Passed again. Streak: {days}. Come back tomorrow for a new one.";
+            if (dailyUnlocked) line += "\n" + BoardColors.Yellow($"UNLOCKED: a bonus song, {Title(TrackLibrary.BonusTrack)}. Find it in FREESTYLE.");
+            return line + "\n";
+        }
 
         void RefreshPanel()
         {
@@ -294,7 +359,7 @@ namespace DJMaster
                 case GameMode.Live:
                     if (!performer.Running) break;
                     var set = performer.Set;
-                    string title = $"LIVE  SONG {performer.SongIndex + 1}/{set.Count}  {TextUtil.Clock(performer.Elapsed)}";
+                    string title = $"{(dailyRun ? "DAILY CHALLENGE" : "LIVE")}  SONG {performer.SongIndex + 1}/{set.Count}  {TextUtil.Clock(performer.Elapsed)}";
                     string text;
                     if (performer.InFinale)
                         text = $"Last song: {Title(set.songs[performer.SongIndex])}. Enjoy it! Try a {BoardColors.Yellow("FILTER")} sweep, a bass drop or the {BoardColors.Red("AIR HORN")}.\nSet ends in {TextUtil.Clock(performer.FinaleLeft)}.";
@@ -321,8 +386,9 @@ namespace DJMaster
                     var c = performer.Review;
                     sb.Append($"LISTEN BACK: beats in sync {c.syncPercent:0}% of mix time, {c.clashSeconds:0} s of clashing, {c.deadAirSeconds:0} s of silence.\n");
                     sb.Append($"PRACTISE NEXT: {c.practise}");
+                    if (dailyRun) sb.Insert(0, DailyResult(results));
                     bool listening = recorder.Replaying;
-                    panel.Show("SET COMPLETE!", sb.ToString(),
+                    panel.Show(dailyRun ? "DAILY CHALLENGE" : "SET COMPLETE!", sb.ToString(),
                         listening ? replaying : $"Score {lastScore:0}   Best {PlayerPrefs.GetInt("bestSet", 0)} pts",
                         new string('*', stars) + new string('-', 3 - stars));
                     break;

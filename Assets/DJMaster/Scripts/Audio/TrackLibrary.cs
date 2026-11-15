@@ -33,7 +33,15 @@ namespace DJMaster
             TrackInfo.Recording("Slampe",             "Fupi",                    113.99998f, Genre.Synthwave, "slampe-synthwave-house"),
             TrackInfo.Recording("Espelhar",           "Fupi",                    140f,       Genre.EDM,       "espelhar-loud-melodic-edm"),
             TrackInfo.Recording("Nosferatu's Party",  "Cygnus",                  140f,       Genre.House,     "nosferatus-house-party"),
+
+            // Unlocked by a daily challenge streak (see DailyChallenge). Synthesized like the game tracks.
+            new("Streak Rider",     "DJ Master Crew",  126f, 2,  Genre.House,  909),
         };
+
+        public static int BonusTrack => Tracks.Length - 1;
+
+        // The bonus song stays hidden until you've done the daily challenge a few days in a row.
+        public static bool IsLocked(int index) => index == BonusTrack && !DailyChallenge.BonusUnlocked;
 
         static readonly ConcurrentDictionary<int, Task<float[]>> renders = new();
         static readonly Dictionary<int, AudioClip> clips = new();

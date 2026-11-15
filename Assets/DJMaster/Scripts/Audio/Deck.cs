@@ -78,8 +78,13 @@ namespace DJMaster
 
         public void LoadNext(int otherDeckTrack)
         {
+            int n = TrackLibrary.Tracks.Length;
             int next = TrackIndex + 1;
-            if (next % TrackLibrary.Tracks.Length == otherDeckTrack) next++;
+            for (int tries = 0; tries < n; tries++, next++)
+            {
+                int i = ((next % n) + n) % n;
+                if (i != otherDeckTrack && !TrackLibrary.IsLocked(i)) break;
+            }
             Load(next);
         }
 
