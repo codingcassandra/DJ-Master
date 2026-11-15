@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily }
+    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid }
 
     // Top-level flow: on the black start screen, pick a mode (Learn / Build a set / Freestyle / DJ Vocab) and where to play
     // (your room, a club or a festival), then step into the booth. Also wires up the scene and comfort buttons.
@@ -13,6 +13,7 @@ namespace DJMaster
         public MixJudge judge;
         public LessonDirector lessons;
         public SetPerformer performer;
+        public GridEditor gridEditor;
         public MixRecorder recorder;
         public InstructionPanel panel;
         public StartMenu startMenu;
@@ -65,6 +66,7 @@ namespace DJMaster
             systemButtons.home.Pressed += EnterTitle;
             systemButtons.colorBlind.Pressed += () => BoardColors.SetColorSafe(!BoardColors.ColorSafe);
             builder.GoLivePressed += StartLive;
+            if (gridEditor != null) gridEditor.Done += StartFreestyle;
 
             OVRManager.InputFocusLost += () => { focusLost = true; RefreshPause(); };
             OVRManager.InputFocusAcquired += () => { focusLost = false; RefreshPause(); };
@@ -110,8 +112,20 @@ namespace DJMaster
             systemButtons.MountOn(corner, mode != GameMode.Title);
         }
 
+        // The tap-the-one screen for a song that doesn't start on beat 1 (songs you add yourself). Saves its beatgrid,
+        // then goes to Freestyle.
+        public void EditGrid(int track)
+        {
+            lessons.Stop();
+            performer.Stop();
+            SetMode(GameMode.Grid);
+            panel.SetActions("◄ EARLIER", "LATER ►", "HALF / x2", "SAVE");
+            gridEditor.Begin(track);
+        }
+
         void EnterTitle()
         {
+            gridEditor?.Stop();
             lessons.Stop();
             performer.Stop();
             recorder.StopReplay();
@@ -209,6 +223,12 @@ namespace DJMaster
         {
             switch (Mode)
             {
+                case GameMode.Grid:
+                    if (i == 0) gridEditor.Nudge(-1);
+                    else if (i == 1) gridEditor.Nudge(1);
+                    else if (i == 2) gridEditor.HalfDouble();
+                    else gridEditor.Save();
+                    break;
                 case GameMode.Learn:
                     if (i == 0) ChooseLesson();
                     else if (i == 1) lessons.Skip();
@@ -295,6 +315,7 @@ namespace DJMaster
 
         void StartFreestyle()
         {
+            gridEditor?.Stop();
             lessons.Stop();
             performer.Stop();
             SetMode(GameMode.Freestyle);
@@ -348,6 +369,10 @@ namespace DJMaster
         {
             switch (Mode)
             {
+                case GameMode.Grid:
+                    panel.Show(gridEditor.Title, gridEditor.Body, gridEditor.Status, gridEditor.Feedback);
+                    break;
+
                 case GameMode.Learn:
                     var s = lessons.Current;
                     if (s == null) break;

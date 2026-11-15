@@ -43,6 +43,16 @@ namespace DJMaster
         // The bonus song stays hidden until you've done the daily challenge a few days in a row.
         public static bool IsLocked(int index) => index == BonusTrack && !DailyChallenge.BonusUnlocked;
 
+        // Puts a beatgrid on a song: the decks read the BPM and first beat from here, so the bar counter, hot cues,
+        // loops and SYNC all follow it.
+        public static void SetGrid(int index, BeatGrid grid)
+        {
+            Tracks[index].bpm = grid.bpm;
+            Tracks[index].firstBeat = BeatGrid.WrapToFirstBar(grid.firstBeat, grid.bpm);
+        }
+
+        public static BeatGrid GridOf(int index) => new BeatGrid { bpm = Tracks[index].bpm, firstBeat = Tracks[index].firstBeat, confidence = 1 };
+
         static readonly ConcurrentDictionary<int, Task<float[]>> renders = new();
         static readonly Dictionary<int, AudioClip> clips = new();
         static readonly Dictionary<int, ResourceRequest> loads = new();
