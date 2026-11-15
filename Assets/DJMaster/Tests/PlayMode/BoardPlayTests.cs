@@ -313,6 +313,30 @@ namespace DJMaster.Tests
         }
 
         [UnityTest]
+        public IEnumerator DeckScreensCountDownToTheNextPhrase()
+        {
+            Skill.Reset();
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var display = Object.FindObjectsByType<DeckDisplay>().First(d => d.deck == board.A.deck);
+            var deck = board.A.deck;
+            yield return WaitFor(() => deck.IsLoaded, 20f);
+            Assert.AreEqual("", display.countdown.text, "nothing while the deck is stopped");
+            deck.Play();
+            yield return WaitFor(() => deck.Bar == 1, 6f);
+            yield return null;
+            Assert.AreEqual("PHRASE IN 3 BARS", display.countdown.text);
+            yield return WaitFor(() => deck.Bar == 4, 10f); // bar 5: a new phrase
+            yield return null;
+            StringAssert.Contains("NEW PHRASE!", display.countdown.text);
+
+            Skill.Current = SkillLevel.Advanced; // advanced players count for themselves
+            yield return null;
+            Assert.AreEqual("", display.countdown.text);
+            Skill.Reset();
+        }
+
+        [UnityTest]
         public IEnumerator SlowPokePressesOnce()
         {
             yield return EnterBooth();

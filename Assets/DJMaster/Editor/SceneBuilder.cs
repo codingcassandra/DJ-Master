@@ -410,6 +410,7 @@ namespace DJMaster.EditorTools
             d.title = Text("Title", go.transform, new Vector3(-0.095f, 0.041f, 0), 0.0014f, TextAnchor.UpperLeft, Color.white);
             d.bpm = Text("BPM", go.transform, new Vector3(-0.095f, 0.0f, 0), 0.0019f, TextAnchor.MiddleLeft, color);
             d.position = Text("Position", go.transform, new Vector3(-0.095f, -0.021f, 0), 0.0014f, TextAnchor.MiddleLeft, LabelColor);
+            d.countdown = Text("Countdown", go.transform, new Vector3(0.087f, -0.0335f, 0), 0.0012f, TextAnchor.MiddleRight, LabelColor); // beside the beat lights
             d.beatLights = new Renderer[4];
             for (int i = 0; i < 4; i++)
                 d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.086f + i * 0.022f, -0.034f, 0), new Vector3(0.018f, 0.006f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>();
@@ -1161,6 +1162,19 @@ namespace DJMaster.EditorTools
                 }
             }
             Mount(Object.FindAnyObjectByType<InstructionPanel>().corner, true);
+            // The deck screens mid-mix, so the preview shows how their text fits
+            foreach (var d in Object.FindObjectsByType<DeckDisplay>())
+            {
+                bool isA = d.deck.deckName == "A";
+                d.title.text = isA ? "Neon Tides\n<size=85%>Lumen Kid   House   Am</size>" : "Low Orbit\n<size=85%>Ferro   Techno   Em</size>";
+                d.bpm.text = "128.0 BPM  <size=62.5%>+0.0%</size>";
+                d.position.text = isA ? "BAR 11/16   GROOVE" : "BAR  4/16   DROP";
+                if (d.countdown != null)
+                {
+                    d.countdown.text = isA ? "BREAKDOWN: 3 BEATS" : "PHRASE IN 3 BARS"; // the longest it gets, and the usual
+                    d.countdown.color = isA ? d.headsUpColor : d.countColor;
+                }
+            }
             RenderPreview("Preview_Board.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
