@@ -51,7 +51,13 @@ namespace DJMaster
         float[] lowWas = { 0.5f, 0.5f };
         float[] lowCutAt = { -10f, -10f };
         bool inSync;
-        float echoTime;
+        float echoTime, quietTime;
+
+        // Gain staging: a channel stuck in the red distorts, and a song far quieter than it should be sounds weak.
+        public const float ClipSeconds = 1f, QuietSeconds = 3f;
+        public const float QuietLevel = 0.25f; // -12 dB: the peaks are nowhere near the yellow
+        public int TooLoudDeck { get; private set; } = -1;
+        public int TooQuietDeck { get; private set; } = -1;
         int awardedFrom = -1, awardedTo = -1; // the two tracks of the last transition that scored
 
         public void ResetScore()
@@ -119,18 +125,30 @@ namespace DJMaster
             echoTime = a.Strip.echo || b.Strip.echo ? echoTime + dt : 0;
             bool fxOveruse = echoTime > 20f;
 
+            // Gain: what the crowd hears in the red, or the song on the floor way too quiet.
+            TooLoudDeck = -1;
+            for (int i = 0; i < 2; i++)
+                if (mixer.CrowdGain(i) > 0.2f && mixer.decks[i].Strip.ClipTime > ClipSeconds) TooLoudDeck = i;
+            bool quiet = dom >= 0 && mixer.CrowdGain(dom) > 0.3f && mixer.decks[dom].Strip.PeakHold < QuietLevel;
+            quietTime = quiet ? quietTime + dt : 0;
+            TooQuietDeck = quietTime > QuietSeconds ? dom : -1;
+
             float freshness = Mathf.Clamp01(1.1f - Mathf.Max(0, trackTime - 60f) / 90f); // crowd tires of one track after a minute
             float target = dom < 0 ? 0.05f : 0.55f + 0.35f * freshness;
             if (bothAudible && inSync) target = Mathf.Max(target, 0.9f);
             if (Clashing) target = 0.15f;
             else if (bassClash) target = Mathf.Min(target, 0.45f);
             if (fxOveruse) target = Mathf.Min(target, 0.5f);
+            if (TooLoudDeck >= 0) target = Mathf.Min(target, 0.4f);
+            if (TooQuietDeck >= 0) target = Mathf.Min(target, 0.5f);
             float rate = target < BeatBus.Energy ? 0.12f : 0.05f;
             BeatBus.Energy = Mathf.MoveTowards(BeatBus.Energy, target, dt * rate);
 
             Warning = Clashing ? "TRAINWRECK! The beats are clashing. Match the tempo or pull a fader down."
                 : bassClash ? "Muddy bass: cut the LOW on one deck."
                 : silence > 1.5f ? "The dance floor is silent! Get a track playing."
+                : TooLoudDeck >= 0 ? $"Deck {(TooLoudDeck == 0 ? "A" : "B")} is in the red and distorting! Turn its GAIN down."
+                : TooQuietDeck >= 0 ? $"Deck {(TooQuietDeck == 0 ? "A" : "B")} is too quiet. Turn its GAIN up until the meter hits the yellow."
                 : trackTime > 75f ? "The crowd wants something new. Mix in the other deck."
                 : fxOveruse ? "Less is more: switch the ECHO off and let the music breathe."
                 : "";

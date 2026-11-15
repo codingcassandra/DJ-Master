@@ -26,6 +26,35 @@ namespace DJMaster
             return 1f + (v - 0.5f) * 2f;
         }
 
+        // GAIN (trim) knob: 0 = -12 dB, 0.5 = 0 dB, 1 = +12 dB. Songs are mastered at different volumes, and DJs use this
+        // to bring each one to the same level before it goes out to the room.
+        public const float TrimRangeDb = 12f;
+        public static float TrimGain(float v) => (float)Math.Pow(10.0, (Clamp01(v) - 0.5f) * 2f * TrimRangeDb / 20.0);
+        public static float TrimFor(float gain) => Clamp01(0.5f + (float)(20.0 * Math.Log10(Math.Max(1e-6, gain))) / (2f * TrimRangeDb));
+
+        public static float ToDb(float level) => (float)(20.0 * Math.Log10(Math.Max(1e-6, level)));
+
+        // The channel level meter: 8 lights from the bottom. 4 green, 3 yellow, and the top one red, which means the
+        // channel is clipping (full scale). A good level has the peaks bouncing in the yellow and never touching red.
+        public const float ClipLevel = 0.999f;
+        public static readonly float[] MeterDb = { -30f, -21f, -15f, -10f, -6f, -3.5f, -1.5f, 0f };
+        public const int MeterGreen = 4, MeterYellow = 3;
+        public static float YellowLevel => (float)Math.Pow(10.0, MeterDb[MeterGreen] / 20.0); // -6 dB, about 0.5
+
+        // How many meter lights a peak level turns on (0..8).
+        public static int MeterLights(float level)
+        {
+            if (level >= ClipLevel) return MeterDb.Length;
+            float db = ToDb(level);
+            int n = 0;
+            for (int i = 0; i < MeterDb.Length - 1; i++) if (db >= MeterDb[i]) n = i + 1;
+            return n;
+        }
+
+        public enum Zone { Low, Good, Red }
+        // Where a peak sits on the meter: below the yellow, in the yellow (just right), or in the red.
+        public static Zone LevelZone(float peak) => peak >= ClipLevel ? Zone.Red : peak >= YellowLevel ? Zone.Good : Zone.Low;
+
         // Tempo fader 0..1 (0.5 = center) to playback rate.
         public static float TempoRate(float fader01) => 1f + (Clamp01(fader01) - 0.5f) * 2f * TempoRange;
 

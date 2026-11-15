@@ -9,7 +9,7 @@ namespace DJMaster
         public Deck deck;
         public PokeButton play, cue, load, headphones, sync, loop, echo;
         public Fader tempo, volume;
-        public Knob high, mid, low, filter;
+        public Knob gain, high, mid, low, filter;
         public JogWheel jog;
         public PokeButton[] hotCues = new PokeButton[4];   // jump to bar 1, 5, 9, 13
         public PokeButton[] samplers = new PokeButton[4];  // crowd sounds, see Sfx.SampleNames
@@ -84,6 +84,7 @@ namespace DJMaster
                 var ch = channels[i];
                 ch.deck.tempoFader = ch.tempo.value;
                 mixer.channelFader[i] = ch.volume.value;
+                if (ch.gain != null) ch.deck.Strip.trim = ch.gain.value;
                 ch.deck.Strip.high = ch.high.value;
                 ch.deck.Strip.mid = ch.mid.value;
                 ch.deck.Strip.low = ch.low.value;
@@ -137,6 +138,7 @@ namespace DJMaster
             {
                 ch.tempo.SetValue(0.5f);
                 ch.volume.SetValue(0f);
+                ch.gain?.SetValue(0.5f);
                 ch.high.SetValue(0.5f); ch.mid.SetValue(0.5f); ch.low.SetValue(0.5f); ch.filter.SetValue(0.5f);
             }
             crossfader.SetValue(0.5f);

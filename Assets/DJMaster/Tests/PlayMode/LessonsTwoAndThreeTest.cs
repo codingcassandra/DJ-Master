@@ -63,6 +63,20 @@ namespace DJMaster.Tests
 
             B.headphones.SimulatePress(); yield return Next();
             B.play.SimulatePress(); yield return Next();
+
+            // Set your gain: B starts low (in the green), too far goes into the red, then back to the yellow.
+            Assert.AreEqual(LessonDirector.LowGainStart, B.gain.value, 0.001f);
+            yield return WaitFor(() => B.deck.Strip.PeakHold > 0.05f, 5f, "deck B on the meter");
+            yield return new WaitForSeconds(2f); // let the peak hold settle on the song itself
+            Assert.AreEqual(DJMath.Zone.Low, DJMath.LevelZone(B.deck.Strip.PeakHold), "deck B starts too quiet");
+            B.gain.SetValue(1f);
+            yield return WaitFor(() => B.deck.Strip.ClipTime > 0, 5f, "+12 dB clips");
+            yield return null; // the lesson reads the meter on its next frame
+            StringAssert.Contains("Too hot", lessons.Feedback);
+            Assert.AreEqual(2, lessons.StepIndex, "no credit while it's in the red");
+            B.gain.SetValue(0.5f); // 0 dB: the synth songs peak in the yellow
+            yield return Next(10f);
+
             B.cue.SimulatePress(); yield return Next();
             board.crossfader.SetValue(0.5f); B.volume.SetValue(1f); yield return Next();
             A.volume.SetValue(0.65f); yield return Next();
