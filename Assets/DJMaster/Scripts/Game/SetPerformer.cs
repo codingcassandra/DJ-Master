@@ -71,6 +71,7 @@ namespace DJMaster
         float overlap, synced, clash, bassClash, transitionStart;
         float fadeStart, fadeEnd, outCutAt, inHeardAt;
         bool filterSwept, inHeard, inLowCutOnEntry, enteredOnPhrase, enteredOnBar, echoWhenCut, outCut;
+        int syncPressesAtStart; // DJBoard.SyncPresses when this transition started
         // Whole set, for the critique.
         float mixTime, mixSynced;
 
@@ -131,7 +132,8 @@ namespace DJMaster
 
             foreach (var t in Tasks)
                 if (!t.complete && t.done()) t.complete = true;
-            var current = Tasks.Find(t => !t.complete);
+            // Advanced and Solo play without the checklist: no step, no glowing controls, the panel just says NEXT: song + style
+            var current = SkillLevels.Rules.checklist ? Tasks.Find(t => !t.complete) : null;
             if (current != CurrentTask)
             {
                 CurrentTask = current;
@@ -157,7 +159,7 @@ namespace DJMaster
                 inHeardAt = Time.time;
                 inLowCutOnEntry = In.Strip.low < 0.2f;
                 double bar = Out.Beat / TrackSynth.BeatsPerBar;
-                enteredOnBar = DJMath.DistanceToBeat(bar) < 0.15f;
+                enteredOnBar = DJMath.DistanceToBeat(bar) < SkillLevels.Rules.onBarWindow;
                 enteredOnPhrase = enteredOnBar && (int)Math.Round(bar) % 4 == 0;
             }
             if (gOut > 0.15f && gIn > 0.15f)
@@ -188,7 +190,9 @@ namespace DJMaster
             var result = new Result { from = Set.songs[SongIndex], to = NextTrack, style = style, grade = grade, note = note };
             Results.Add(result);
             if (recorder != null) StartCoroutine(Record(result, Time.time - Mathf.Max(transitionStart, (inHeard ? inHeardAt : Time.time) - 8f)));
-            judge.Award($"{SetList.Name(style)}: {grade.ToString().ToUpper()}", grade == Grade.Perfect ? 1000 : grade == Grade.Good ? 600 : 200);
+            int points = grade == Grade.Perfect ? 1000 : grade == Grade.Good ? 600 : 200;
+            string extras = Extras(grade, ref points);
+            judge.Award($"{SetList.Name(style)}: {grade.ToString().ToUpper()}{extras}", points);
             if (grade == Grade.Perfect) BeatBus.FireDrop();
 
             int freed = OutDeck;
@@ -227,19 +231,21 @@ namespace DJMaster
 
         (Grade, string) GradeTransition(TransitionStyle style)
         {
+            var L = SkillLevels.Rules;
+            float clean = L.clashPerfect, messy = L.clashGood; // Intermediate: 1 and 3 seconds of trainwreck
             float syncedBars = synced * Mathf.Max(60f, Out.BPM) / 60f / TrackSynth.BeatsPerBar;
             switch (style)
             {
                 case TransitionStyle.Cut:
-                    if (overlap < 0.6f && enteredOnPhrase) return (Grade.Perfect, "Right on the phrase!");
-                    if (overlap < 2f) return (Grade.Good, enteredOnBar ? "Cut on bar 1, 5, 9 or 13 for a perfect phrase." : "Hit PLAY exactly on bar 1 of a phrase.");
+                    if (overlap < L.cutPerfect && enteredOnPhrase) return (Grade.Perfect, "Right on the phrase!");
+                    if (overlap < L.cutGood) return (Grade.Good, enteredOnBar ? "Cut on bar 1, 5, 9 or 13 for a perfect phrase." : "Hit PLAY exactly on bar 1 of a phrase.");
                     return (Grade.Rough, "A cut has no overlap: PLAY and crossfader at the same moment.");
                 case TransitionStyle.Fade:
                 {
                     float len = fadeStart < 0 ? 0 : (fadeEnd > 0 ? fadeEnd : Time.time) - fadeStart;
-                    if (len >= 6f && len <= 25f && enteredOnPhrase && clash < 1f) return (Grade.Perfect, "A confident, steady fade.");
-                    if (len >= 3f && clash < 3f) return (Grade.Good, len < 6f ? "Fade slower: about 10 seconds." : "Start the new song on a phrase (bar 1, 5, 9, 13).");
-                    return (Grade.Rough, clash >= 3f ? "The new song came in while the old one was still loud." : "Dip the fader, then fade over about 10 seconds.");
+                    if (len >= 6f && len <= 25f && enteredOnPhrase && clash < clean) return (Grade.Perfect, "A confident, steady fade.");
+                    if (len >= 3f && clash < messy) return (Grade.Good, len < 6f ? "Fade slower: about 10 seconds." : "Start the new song on a phrase (bar 1, 5, 9, 13).");
+                    return (Grade.Rough, clash >= messy ? "The new song came in while the old one was still loud." : "Dip the fader, then fade over about 10 seconds.");
                 }
                 case TransitionStyle.EchoOut:
                 {
@@ -249,25 +255,40 @@ namespace DJMaster
                     return (Grade.Rough, "Turn ECHO on before you pull the fader down.");
                 }
                 case TransitionStyle.BassSwap:
-                    if (inLowCutOnEntry && bassClash < 1.5f && clash < 1f && synced >= 3f) return (Grade.Perfect, "Clean basslines all the way.");
-                    if (bassClash < 4f && clash < 3f) return (Grade.Good, inLowCutOnEntry ? "Swap the LOWs sooner." : "Cut the new song's LOW before you bring it in.");
-                    return (Grade.Rough, clash >= 3f ? "The beats clashed: match TEMPO and JOG first." : "Two basslines at once got muddy.");
+                    if (inLowCutOnEntry && bassClash < 1.5f && clash < clean && synced >= 3f) return (Grade.Perfect, "Clean basslines all the way.");
+                    if (bassClash < 4f && clash < messy) return (Grade.Good, inLowCutOnEntry ? "Swap the LOWs sooner." : "Cut the new song's LOW before you bring it in.");
+                    return (Grade.Rough, clash >= messy ? "The beats clashed: match TEMPO and JOG first." : "Two basslines at once got muddy.");
                 case TransitionStyle.Filter:
-                    if (filterSwept && clash < 1f) return (Grade.Perfect, "Great filter sweep.");
-                    if (filterSwept || (clash < 1f && synced > 1.5f)) return (Grade.Good, filterSwept ? "Beatmatch before you blend." : "Sweep the old song's FILTER while you mix.");
+                    if (filterSwept && clash < clean) return (Grade.Perfect, "Great filter sweep.");
+                    if (filterSwept || (clash < clean && synced > 1.5f)) return (Grade.Good, filterSwept ? "Beatmatch before you blend." : "Sweep the old song's FILTER while you mix.");
                     return (Grade.Rough, "Beatmatch first, then sweep the FILTER.");
                 default:
-                    if (clash < 1f && syncedBars >= 4f && syncedBars <= 20f && enteredOnPhrase) return (Grade.Perfect, $"{syncedBars:0} bars together, right on the phrase.");
-                    if (clash < 3f && syncedBars >= 1.5f)
+                    if (clash < clean && syncedBars >= 4f && syncedBars <= 20f && enteredOnPhrase) return (Grade.Perfect, $"{syncedBars:0} bars together, right on the phrase.");
+                    if (clash < messy && syncedBars >= 1.5f)
                         return (Grade.Good, syncedBars > 20f ? "Too long together sounds muddy: keep it to about 8 bars."
                             : syncedBars < 4f ? "Let both songs play for a full phrase (about 8 bars)." : "Bring the new song in on bar 1, 5, 9 or 13.");
-                    return (Grade.Rough, "The beats clashed: match TEMPO and JOG (or press SYNC) before you crossfade.");
+                    return (Grade.Rough, L.syncAllowed ? "The beats clashed: match TEMPO and JOG (or press SYNC) before you crossfade." : "The beats clashed: match TEMPO and JOG before you crossfade.");
             }
+        }
+
+        // Level extras on top of the grade: SYNC can cost a bit, and Advanced gets a bonus for a phrase-perfect
+        // or harmonic entry. Changes the points and returns the text to add to the shoutout.
+        string Extras(Grade grade, ref int points)
+        {
+            var L = SkillLevels.Rules;
+            string text = "";
+            if (board.SyncPresses > syncPressesAtStart && L.syncPenalty > 0f) points -= Mathf.RoundToInt(points * L.syncPenalty);
+            if (grade == Grade.Rough) return text;
+            if (L.phraseBonus > 0 && enteredOnPhrase) { points += L.phraseBonus; text += " + ON THE PHRASE"; }
+            if (L.harmonicBonus > 0 && SkillLevels.KeysMatch(TrackLibrary.Tracks[Set.songs[SongIndex]], TrackLibrary.Tracks[NextTrack]))
+            { points += L.harmonicBonus; text += " + IN KEY"; }
+            return text;
         }
 
         void StartTransition()
         {
             overlap = synced = clash = bassClash = 0;
+            syncPressesAtStart = board.SyncPresses;
             filterSwept = inHeard = inLowCutOnEntry = enteredOnPhrase = enteredOnBar = echoWhenCut = outCut = false;
             fadeStart = fadeEnd = -1;
             transitionStart = Time.time;
