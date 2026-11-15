@@ -18,6 +18,10 @@ namespace DJMaster
     // Connects the physical controls to the decks and mixer, and keeps button lights in sync.
     public class DJBoard : MonoBehaviour
     {
+        // The controller is drawn at 70% of its design size so every control is inside a seated player's reach
+        // (Meta's 2 ft airplane seat test). SceneBuilder makes the pads big enough that they're still 2 cm or more
+        public const float SurfaceScale = 0.7f;
+
         public Mixer mixer;
         public DeckControls[] channels = new DeckControls[2];
         public Fader crossfader;

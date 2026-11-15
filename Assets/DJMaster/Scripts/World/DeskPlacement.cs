@@ -24,12 +24,13 @@ namespace DJMaster
             }
         }
 
-        // Board size, same as the one SceneBuilder makes: the body is 0.78 wide and its bottom is 0.051 under the
-        // board's origin. It goes 0.215 toward you and about 0.31 away from you (the screens at the back).
-        public const float BoardBottom = 0.051f;
-        public const float BoardHalfWidth = 0.39f;
-        public const float BoardFront = 0.215f;
-        public const float BoardBack = 0.31f;
+        // Board size, same as the one SceneBuilder makes: at design size the body is 0.78 wide and its bottom is
+        // 0.051 under the board's origin. It goes 0.215 toward you and about 0.31 away from you (the screens at the
+        // back). The board is drawn at DJBoard.SurfaceScale of that
+        public const float BoardBottom = 0.051f * DJBoard.SurfaceScale;
+        public const float BoardHalfWidth = 0.39f * DJBoard.SurfaceScale;
+        public const float BoardFront = 0.215f * DJBoard.SurfaceScale;
+        public const float BoardBack = 0.31f * DJBoard.SurfaceScale;
         // Keep the front edge a little in from the table edge so it doesn't hang off
         public const float EdgeGap = 0.04f;
 

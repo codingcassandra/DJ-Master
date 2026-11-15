@@ -9,8 +9,9 @@ namespace DJMaster
     {
         public Transform head;
         [Tooltip("Where the board sits relative to the eyes: forward and down, in metres.")]
-        public float forward = 0.40f;
-        public float below = 0.42f;
+        // Close enough that every control is inside 0.61 m of your eyes (the ReachTest checks it)
+        public float forward = 0.33f;
+        public float below = 0.35f;
         [Tooltip("Height of the board surface above the venue floor, in the world's local space.")]
         public float boardHeight = 0.82f;
         public float boardForward = 0.40f;

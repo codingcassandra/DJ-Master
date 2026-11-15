@@ -11,6 +11,9 @@ namespace DJMaster.Tests
     {
         Pointer finger;
 
+        // A spot next to a control, with the offset in real metres like a real fingertip (the board is drawn scaled)
+        static Vector3 AtMetres(Transform t, Vector3 m) => t.TransformPoint(new Vector3(m.x / t.lossyScale.x, m.y / t.lossyScale.y, m.z / t.lossyScale.z));
+
         [UnitySetUp]
         public IEnumerator Load()
         {
@@ -39,11 +42,11 @@ namespace DJMaster.Tests
         {
             finger.DirectPress = false;
             finger.Active = true;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, 0.015f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, 0.015f, 0));
             yield return null; yield return null;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, -0.01f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, -0.01f, 0));
             yield return null; yield return null;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, 0.03f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, 0.03f, 0));
             yield return null;
             finger.Active = false;
             yield return null;
@@ -85,9 +88,9 @@ namespace DJMaster.Tests
 
             // Sliding a finger in from the side must not press it.
             finger.Active = true;
-            finger.Position = board.A.play.transform.TransformPoint(new Vector3(0.05f, -0.01f, 0));
+            finger.Position = AtMetres(board.A.play.transform, new Vector3(0.05f, -0.01f, 0));
             yield return null;
-            finger.Position = board.A.play.transform.TransformPoint(new Vector3(0f, -0.01f, 0));
+            finger.Position = AtMetres(board.A.play.transform, new Vector3(0f, -0.01f, 0));
             yield return null; yield return null;
             finger.Active = false;
             yield return null;
@@ -295,7 +298,7 @@ namespace DJMaster.Tests
             var knob = ch.gain;
             for (int i = 0; i <= 30; i++)
             {
-                finger.Position = knob.transform.TransformPoint(new Vector3(0, -0.005f, i * 0.002f));
+                finger.Position = AtMetres(knob.transform, new Vector3(0, -0.005f, i * 0.002f));
                 yield return null;
             }
             finger.Active = false;
@@ -327,7 +330,7 @@ namespace DJMaster.Tests
             finger.Active = true;
             for (int mm = 15; mm >= -10; mm--)
             {
-                finger.Position = board.A.play.transform.TransformPoint(new Vector3(0, mm * 0.001f, 0));
+                finger.Position = AtMetres(board.A.play.transform, new Vector3(0, mm * 0.001f, 0));
                 yield return null;
             }
             Assert.IsTrue(deck.IsPlaying, "a slow poke from above should press PLAY");
@@ -336,7 +339,7 @@ namespace DJMaster.Tests
             float end = Time.time + 0.6f;
             for (int i = 0; Time.time < end; i++)
             {
-                finger.Position = board.A.play.transform.TransformPoint(new Vector3(0, i % 2 == 0 ? -0.002f : -0.009f, 0));
+                finger.Position = AtMetres(board.A.play.transform, new Vector3(0, i % 2 == 0 ? -0.002f : -0.009f, 0));
                 yield return null;
             }
             finger.Active = false;
@@ -350,7 +353,7 @@ namespace DJMaster.Tests
             yield return EnterBooth();
             var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
             var knob = board.A.low;
-            Vector3 At(float y, float z) => knob.transform.TransformPoint(new Vector3(0, y, z));
+            Vector3 At(float y, float z) => AtMetres(knob.transform, new Vector3(0, y, z));
 
             // Turn the LOW down
             finger.DirectPress = false;

@@ -18,6 +18,9 @@ namespace DJMaster.Tests
         DJBoard board;
         Pointer finger;
 
+        // A spot next to a control, with the offset in real metres like a real fingertip (the board is drawn scaled)
+        static Vector3 AtMetres(Transform t, Vector3 m) => t.TransformPoint(new Vector3(m.x / t.lossyScale.x, m.y / t.lossyScale.y, m.z / t.lossyScale.z));
+
         [UnitySetUp]
         public IEnumerator Load()
         {
@@ -49,11 +52,11 @@ namespace DJMaster.Tests
             yield return new WaitForSeconds(0.3f); // button debounce
             finger.DirectPress = false;
             finger.Active = true;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, 0.015f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, 0.015f, 0));
             yield return null; yield return null;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, -0.01f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, -0.01f, 0));
             yield return null; yield return null;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, 0.03f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, 0.03f, 0));
             yield return null;
             finger.Active = false;
             yield return null;

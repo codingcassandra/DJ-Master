@@ -46,7 +46,7 @@ namespace DJMaster
                 {
                     Vector3 d = lp - lastLocal;
                     lastLocal = lp;
-                    SetValue(value + (d.z + d.x) / throw01);
+                    SetValue(value + (d.z + d.x) * UnitSize / throw01); // throw01 is real metres of finger travel
                 }
             }
 
