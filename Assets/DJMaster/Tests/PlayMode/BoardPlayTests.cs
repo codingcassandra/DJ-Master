@@ -168,7 +168,7 @@ namespace DJMaster.Tests
                 Assert.AreEqual(4, deck.Bar, t.title);
                 checkedCount++;
             }
-            Assert.AreEqual(TrackLibrary.Tracks.Length - TrackLibrary.GameTrackCount, checkedCount);
+            Assert.AreEqual(8, checkedCount, "the 8 free (CC0) songs");
         }
 
         [UnityTest]

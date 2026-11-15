@@ -120,7 +120,7 @@ namespace DJMaster
             for (int i = 0; i < crateButtons.Length; i++)
             {
                 int track = TrackAt(i);
-                bool has = track < tracks.Length;
+                bool has = track < tracks.Length && !TrackLibrary.IsLocked(track);
                 crateButtons[i].gameObject.SetActive(has);
                 if (!has) continue;
                 crateButtons[i].Lit = Set.songs.Contains(track);
