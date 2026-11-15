@@ -84,6 +84,7 @@ namespace DJMaster.EditorTools
             var startMenu = BuildStartMenu(world);
             var vocab = BuildVocabPanel(world);
             var scenePanel = BuildScenePanel(board.transform, out var roomBtn, out var clubBtn, out var festBtn, out var recenterBtn, out var upBtn, out var downBtn);
+            var systemButtons = BuildSystemButtons(world);
 
             // ---------- Venues ----------
             var club = BuildClub(world);
@@ -127,6 +128,7 @@ namespace DJMaster.EditorTools
             game.panel = panel; game.environment = env; game.anchor = anchor;
             game.roomButton = roomBtn; game.clubButton = clubBtn; game.festivalButton = festBtn;
             game.recenterButton = recenterBtn; game.raiseButton = upBtn; game.lowerButton = downBtn;
+            game.systemButtons = systemButtons;
 
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -443,6 +445,7 @@ namespace DJMaster.EditorTools
             p.feedback = Text("Feedback", go.transform, new Vector3(0, -0.04f, 0), 0.0019f, TextAnchor.MiddleCenter, new Color(0.3f, 1f, 0.5f));
             p.status = Text("Status", go.transform, new Vector3(-0.3f, -0.062f, 0), 0.0012f, TextAnchor.MiddleLeft, LabelColor);
             p.wrapChars = 64;
+            p.corner = Corner(go.transform, new Vector3(0.32f, 0.117f, 0));
 
             var faceUser = Quaternion.Euler(-90, 0, 0); // button +Y toward the player
             p.actionButtons = new PokeButton[4];
@@ -512,6 +515,7 @@ namespace DJMaster.EditorTools
                 tm.text = label;
                 return b;
             }
+            p.corner = Corner(t, new Vector3(0.32f, 0.157f, 0));
             p.back = Action(0, "BACK", Color.white);
             p.undo = Action(1, "UNDO", Color.white);
             p.clear = Action(2, "CLEAR", Color.white);
@@ -538,6 +542,7 @@ namespace DJMaster.EditorTools
             m.subtitle = Text("Subtitle", t, new Vector3(0, 0.105f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
             m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
+            m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
 
             for (int i = 0; i < StartMenu.Rows; i++)
             {
@@ -577,7 +582,8 @@ namespace DJMaster.EditorTools
                 return b;
             }
             v.quizButton = Btn("vocab.quiz", "QUIZ ME", new Vector3(0, Top - 0.085f, 0), new Vector2(0.22f, 0.04f), out v.quizButtonLabel);
-            v.menuButton = Btn("vocab.menu", "MENU", new Vector3(W / 2 - 0.075f, Top - 0.04f, 0), new Vector2(0.11f, 0.035f), out _, 0.0013f);
+            v.menuButton = Btn("vocab.menu", "BACK", new Vector3(W / 2 - 0.075f, Top - 0.04f, 0), new Vector2(0.11f, 0.035f), out _, 0.0013f);
+            v.corner = Corner(t, new Vector3(W / 2, Top + 0.002f, 0));
             v.info = Text("Info", t, new Vector3(0, Top - 0.125f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
 
             // The list: 12 words per column.
@@ -616,6 +622,44 @@ namespace DJMaster.EditorTools
             quiz.SetActive(false);
             go.SetActive(false);
             return v;
+        }
+
+        // An empty spot at a panel's top right corner. The HOME / COLOR-BLIND tab hangs off it, right-aligned,
+        // just above the panel's top edge, so it never covers the panel's own text
+        static Transform Corner(Transform panel, Vector3 topRight)
+        {
+            var go = new GameObject("Corner");
+            go.transform.SetParent(panel, false);
+            go.transform.localPosition = topRight;
+            return go.transform;
+        }
+
+        // HOME and COLOR-BLIND. One set, GameDirector moves it onto the corner of whatever panel is showing
+        static SystemButtons BuildSystemButtons(Transform world)
+        {
+            var go = new GameObject("SystemButtons");
+            go.transform.SetParent(world, false);
+            var s = go.AddComponent<SystemButtons>();
+            var t = go.transform;
+            var faceUser = Quaternion.Euler(-90, 0, 0);
+            const float W = 0.215f, H = 0.036f;
+            // The tab's local origin is the panel's top right corner, so it all sits left of x = 0 and above y = 0
+            s.tab = Box("Tab", t, new Vector3(-W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f))).transform;
+            s.fullWidth = W;
+            s.shortWidth = 0.14f;
+            PokeButton Btn(string id, float x, float w, out TextMeshPro label)
+            {
+                var b = MakeButton(id, "", t, new Vector3(x, H / 2, -0.004f), new Vector2(w, 0.026f), Unlit("Cap", Color.gray), Color.white,
+                    out label, faceUser, 0.0012f, Color.white);
+                b.offColor = new Color(0.2f, 0.2f, 0.28f);
+                return b;
+            }
+            s.home = Btn("system.home", -W + 0.04f, 0.064f, out var homeLabel);
+            homeLabel.text = "HOME";
+            s.colorBlind = Btn("system.colorblind", -0.07f, 0.124f, out s.colorBlindLabel);
+            s.colorBlind.onColor = new Color(1f, 0.85f, 0.3f); // not one of the board's color families, so color-blind mode leaves it alone
+            s.colorBlindLabel.text = "COLOR-BLIND: OFF";
+            return s;
         }
 
         static GameObject BuildScenePanel(Transform board, out PokeButton room, out PokeButton club, out PokeButton fest, out PokeButton recenter, out PokeButton up, out PokeButton down)
@@ -1067,6 +1111,19 @@ namespace DJMaster.EditorTools
                 RenderPreview($"Preview_{mode}_Crowd.png", eye, new Vector3(2, 0, 0), 90f, mode != EnvMode.Room);
             }
             SetPreviewMode(env, EnvMode.Room);
+            // The HOME / COLOR-BLIND tab, mounted the way GameDirector does at runtime, with the button tint PokeButton gives it
+            var system = Object.FindAnyObjectByType<SystemButtons>();
+            void Mount(Transform corner, bool home)
+            {
+                system.MountOn(corner, home);
+                foreach (var b in system.GetComponentsInChildren<PokeButton>(true))
+                {
+                    var block = new MaterialPropertyBlock();
+                    block.SetColor("_Color", b.offColor);
+                    b.capRenderer.SetPropertyBlock(block);
+                }
+            }
+            Mount(Object.FindAnyObjectByType<InstructionPanel>().corner, true);
             RenderPreview("Preview_Board.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
@@ -1080,8 +1137,8 @@ namespace DJMaster.EditorTools
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
                 ("FREESTYLE", "Just play. No timer, no rules."),
-                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
-                ("COLOR-BLIND", "OFF: tap for color-blind friendly colors, with a shape on every color so nothing relies on color alone."));
+                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."));
+            Mount(menu.corner, false);
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime
             tint.SetColor("_Color", menu.buttons[0].offColor);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
@@ -1095,6 +1152,7 @@ namespace DJMaster.EditorTools
 
             panel.gameObject.SetActive(false);
             builder.gameObject.SetActive(true);
+            Mount(builder.corner, true);
             builder.Set.Clear();
             builder.Set.Add(0, TransitionStyle.Blend);
             builder.Set.Add(1, TransitionStyle.BassSwap);
@@ -1116,6 +1174,7 @@ namespace DJMaster.EditorTools
             env.editorRoomStandIn.SetActive(false);
             panel.gameObject.SetActive(false);
             vocab.gameObject.SetActive(true);
+            Mount(vocab.corner, true);
             vocab.FillList();
             vocab.ShowList();
             tint.SetColor("_Color", vocab.quizButton.offColor);
@@ -1138,6 +1197,7 @@ namespace DJMaster.EditorTools
             env.editorRoomStandIn.SetActive(true);
 
             panel.gameObject.SetActive(true);
+            Mount(panel.corner, true);
             RenderPreview("Preview_ScenePanel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(15, -38, 0), 60f, false);
         }
 
