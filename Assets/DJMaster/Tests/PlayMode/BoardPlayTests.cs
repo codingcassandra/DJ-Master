@@ -472,5 +472,38 @@ namespace DJMaster.Tests
             menu.buttons[0].SimulatePress(); menu.buttons[0].SimulatePress();
             yield return Home(menu.buttons[4], "the lesson list");
         }
+
+        // The COLOR-BLIND button on the SCENE panel works from the booth, not only from the start menu
+        [UnityTest]
+        public IEnumerator ColorBlindButton_InTheBooth_TogglesTheSameSetting()
+        {
+            var game = Object.FindAnyObjectByType<GameDirector>();
+            yield return EnterBooth();
+            var button = game.colorBlindButton;
+            Assert.IsNotNull(button);
+            Assert.IsTrue(button.gameObject.activeInHierarchy, "the COLOR-BLIND button should be there in the booth");
+            if (BoardColors.ColorSafe) { button.SimulatePress(); yield return null; } // start from the normal look
+
+            var board = Object.FindAnyObjectByType<DJBoard>();
+            var playLabel = board.A.play.GetComponentInChildren<TMPro.TextMeshPro>(true);
+            Color normalPlay = board.A.play.onColor;
+            Assert.AreEqual("PLAY", playLabel.text);
+            Assert.IsFalse(button.Lit);
+
+            button.SimulatePress();
+            yield return null;
+            Assert.IsTrue(BoardColors.ColorSafe);
+            Assert.AreEqual(1, PlayerPrefs.GetInt("colorSafe", 0), "it's the same saved setting as the start menu row");
+            Assert.IsTrue(button.Lit, "the button should light up when it's on");
+            Assert.AreEqual("● PLAY", playLabel.text);
+            Assert.AreNotEqual(normalPlay, board.A.play.onColor, "PLAY should switch to the color-blind palette");
+
+            button.SimulatePress();
+            yield return null;
+            Assert.IsFalse(BoardColors.ColorSafe);
+            Assert.IsFalse(button.Lit);
+            Assert.AreEqual("PLAY", playLabel.text);
+            Assert.AreEqual(normalPlay, board.A.play.onColor, "turning it off should restore the original colors");
+        }
     }
 }

@@ -93,7 +93,8 @@ namespace DJMaster.EditorTools
             var builder = BuildSetBuilder(board.transform, deckA);
             var startMenu = BuildStartMenu(world);
             var vocab = BuildVocabPanel(world);
-            var scenePanel = BuildScenePanel(board.transform, out var roomBtn, out var clubBtn, out var festBtn, out var recenterBtn, out var upBtn, out var downBtn);
+            var scenePanel = BuildScenePanel(board.transform, out var roomBtn, out var clubBtn, out var festBtn, out var recenterBtn, out var upBtn, out var downBtn,
+                out var colorBlindBtn);
             // Buttons on the smaller board (and the smaller vocab panel) would press after a shorter push,
             // so we make them deeper in their own units. A poke still needs about 7 mm, like before
             foreach (var b in world.GetComponentsInChildren<PokeButton>(true))
@@ -146,6 +147,7 @@ namespace DJMaster.EditorTools
             game.panel = panel; game.environment = env; game.anchor = anchor;
             game.roomButton = roomBtn; game.clubButton = clubBtn; game.festivalButton = festBtn;
             game.recenterButton = recenterBtn; game.raiseButton = upBtn; game.lowerButton = downBtn;
+            game.colorBlindButton = colorBlindBtn;
 
             EditorSceneManager.SaveScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), ScenePath);
             EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(ScenePath, true) };
@@ -446,6 +448,8 @@ namespace DJMaster.EditorTools
             s.halfWidth = 0.048f;
             s.lockLight = Prim(PrimitiveType.Cylinder, "Lock", go.transform, new Vector3(0.05f, 0.033f, -0.0005f), new Vector3(0.01f, 0.0005f, 0.01f), Unlit("Lock", Color.gray)).GetComponent<Renderer>();
             s.lockLight.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            // Just left of the light, empty unless color-blind mode is on
+            s.lockShape = Text("LockShape", go.transform, new Vector3(0.042f, 0.033f, -0.0005f), 0.0016f, TextAnchor.MiddleRight, Color.white);
             Text("CrowdLabel", go.transform, new Vector3(-0.058f, -0.03f, 0), 0.0009f, TextAnchor.MiddleLeft, LabelColor).text = "CROWD";
             var pivot = new GameObject("EnergyPivot").transform;
             pivot.SetParent(go.transform, false);
@@ -677,7 +681,8 @@ namespace DJMaster.EditorTools
             return v;
         }
 
-        static GameObject BuildScenePanel(Transform board, out PokeButton room, out PokeButton club, out PokeButton fest, out PokeButton recenter, out PokeButton up, out PokeButton down)
+        static GameObject BuildScenePanel(Transform board, out PokeButton room, out PokeButton club, out PokeButton fest, out PokeButton recenter, out PokeButton up, out PokeButton down,
+            out PokeButton colorBlind)
         {
             var go = new GameObject("ScenePanel");
             go.transform.SetParent(board, false);
@@ -685,8 +690,10 @@ namespace DJMaster.EditorTools
             go.transform.localPosition = new Vector3(-0.4571f, 0.131f, 0.1143f); // up a bit so BOARD DOWN doesn't sink into the board
             go.transform.localRotation = Quaternion.Euler(30.4f, -38.7f, 0);
             go.transform.localScale = Vector3.one * (0.75f / BoardScale);
-            Box("Back", go.transform, new Vector3(0, 0, 0.004f), new Vector3(0.13f, 0.27f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
-            Text("Heading", go.transform, new Vector3(0, 0.125f, 0), 0.0018f, TextAnchor.UpperCenter, new Color(1f, 0.85f, 0.3f)).text = "SCENE";
+            // One row taller than before for COLOR-BLIND. It grows at the top so the bottom stays off the board,
+            // the top corners are still about 0.60 m from your eyes
+            Box("Back", go.transform, new Vector3(0, 0.0225f, 0.004f), new Vector3(0.13f, 0.315f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
+            Text("Heading", go.transform, new Vector3(0, 0.17f, 0), 0.0018f, TextAnchor.UpperCenter, new Color(1f, 0.85f, 0.3f)).text = "SCENE";
             var faceUser = Quaternion.Euler(-90, 0, 0);
             PokeButton Btn(string id, string label, float y, float w = 0.1f, float x = 0)
             {
@@ -695,9 +702,11 @@ namespace DJMaster.EditorTools
                 b.offColor = new Color(0.15f, 0.15f, 0.22f);
                 return b;
             }
-            room = Btn("scene.room", "MY ROOM", 0.085f);
-            club = Btn("scene.club", "CLUB", 0.04f);
-            fest = Btn("scene.festival", "FESTIVAL", -0.005f);
+            room = Btn("scene.room", "MY ROOM", 0.13f);
+            club = Btn("scene.club", "CLUB", 0.085f);
+            fest = Btn("scene.festival", "FESTIVAL", 0.04f);
+            // Always here in the booth, lit when it's on. Same setting as the COLOR-BLIND row on the start menu
+            colorBlind = Btn("scene.colorblind", "COLOR-BLIND", -0.015f);
             recenter = Btn("scene.recenter", "RECENTER", -0.06f);
             up = Btn("scene.up", "BOARD UP", -0.1f, 0.048f, -0.026f);
             down = Btn("scene.down", "DOWN", -0.1f, 0.048f, 0.026f);

@@ -23,11 +23,17 @@ namespace DJMaster
         public EnvironmentManager environment;
         public SeatedAnchor anchor;
         public PokeButton roomButton, clubButton, festivalButton, recenterButton, raiseButton, lowerButton;
+        [Tooltip("COLOR-BLIND on the SCENE panel, so you can switch it from the booth too.")]
+        public PokeButton colorBlindButton;
 
         public GameMode Mode { get; private set; }
         public GameMode ChosenMode { get; private set; } // what starts after the venue is picked
 
         bool paused, focusLost, appPaused, appUnfocused;
+        DeskSnap deskSnap;
+
+        // While the room scan popup is up we show why on the panel, the rest of the time it's the normal line
+        string Feedback(string normal) => deskSnap != null && deskSnap.Message != "" ? deskSnap.Message : normal;
         float lastScore;
         int replayIndex;
 
@@ -53,7 +59,9 @@ namespace DJMaster
             recenterButton.Pressed += anchor.Recenter;
             raiseButton.Pressed += () => anchor.AdjustHeight(0.02f);
             lowerButton.Pressed += () => anchor.AdjustHeight(-0.02f);
-            anchor.gameObject.AddComponent<DeskSnap>().Init(anchor, environment); // in MY ROOM the board goes on your real desk
+            if (colorBlindButton != null) colorBlindButton.Pressed += () => BoardColors.SetColorSafe(!BoardColors.ColorSafe);
+            deskSnap = anchor.gameObject.AddComponent<DeskSnap>(); // in MY ROOM the board goes on your real desk
+            deskSnap.Init(anchor, environment);
             lessons.Completed += ChooseLesson;
             performer.Completed += ShowResults;
             builder.BackPressed += EnterTitle;
@@ -279,6 +287,7 @@ namespace DJMaster
 
         void Update()
         {
+            if (colorBlindButton != null) colorBlindButton.Lit = BoardColors.ColorSafe; // stays right if it's switched on the start menu
             RefreshPanel();
         }
 
@@ -293,7 +302,7 @@ namespace DJMaster
                     if (s == null) break;
                     string body = s.text;
                     if (lessons.ShowHint && !string.IsNullOrEmpty(s.hint)) body += "\n\nHINT: " + s.hint;
-                    panel.Show($"LESSON {lessons.LessonIndex + 1}  {lessons.StepIndex + 1}/{lessons.StepCount}  {s.title.ToUpper()}", body, "", lessons.Feedback);
+                    panel.Show($"LESSON {lessons.LessonIndex + 1}  {lessons.StepIndex + 1}/{lessons.StepCount}  {s.title.ToUpper()}", body, "", Feedback(lessons.Feedback));
                     break;
 
                 case GameMode.Live:
@@ -310,7 +319,8 @@ namespace DJMaster
                                (task != null ? $"Step {performer.CurrentTaskIndex + 1}/{performer.Tasks.Count}: {task.text}" : "");
                     }
                     if (judge.Warning != "") text += "\n" + BoardColors.Red(judge.Warning);
-                    panel.Show(title, text, $"Score {judge.Score:0}   Crowd {(int)(BeatBus.Energy * 100)}%", judge.Shoutout);
+                    // The SYNC message matters in a set too, like "SYNC is off in Advanced"
+                    panel.Show(title, text, $"Score {judge.Score:0}   Crowd {(int)(BeatBus.Energy * 100)}%", Feedback(board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout));
                     break;
 
                 case GameMode.LiveResults:
@@ -335,7 +345,7 @@ namespace DJMaster
                 case GameMode.Freestyle:
                     panel.Show("FREESTYLE",
                         judge.Warning != "" ? judge.Warning : "No timer, no rules. LOAD songs, mix with any transition, try bass drops (cut the LOW, slam it back on bar 1), LOOPs and ECHO. Remember: less is more.",
-                        $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}", board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout);
+                        $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}", Feedback(board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout));
                     break;
             }
         }

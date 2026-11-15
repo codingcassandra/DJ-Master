@@ -55,7 +55,9 @@ namespace DJMaster
             };
         }
 
-        void OnEnable() => Refresh();
+        // Redraw when color-blind mode is switched from the SCENE panel too
+        void OnEnable() { BoardColors.Changed += Refresh; Refresh(); }
+        void OnDisable() => BoardColors.Changed -= Refresh;
 
         public void AddSong(int track)
         {

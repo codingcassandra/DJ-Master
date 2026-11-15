@@ -5,6 +5,7 @@ namespace DJMaster
 {
     // Center screen: how far apart the two decks are in tempo and in beat phase.
     // The needle sits in the middle and the light turns green when the beats are locked.
+    // In color-blind mode the light also gets its color's shape next to it, so it's not color only.
     public class SyncMeter : MonoBehaviour
     {
         public MixJudge judge;
@@ -13,11 +14,13 @@ namespace DJMaster
         public Transform needle;        // moves along local X
         public float halfWidth = 0.045f;
         public Renderer lockLight;
+        [Tooltip("The shape next to the light in color-blind mode: ● locked, ■ close, ♥ far off.")]
+        public TextMeshPro lockShape;
         public Renderer energyFill;
         public Transform energyPivot;
 
         MaterialPropertyBlock block;
-        string lastText;
+        string lastText, lastShape;
 
         void Update()
         {
@@ -30,8 +33,19 @@ namespace DJMaster
             needle.localPosition = new Vector3(phase * 2f * halfWidth, needle.localPosition.y, needle.localPosition.z);
 
             Color c = !both ? new Color(0.1f, 0.1f, 0.12f) : judge.InSync ? new Color(0.1f, 1f, 0.4f) : Mathf.Abs(judge.BpmDifference) < 0.6f ? new Color(1f, 0.75f, 0.1f) : new Color(1f, 0.15f, 0.2f);
+            // Color-blind mode: the safe colors, and the shape that goes with each one (green ●, orange ■, red ♥)
+            var family = !both ? BoardColors.Family.None : judge.InSync ? BoardColors.Family.Play
+                : Mathf.Abs(judge.BpmDifference) < 0.6f ? BoardColors.Family.Cue : BoardColors.Family.Crowd;
+            bool safe = BoardColors.ColorSafe && family != BoardColors.Family.None;
+            if (safe) c = BoardColors.Of(family);
             block.SetColor("_Color", c);
             lockLight.SetPropertyBlock(block);
+            if (lockShape != null)
+            {
+                string shape = safe ? BoardColors.Shape(family) : "";
+                if (shape != lastShape) { lockShape.text = shape; lastShape = shape; }
+                lockShape.color = c;
+            }
 
             string text;
             if (!a.HasTrack || !b.HasTrack) text = "SYNC";

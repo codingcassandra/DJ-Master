@@ -7,6 +7,8 @@ namespace DJMaster
 {
     // DJ VOCAB on the start screen: every DJ word with what it means, and a QUIZ ME button at the top.
     // The quiz shows a meaning (with the word blanked out) and four words to pick from.
+    // After you answer the right word lights green and a wrong pick lights red. In color-blind mode they also get
+    // their color's shape in front (● right, ♥ wrong), same as the board, so it's not color only.
     public class VocabPanel : MonoBehaviour
     {
         public const int QuizLength = 10;
@@ -40,6 +42,8 @@ namespace DJMaster
 
         readonly List<int> order = new();
         readonly int[] choices = new int[4];
+        int picked;
+        string feedbackText = "";
         System.Random rng = new();
 
         void Awake()
@@ -53,6 +57,19 @@ namespace DJMaster
             }
             next.Pressed += () => { if (Finished) StartQuiz(); else if (Answered) NextQuestion(); };
             FillList();
+        }
+
+        void OnEnable() => BoardColors.Changed += Redraw;
+        void OnDisable() => BoardColors.Changed -= Redraw;
+
+        // Color-blind mode was switched, so we draw the list or the question again with the new look
+        void Redraw()
+        {
+            FillList();
+            feedback.text = BoardColors.Display(feedbackText);
+            if (!Quizzing || Finished) return;
+            question.text = TextUtil.Wrap(BoardColors.Display(DJVocab.Clue(DJVocab.Words[order[QuestionIndex]])), questionWrapChars);
+            if (Answered) ShowMarks();
         }
 
         public void FillList()
@@ -118,7 +135,7 @@ namespace DJMaster
             }
             progress.text = $"Question {QuestionIndex + 1} of {QuizLength}      Score: {Score}";
             question.text = TextUtil.Wrap(BoardColors.Display(DJVocab.Clue(DJVocab.Words[target])), questionWrapChars);
-            feedback.text = "";
+            SetFeedback("");
             next.gameObject.SetActive(false);
         }
 
@@ -126,18 +143,12 @@ namespace DJMaster
         {
             if (!Quizzing || Answered || Finished) return;
             Answered = true;
+            picked = i;
             bool right = i == CorrectChoice;
             if (right) Score++;
-            var correct = answers[CorrectChoice];
-            correct.onColor = BoardColors.Play;
-            correct.Lit = true;
-            if (!right)
-            {
-                answers[i].onColor = BoardColors.Crowd;
-                answers[i].Lit = true;
-            }
+            ShowMarks();
             string word = DJVocab.Words[choices[CorrectChoice]].term;
-            feedback.text = BoardColors.Display(right ? BoardColors.Green("Correct!") : $"{BoardColors.Red("Not quite.")} It's {BoardColors.Green(word)}.");
+            SetFeedback(right ? BoardColors.Green("Correct!") : $"{BoardColors.Red("Not quite.")} It's {BoardColors.Green(word)}.");
             Sfx.Click();
             progress.text = $"Question {QuestionIndex + 1} of {QuizLength}      Score: {Score}";
             nextLabel.text = QuestionIndex + 1 < QuizLength ? "NEXT" : "SEE SCORE";
@@ -155,9 +166,29 @@ namespace DJMaster
                  Score >= 7 ? "Nice work. You know your stuff." :
                  Score >= 4 ? "Getting there. Look over the list and go again." :
                  "Check the word list, then try again.");
-            feedback.text = newBest ? BoardColors.Green("New best score!") : $"Best: {DJVocab.BestQuizScore} / {QuizLength}";
+            SetFeedback(newBest ? BoardColors.Green("New best score!") : $"Best: {DJVocab.BestQuizScore} / {QuizLength}");
             nextLabel.text = "TRY AGAIN";
             next.gameObject.SetActive(true);
+        }
+
+        // Lights the right word, and the wrong one if you picked it, in the colors we use right now
+        void ShowMarks()
+        {
+            for (int i = 0; i < answers.Length; i++)
+            {
+                var family = i == CorrectChoice ? BoardColors.Family.Play : i == picked ? BoardColors.Family.Crowd : BoardColors.Family.None;
+                string term = DJVocab.Words[choices[i]].term;
+                answerLabels[i].text = BoardColors.ColorSafe && family != BoardColors.Family.None ? $"{BoardColors.Shape(family)} {term}" : term;
+                if (family == BoardColors.Family.None) continue;
+                answers[i].onColor = BoardColors.Of(family);
+                answers[i].Lit = true;
+            }
+        }
+
+        void SetFeedback(string text)
+        {
+            feedbackText = text;
+            feedback.text = BoardColors.Display(text);
         }
 
         void Shuffle(List<int> list)
