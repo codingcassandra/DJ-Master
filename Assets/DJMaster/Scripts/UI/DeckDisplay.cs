@@ -8,6 +8,10 @@ namespace DJMaster
     {
         public Deck deck;
         public TextMeshPro title, bpm, position;
+        [Tooltip("Phrase countdown (PhraseCue), right of the bar counter. Hidden for ADVANCED players.")]
+        public TextMeshPro countdown;
+        public Color countColor = new Color(0.75f, 0.78f, 0.85f);
+        public Color headsUpColor = new Color(1f, 0.7f, 0.15f);
         public Renderer[] beatLights = new Renderer[4];
         public Transform phraseFill;     // scaled on X from 0..1 across the 16-bar loop
         public Renderer levelFill;
@@ -18,6 +22,7 @@ namespace DJMaster
 
         MaterialPropertyBlock block;
         int lastBar = -1, lastBeatInBar = -1, lastTrack = -2;
+        bool lastShowCount, lastPlaying;
         float lastBpm = -1, lastTempo = -99;
 
         void Update()
@@ -41,9 +46,12 @@ namespace DJMaster
             }
 
             int bar = deck.Bar, beatInBar = deck.BeatInBar;
-            if (bar != lastBar || beatInBar != lastBeatInBar)
+            bool showCount = Skill.PhraseCountdown;
+            bool playing = deck.IsPlaying;
+            if (bar != lastBar || beatInBar != lastBeatInBar || showCount != lastShowCount || playing != lastPlaying)
             {
-                lastBar = bar; lastBeatInBar = beatInBar;
+                lastBar = bar; lastBeatInBar = beatInBar; lastShowCount = showCount; lastPlaying = playing;
+                UpdateCountdown(bar, beatInBar, showCount);
                 // Section names describe the synthesized arrangement, so recordings just show the bar.
                 position.text = deck.IsLoaded ? $"BAR {bar + 1,2}/16   {(deck.Track.IsRecording ? "" : SectionName(deck.Section))}" : "";
                 if (phraseFill != null) phraseFill.localScale = new Vector3(Mathf.Max(0.001f, (bar + 1) / 16f), 1, 1);
@@ -64,6 +72,16 @@ namespace DJMaster
                 block.SetColor("_Color", lvl > 0.95f ? Color.red : Color.Lerp(new Color(0.1f, 0.9f, 0.4f), new Color(1f, 0.8f, 0.1f), lvl));
                 levelFill.SetPropertyBlock(block);
             }
+        }
+
+        void UpdateCountdown(int bar, int beatInBar, bool show)
+        {
+            if (countdown == null) return;
+            if (!show || !deck.IsLoaded || !deck.IsPlaying) { countdown.text = ""; return; }
+            string text = PhraseCue.Text(bar, beatInBar, !deck.Track.IsRecording, out var kind);
+            countdown.color = kind == PhraseCue.Kind.HeadsUp ? headsUpColor : kind == PhraseCue.Kind.NewPhrase ? Color.white : countColor;
+            // The 1 of a new phrase flashes big and bright for a beat
+            countdown.text = kind == PhraseCue.Kind.NewPhrase ? $"<size=125%><b>{text}</b></size>" : text;
         }
 
         static string SectionName(TrackSynth.Section s) => s switch

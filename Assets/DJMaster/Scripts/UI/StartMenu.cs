@@ -16,8 +16,20 @@ namespace DJMaster
         public TextMeshPro[] labels = new TextMeshPro[Rows];
         public TextMeshPro[] descriptions = new TextMeshPro[Rows];
         public int wrapChars = 40;
+        [Tooltip("The skill level picker on the title screen, in SkillLevel order.")]
+        public PokeButton[] levelButtons = new PokeButton[4];
+        public GameObject levelRow;
         [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
         public Transform corner;
+
+        // The level picker only shows on the title screen. The picked level stays lit.
+        public void ShowLevels(bool on)
+        {
+            if (levelRow == null) return;
+            levelRow.SetActive(on);
+            for (int i = 0; i < levelButtons.Length; i++)
+                if (levelButtons[i] != null) levelButtons[i].Lit = (int)Skill.Current == i;
+        }
 
         public void Show(string titleText, string subtitleText, string footerText)
         {

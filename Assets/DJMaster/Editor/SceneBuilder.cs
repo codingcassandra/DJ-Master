@@ -415,9 +415,10 @@ namespace DJMaster.EditorTools
             d.title = Text("Title", go.transform, new Vector3(-0.095f, 0.041f, 0), 0.0014f, TextAnchor.UpperLeft, Color.white);
             d.bpm = Text("BPM", go.transform, new Vector3(-0.095f, 0.0f, 0), 0.0019f, TextAnchor.MiddleLeft, color);
             d.position = Text("Position", go.transform, new Vector3(-0.095f, -0.021f, 0), 0.0014f, TextAnchor.MiddleLeft, LabelColor);
+            d.countdown = Text("Countdown", go.transform, new Vector3(0.087f, -0.0335f, 0), 0.0016f, TextAnchor.MiddleRight, LabelColor); // beside the beat lights
             d.beatLights = new Renderer[4];
             for (int i = 0; i < 4; i++)
-                d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.086f + i * 0.022f, -0.034f, 0), new Vector3(0.018f, 0.006f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>();
+                d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.089f + i * 0.014f, -0.034f, 0), new Vector3(0.011f, 0.006f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>(); // narrow, to leave room for the countdown
             Box("PhraseBack", go.transform, new Vector3(0, -0.041f, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
             var pivot = new GameObject("PhrasePivot").transform;
             pivot.SetParent(go.transform, false);
@@ -568,7 +569,7 @@ namespace DJMaster.EditorTools
             Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             m.title = Text("Title", t, new Vector3(0, 0.165f, 0), 0.0042f, TextAnchor.UpperCenter, purple);
-            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.105f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
+            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
             m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
             m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
@@ -581,6 +582,19 @@ namespace DJMaster.EditorTools
                 b.offColor = new Color(0.3f, 0.1f, 0.5f);
                 m.buttons[i] = b;
                 m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), 0.00145f, TextAnchor.MiddleLeft, purple);
+            }
+
+            // Skill level picker (title screen only): four chips between the subtitle and the menu. The picked one stays lit.
+            var levels = new GameObject("Levels");
+            levels.transform.SetParent(t, false);
+            m.levelRow = levels;
+            string[] names = { "BEGINNER", "INTERMEDIATE", "ADVANCED", "SOLO" };
+            for (int i = 0; i < names.Length; i++)
+            {
+                var b = MakeButton($"level.{i}", names[i], levels.transform, new Vector3(-0.21f + i * 0.14f, 0.088f, -0.004f), new Vector2(0.128f, 0.022f),
+                    Unlit("Cap", Color.gray), purple, out _, faceUser, 0.00125f, Color.white);
+                b.offColor = new Color(0.16f, 0.06f, 0.28f);
+                m.levelButtons[i] = b;
             }
             return m;
         }
@@ -1154,6 +1168,19 @@ namespace DJMaster.EditorTools
                 }
             }
             Mount(Object.FindAnyObjectByType<InstructionPanel>().corner, true);
+            // The deck screens mid-mix, so the preview shows how their text fits
+            foreach (var d in Object.FindObjectsByType<DeckDisplay>())
+            {
+                bool isA = d.deck.deckName == "A";
+                d.title.text = isA ? "Neon Tides\n<size=85%>Lumen Kid   House   Am</size>" : "Low Orbit\n<size=85%>Ferro   Techno   Em</size>";
+                d.bpm.text = "128.0 BPM  <size=62.5%>+0.0%</size>";
+                d.position.text = isA ? "BAR 11/16   GROOVE" : "BAR  4/16   DROP";
+                if (d.countdown != null)
+                {
+                    d.countdown.text = isA ? "BREAKDOWN: 3 BEATS" : "PHRASE IN 3 BARS"; // the longest it gets, and the usual
+                    d.countdown.color = isA ? d.headsUpColor : d.countColor;
+                }
+            }
             RenderPreview("Preview_Board.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
@@ -1167,15 +1194,23 @@ namespace DJMaster.EditorTools
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
                 ("FREESTYLE", "Just play. No timer, no rules."),
-                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."));
+                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
+                ("DAILY", "Today: QUICK CUT: Neon Tides into Sundial. 3 days in a row unlocks a bonus song."));
             Mount(menu.corner, false);
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime
             tint.SetColor("_Color", menu.buttons[0].offColor);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
+            for (int i = 0; i < menu.levelButtons.Length; i++)
+            {
+                var lv = new MaterialPropertyBlock();
+                lv.SetColor("_Color", i == (int)SkillLevel.Intermediate ? menu.levelButtons[i].onColor : menu.levelButtons[i].offColor); // the default level
+                menu.levelButtons[i].capRenderer.SetPropertyBlock(lv);
+            }
             boardGo.SetActive(false);
             env.editorRoomStandIn.SetActive(false);
             RenderPreview("Preview_Menu.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(null);
+            foreach (var b in menu.levelButtons) b.capRenderer.SetPropertyBlock(null);
             menu.gameObject.SetActive(false);
             boardGo.SetActive(true);
             env.editorRoomStandIn.SetActive(true);
