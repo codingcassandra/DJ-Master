@@ -41,7 +41,7 @@ namespace DJMaster
         public Step Current => Running && StepIndex < steps.Count ? steps[StepIndex] : null;
         public string Feedback { get; private set; } = "";
         public bool ShowingPraise => praiseTimer > 0;
-        public bool ShowHint => stepTime > 25f;
+        public bool ShowHint => stepTime > SkillLevels.Rules.hintAfter;
 
         public event Action Completed;
 
@@ -195,7 +195,8 @@ namespace DJMaster
 
         // Tapping along: how far off the kick a tap can be, in seconds either way. 120 ms is fair for a fingertip
         // and still well under half a beat even at 140 BPM, so four in a row means you really found the kick.
-        public const float TapWindow = 0.12f;
+        // That's Intermediate, Beginner gets a wider one and Advanced a tighter one (see SkillLevels).
+        public static float TapWindow => SkillLevels.Rules.tapWindow;
         // How late a tap on the kick shows up, on top of the audio buffers: hand tracking plus the 7 mm press.
         // Tune this on the Quest with the tap log below.
         public const float HandLag = 0.05f;
