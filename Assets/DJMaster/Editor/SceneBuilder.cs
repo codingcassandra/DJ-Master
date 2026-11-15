@@ -563,7 +563,7 @@ namespace DJMaster.EditorTools
             Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             m.title = Text("Title", t, new Vector3(0, 0.165f, 0), 0.0042f, TextAnchor.UpperCenter, purple);
-            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.105f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
+            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
             m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
             m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
@@ -576,6 +576,19 @@ namespace DJMaster.EditorTools
                 b.offColor = new Color(0.3f, 0.1f, 0.5f);
                 m.buttons[i] = b;
                 m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), 0.00145f, TextAnchor.MiddleLeft, purple);
+            }
+
+            // Skill level picker (title screen only): four chips between the subtitle and the menu. The picked one stays lit.
+            var levels = new GameObject("Levels");
+            levels.transform.SetParent(t, false);
+            m.levelRow = levels;
+            string[] names = { "BEGINNER", "INTERMEDIATE", "ADVANCED", "SOLO" };
+            for (int i = 0; i < names.Length; i++)
+            {
+                var b = MakeButton($"level.{i}", names[i], levels.transform, new Vector3(-0.21f + i * 0.14f, 0.088f, -0.004f), new Vector2(0.128f, 0.022f),
+                    Unlit("Cap", Color.gray), purple, out _, faceUser, 0.00125f, Color.white);
+                b.offColor = new Color(0.16f, 0.06f, 0.28f);
+                m.levelButtons[i] = b;
             }
             return m;
         }
@@ -1161,15 +1174,23 @@ namespace DJMaster.EditorTools
                 ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
                 ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
                 ("FREESTYLE", "Just play. No timer, no rules."),
-                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."));
+                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
+                ("DAILY", "Today: QUICK CUT: Neon Tides into Sundial. 3 days in a row unlocks a bonus song."));
             Mount(menu.corner, false);
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime
             tint.SetColor("_Color", menu.buttons[0].offColor);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
+            for (int i = 0; i < menu.levelButtons.Length; i++)
+            {
+                var lv = new MaterialPropertyBlock();
+                lv.SetColor("_Color", i == 0 ? menu.levelButtons[i].onColor : menu.levelButtons[i].offColor); // BEGINNER picked
+                menu.levelButtons[i].capRenderer.SetPropertyBlock(lv);
+            }
             boardGo.SetActive(false);
             env.editorRoomStandIn.SetActive(false);
             RenderPreview("Preview_Menu.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(null);
+            foreach (var b in menu.levelButtons) b.capRenderer.SetPropertyBlock(null);
             menu.gameObject.SetActive(false);
             boardGo.SetActive(true);
             env.editorRoomStandIn.SetActive(true);

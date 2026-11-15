@@ -52,6 +52,11 @@ namespace DJMaster
                 int idx = i;
                 startMenu.buttons[i].Pressed += () => MenuAction(idx);
             }
+            for (int i = 0; i < startMenu.levelButtons.Length; i++)
+            {
+                var level = (SkillLevel)i;
+                if (startMenu.levelButtons[i] != null) startMenu.levelButtons[i].Pressed += () => PickLevel(level);
+            }
             roomButton.Pressed += () => environment.SetMode(EnvMode.Room);
             clubButton.Pressed += () => environment.SetMode(EnvMode.Club);
             festivalButton.Pressed += () => environment.SetMode(EnvMode.Festival);
@@ -100,6 +105,7 @@ namespace DJMaster
             // The start screen is its own black space: no booth, no venue, no passthrough.
             bool menu = OnStartScreen;
             startMenu.gameObject.SetActive(menu && mode != GameMode.Vocab);
+            startMenu.ShowLevels(mode == GameMode.Title);
             vocab.gameObject.SetActive(mode == GameMode.Vocab);
             board.gameObject.SetActive(!menu);
             environment.SetMenuScreen(menu);
@@ -162,6 +168,14 @@ namespace DJMaster
 
         static string GradeName(SetPerformer.Grade g) => g == SetPerformer.Grade.Perfect ? "PERFECT" : g == SetPerformer.Grade.Good ? "GOOD" : "ROUGH";
 
+        // A level on the title screen: saved, then straight on to the mode it opens.
+        void PickLevel(SkillLevel level)
+        {
+            Skill.Current = level;
+            startMenu.ShowLevels(true);
+            ChooseVenue(Skill.ModeFor(level));
+        }
+
         // Every DJ word with its meaning, plus a quiz.
         void ShowVocab()
         {
@@ -174,7 +188,7 @@ namespace DJMaster
             ChosenMode = next;
             SetMode(GameMode.ChooseVenue);
             string what = next == GameMode.Learn ? "LEARN" : next == GameMode.Build ? "BUILD A SET" : next == GameMode.Daily ? "DAILY CHALLENGE" : "FREESTYLE";
-            startMenu.Show("WHERE DO YOU WANT TO PLAY?", $"Mode: {what}", "You can switch anytime with the SCENE panel next to the booth.");
+            startMenu.Show("WHERE DO YOU WANT TO PLAY?", $"Mode: {what}     Level: {Skill.Name(Skill.Current)}", "You can switch anytime with the SCENE panel next to the booth.");
             startMenu.SetRows(
                 ("MY ROOM", "Your real room. We'll ask for your room scan so the board can sit on your desk."),
                 ("CLUB", "A dark club with lasers, a mirror ball and a packed dance floor."),
@@ -353,6 +367,9 @@ namespace DJMaster
 
         static string Title(int track) => TrackLibrary.Tracks[track].title;
 
+        // The level you picked, on the panel's status line while you play.
+        static string LevelTag => $"Level: {Skill.Name(Skill.Current)}";
+
         // The top of the results for a daily challenge: passed or not, the streak, and any unlock.
         string DailyResult(System.Collections.Generic.List<SetPerformer.Result> results)
         {
@@ -378,7 +395,7 @@ namespace DJMaster
                     if (s == null) break;
                     string body = s.text;
                     if (lessons.ShowHint && !string.IsNullOrEmpty(s.hint)) body += "\n\nHINT: " + s.hint;
-                    panel.Show($"LESSON {lessons.LessonIndex + 1}  {lessons.StepIndex + 1}/{lessons.StepCount}  {s.title.ToUpper()}", body, "", lessons.Feedback);
+                    panel.Show($"LESSON {lessons.LessonIndex + 1}  {lessons.StepIndex + 1}/{lessons.StepCount}  {s.title.ToUpper()}", body, LevelTag, lessons.Feedback);
                     break;
 
                 case GameMode.Live:
@@ -395,7 +412,7 @@ namespace DJMaster
                                (task != null ? $"Step {performer.CurrentTaskIndex + 1}/{performer.Tasks.Count}: {task.text}" : "");
                     }
                     if (judge.Warning != "") text += "\n" + BoardColors.Red(judge.Warning);
-                    panel.Show(title, text, $"Score {judge.Score:0}   Crowd {(int)(BeatBus.Energy * 100)}%", judge.Shoutout);
+                    panel.Show(title, text, $"Score {judge.Score:0}   Crowd {(int)(BeatBus.Energy * 100)}%   {LevelTag}", judge.Shoutout);
                     break;
 
                 case GameMode.LiveResults:
@@ -421,7 +438,7 @@ namespace DJMaster
                 case GameMode.Freestyle:
                     panel.Show("FREESTYLE",
                         judge.Warning != "" ? judge.Warning : "No timer, no rules. LOAD songs, mix with any transition, try bass drops (cut the LOW, slam it back on bar 1), LOOPs and ECHO. Remember: less is more.",
-                        $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}", board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout);
+                        $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}   {LevelTag}", board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout);
                     break;
             }
         }
