@@ -2,6 +2,7 @@
   "name": "DJMaster",
   "references": [
     "Oculus.VR",
+    "Oculus.Platform",
     "Unity.TextMeshPro",
     "meta.xr.mrutilitykit"
   ],

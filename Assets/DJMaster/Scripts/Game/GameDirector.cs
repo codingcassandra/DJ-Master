@@ -37,6 +37,8 @@ namespace DJMaster
         public float menuMusicLevel = 0.3f;
 
         bool menuMusicOn;
+        MetaSignIn signIn;
+        public MetaSignIn SignIn => signIn;
         bool paused, focusLost, appPaused, appUnfocused;
         // The live set running now is today's daily challenge (not a set from BUILD A SET)
         bool dailyRun, dailyCounted, dailyUnlocked;
@@ -82,6 +84,9 @@ namespace DJMaster
             // Something to listen to straight away while you look around the menu (loaded first so the menu can start it)
             board.A.deck.Load(0);
             board.B.deck.Load(1);
+            // Meta sign-in (#46): the signed-in name arrives a moment later and the greeting updates with it
+            signIn = gameObject.AddComponent<MetaSignIn>();
+            signIn.NameReady += _ => { if (Mode == GameMode.Greeting) EnterGreeting(); else if (Mode == GameMode.Title) startMenu.ShowPlayer(Players.Current.name); };
             if (GreetOnStart) EnterGreeting();
             else EnterTitle();
         }

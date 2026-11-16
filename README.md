@@ -212,6 +212,8 @@ Tip: set the Game view to **Play Maximized** so small text is easy to read.
 4. **Edit > Project Settings > XR Plug-in Management > Android tab:** check **OpenXR**, then under OpenXR enable the **Meta XR** feature group. Then open **Edit > Project Settings > Meta XR**, pick the Android tab and click **Fix All**.
 5. Put the Quest in developer mode, connect over USB, then **Build And Run**.
 
+**Meta sign-in (entitlement check + the player's name):** in the Meta Developer Dashboard, open the app, copy its **App ID**, then in Unity open **Meta > Platform > Edit Settings** and paste it into **Meta Quest/2/Pro**. On the Quest the game then checks the store entitlement at startup (it quits if that fails, as the store requires) and greets the signed-in user by name. With no App ID, in the editor or offline, it plays on as the local player.
+
 **For the competition:** upload the APK to a release channel named **Competition** in the Meta Developer Dashboard and create an Invite URL for the judges.
 
 ## Tests
