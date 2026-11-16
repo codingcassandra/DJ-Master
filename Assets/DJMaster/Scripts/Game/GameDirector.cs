@@ -39,6 +39,8 @@ namespace DJMaster
         public float menuMusicLevel = 0.3f;
 
         bool menuMusicOn;
+        MetaSignIn signIn;
+        public MetaSignIn SignIn => signIn;
         // Freestyle by ear: how close your last mix was, shown after each transition
         int lastTransitions;
         string lastMixByEar = "";
@@ -88,6 +90,10 @@ namespace DJMaster
             // Something to listen to straight away while you look around the menu (loaded first so the menu can start it)
             board.A.deck.Load(0);
             board.B.deck.Load(1);
+            // Meta sign-in (#46): the signed-in name arrives a moment later and the greeting updates with it
+            gameObject.AddComponent<RenderQuality>(); // sharp as the frame rate allows, headset only (#33)
+            signIn = gameObject.AddComponent<MetaSignIn>();
+            signIn.NameReady += _ => { if (Mode == GameMode.Greeting) EnterGreeting(); else if (Mode == GameMode.Title) startMenu.ShowPlayer(Players.Current.name); };
             if (GreetOnStart) EnterGreeting();
             else EnterTitle();
         }
