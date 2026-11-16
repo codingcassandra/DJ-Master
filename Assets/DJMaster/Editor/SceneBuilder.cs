@@ -584,18 +584,6 @@ namespace DJMaster.EditorTools
                 m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), 0.00145f, TextAnchor.MiddleLeft, purple);
             }
 
-            // Skill level picker (title screen only): four chips between the subtitle and the menu. The picked one stays lit.
-            var levels = new GameObject("Levels");
-            levels.transform.SetParent(t, false);
-            m.levelRow = levels;
-            string[] names = { "BEGINNER", "INTERMEDIATE", "ADVANCED", "SOLO" };
-            for (int i = 0; i < names.Length; i++)
-            {
-                var b = MakeButton($"level.{i}", names[i], levels.transform, new Vector3(-0.21f + i * 0.14f, 0.088f, -0.004f), new Vector2(0.128f, 0.022f),
-                    Unlit("Cap", Color.gray), purple, out _, faceUser, 0.00125f, Color.white);
-                b.offColor = new Color(0.16f, 0.06f, 0.28f);
-                m.levelButtons[i] = b;
-            }
             return m;
         }
 
@@ -1189,28 +1177,25 @@ namespace DJMaster.EditorTools
             var builder = Object.FindAnyObjectByType<SetBuilderPanel>(FindObjectsInactive.Include);
             menu.gameObject.SetActive(true);
             var boardGo = Object.FindAnyObjectByType<DJBoard>().gameObject;
-            menu.Show("DJ MASTER", "Learn to DJ with just your hands", "New to DJing? Start with LEARN.");
-            menu.SetRows(
-                ("LEARN", "Three short lessons: your first mix, fades and cuts, then sync, loops and effects."),
-                ("BUILD A SET", "Pick songs and transitions, then perform them live for a crowd."),
-                ("FREESTYLE", "Just play. No timer, no rules."),
-                ("DJ VOCAB", "What do BPM, cue, drop and the rest mean? Learn the DJ lingo."),
-                ("DAILY", "Today: QUICK CUT: Neon Tides into Sundial. 3 days in a row unlocks a bonus song."));
+            menu.Show("DJ MASTER", "", "");
+            menu.SetButtons("LEARN", "BUILD A SET", "FREESTYLE", "DJ VOCAB", "DAILY");
             Mount(menu.corner, false);
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime
             tint.SetColor("_Color", menu.buttons[0].offColor);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
-            for (int i = 0; i < menu.levelButtons.Length; i++)
-            {
-                var lv = new MaterialPropertyBlock();
-                lv.SetColor("_Color", i == (int)SkillLevel.Intermediate ? menu.levelButtons[i].onColor : menu.levelButtons[i].offColor); // the default level
-                menu.levelButtons[i].capRenderer.SetPropertyBlock(lv);
-            }
             boardGo.SetActive(false);
             env.editorRoomStandIn.SetActive(false);
             RenderPreview("Preview_Menu.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
+            // Step 2, the level screen, with the default level lit
+            menu.Show("PICK YOUR LEVEL", "Mode: DAILY CHALLENGE", TextUtil.Wrap("Today: QUICK CUT: Neon Tides into Sundial. Streak: 2 days in a row. 3 days in a row unlocks a bonus song.", 70));
+            menu.SetRows(("BEGINNER", Skill.Describe(SkillLevel.Beginner)), ("INTERMEDIATE", Skill.Describe(SkillLevel.Intermediate)),
+                ("ADVANCED", Skill.Describe(SkillLevel.Advanced)), ("SOLO", Skill.Describe(SkillLevel.Solo)), ("BACK", ""));
+            foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
+            var lit = new MaterialPropertyBlock();
+            lit.SetColor("_Color", menu.buttons[1].onColor);
+            menu.buttons[1].capRenderer.SetPropertyBlock(lit);
+            RenderPreview("Preview_MenuLevel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(null);
-            foreach (var b in menu.levelButtons) b.capRenderer.SetPropertyBlock(null);
             menu.gameObject.SetActive(false);
             boardGo.SetActive(true);
             env.editorRoomStandIn.SetActive(true);

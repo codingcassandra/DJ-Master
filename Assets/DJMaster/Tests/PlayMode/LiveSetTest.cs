@@ -56,6 +56,7 @@ namespace DJMaster.Tests
             var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
 
             menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.Build, game.Mode);
             Assert.IsTrue(builder.gameObject.activeSelf);
@@ -126,6 +127,7 @@ namespace DJMaster.Tests
             var A = board.A; var B = board.B;
 
             menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[0].SimulatePress(); // MY ROOM
             builder.clear.SimulatePress();
             builder.crateButtons[0].SimulatePress();                          // Neon Tides, 128

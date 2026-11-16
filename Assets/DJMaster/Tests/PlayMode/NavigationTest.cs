@@ -88,6 +88,7 @@ namespace DJMaster.Tests
         {
             // Learn, in the middle of lesson 1
             menu.buttons[0].SimulatePress(); // LEARN
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             menu.buttons[0].SimulatePress(); // lesson 1
             Assert.AreEqual(GameMode.Learn, game.Mode);
@@ -97,6 +98,7 @@ namespace DJMaster.Tests
 
             // Freestyle, with a song playing
             menu.buttons[2].SimulatePress(); // FREESTYLE
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.Freestyle, game.Mode);
             yield return WaitFor(() => board.A.deck.IsLoaded, 20f, "deck A loaded");
@@ -106,6 +108,7 @@ namespace DJMaster.Tests
 
             // Build a set
             menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.Build, game.Mode);
             yield return null;
@@ -113,8 +116,9 @@ namespace DJMaster.Tests
             yield return PressHome("Build a set");
 
             // Live, then the results screen
-            menu.buttons[1].SimulatePress();
-            menu.buttons[1].SimulatePress();
+            menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
+            menu.buttons[1].SimulatePress(); // CLUB
             builder.clear.SimulatePress();
             builder.crateButtons[0].SimulatePress();
             builder.crateButtons[1].SimulatePress();
@@ -126,8 +130,9 @@ namespace DJMaster.Tests
             yield return PressHome("Live");
             Assert.IsFalse(Object.FindAnyObjectByType<SetPerformer>().Running, "going home stops the set");
 
-            menu.buttons[1].SimulatePress();
-            menu.buttons[1].SimulatePress();
+            menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
+            menu.buttons[1].SimulatePress(); // CLUB
             builder.goLive.SimulatePress();
             yield return null;
             panel.actionButtons[2].SimulatePress(); // END SET
@@ -147,15 +152,36 @@ namespace DJMaster.Tests
         [UnityTest]
         public IEnumerator BackGoesOneScreenBack()
         {
-            // Venue picker -> start menu
+            // The start menu is just the five buttons, centered, no descriptions (#47)
+            Assert.IsTrue(menu.Centered);
+            for (int i = 0; i < StartMenu.Rows; i++)
+            {
+                Assert.IsTrue(menu.buttons[i].gameObject.activeSelf);
+                Assert.IsFalse(menu.descriptions[i].gameObject.activeSelf, "no description next to " + menu.labels[i].text);
+                Assert.AreEqual(0f, menu.buttons[i].transform.localPosition.x, 1e-4f, "centered");
+                Assert.GreaterOrEqual(menu.buttons[i].size.y * menu.buttons[i].transform.lossyScale.z, 0.02f, "2 cm or more");
+            }
+
+            // Mode -> level -> venue (#48)
             menu.buttons[0].SimulatePress(); // LEARN
+            Assert.AreEqual(GameMode.ChooseLevel, game.Mode);
+            Assert.AreEqual(GameMode.Learn, game.ChosenMode);
+            Assert.IsFalse(menu.Centered);
+            Assert.AreEqual("BACK", menu.labels[4].text);
+            menu.buttons[4].SimulatePress(); // level -> start menu
+            Assert.AreEqual(GameMode.Title, game.Mode);
+            Assert.IsTrue(menu.Centered);
+
+            menu.buttons[0].SimulatePress(); // LEARN
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             Assert.AreEqual(GameMode.ChooseVenue, game.Mode);
             Assert.AreEqual("BACK", menu.labels[3].text);
-            menu.buttons[3].SimulatePress();
-            Assert.AreEqual(GameMode.Title, game.Mode);
+            menu.buttons[3].SimulatePress(); // venue -> level, still for LEARN
+            Assert.AreEqual(GameMode.ChooseLevel, game.Mode);
+            Assert.AreEqual(GameMode.Learn, game.ChosenMode);
 
             // Lesson list -> venue picker, still for LEARN
-            menu.buttons[0].SimulatePress(); // LEARN
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.ChooseLesson, game.Mode);
             Assert.AreEqual("BACK", menu.labels[3].text);
@@ -164,16 +190,18 @@ namespace DJMaster.Tests
             Assert.AreEqual(GameMode.Learn, game.ChosenMode);
 
             // Set builder -> venue picker, still for BUILD A SET
-            menu.buttons[3].SimulatePress(); // BACK to the start menu
+            menu.buttons[3].SimulatePress(); // BACK to the level screen
+            menu.buttons[4].SimulatePress(); // BACK to the start menu
             menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.Build, game.Mode);
             builder.back.SimulatePress();
             Assert.AreEqual(GameMode.ChooseVenue, game.Mode);
             Assert.AreEqual(GameMode.Build, game.ChosenMode);
 
-            // DJ VOCAB -> start menu
-            menu.buttons[3].SimulatePress();
+            // DJ VOCAB skips the level and venue: start menu -> vocab -> start menu
+            system.home.SimulatePress();
             menu.buttons[3].SimulatePress(); // DJ VOCAB
             Assert.AreEqual(GameMode.Vocab, game.Mode);
             yield return Poke(vocab.menuButton);
@@ -184,6 +212,7 @@ namespace DJMaster.Tests
         public IEnumerator ColorBlindButtonWorksFromTheBooth()
         {
             menu.buttons[2].SimulatePress(); // FREESTYLE
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[0].SimulatePress(); // MY ROOM
             yield return null;
             Assert.IsFalse(BoardColors.ColorSafe);

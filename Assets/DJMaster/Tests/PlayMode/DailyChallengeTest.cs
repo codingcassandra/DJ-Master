@@ -53,11 +53,15 @@ namespace DJMaster.Tests
             var system = Object.FindAnyObjectByType<SystemButtons>(FindObjectsInactive.Include);
 
             Assert.AreEqual("DAILY", menu.labels[4].text);
-            StringAssert.Contains("QUICK CUT: Neon Tides into Sundial", menu.descriptions[4].text.Replace("\n", " "));
+            Assert.IsFalse(menu.descriptions[4].gameObject.activeSelf, "the start menu is just buttons");
             Assert.IsTrue(menu.buttons[4].Lit, "lit while today's challenge is waiting");
-            StringAssert.DoesNotContain("streak", menu.footer.text);
 
             menu.buttons[4].SimulatePress(); // DAILY
+            // Today's challenge moved off the start menu onto the level screen (#47)
+            Assert.AreEqual(GameMode.ChooseLevel, game.Mode);
+            StringAssert.Contains("QUICK CUT: Neon Tides into Sundial", menu.footer.text.Replace("\n", " "));
+            StringAssert.DoesNotContain("Streak", menu.footer.text);
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.Live, game.Mode);
             CollectionAssert.AreEqual(new[] { 0, 3 }, performer.Set.songs);
@@ -84,9 +88,11 @@ namespace DJMaster.Tests
 
             system.home.SimulatePress();
             Assert.AreEqual(GameMode.Title, game.Mode);
-            StringAssert.Contains("Daily streak: 1 day in a row", menu.footer.text);
-            StringAssert.Contains("Your best: PERFECT", menu.descriptions[4].text.Replace("\n", " "));
             Assert.IsFalse(menu.buttons[4].Lit, "done for today");
+            menu.buttons[4].SimulatePress(); // DAILY: the streak and best grade show on the next screen
+            string info = menu.footer.text.Replace("\n", " ");
+            StringAssert.Contains("Streak: 1 day in a row", info);
+            StringAssert.Contains("Your best: PERFECT", info);
         }
     }
 }

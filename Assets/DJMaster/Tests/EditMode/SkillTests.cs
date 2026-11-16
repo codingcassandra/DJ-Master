@@ -7,15 +7,6 @@ namespace DJMaster.Tests
         [TearDown] public void Cleanup() => Skill.Reset();
 
         [Test]
-        public void EachLevelOpensTheRightMode()
-        {
-            Assert.AreEqual(GameMode.Learn, Skill.ModeFor(SkillLevel.Beginner));
-            Assert.AreEqual(GameMode.Build, Skill.ModeFor(SkillLevel.Intermediate));
-            Assert.AreEqual(GameMode.Build, Skill.ModeFor(SkillLevel.Advanced));
-            Assert.AreEqual(GameMode.Freestyle, Skill.ModeFor(SkillLevel.Solo));
-        }
-
-        [Test]
         public void PickerUsesTheSharedSavedLevel()
         {
             Skill.Reset();

@@ -34,6 +34,7 @@ namespace DJMaster.Tests
         {
             var menu = Object.FindAnyObjectByType<StartMenu>();
             menu.buttons[2].SimulatePress(); // FREESTYLE
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[0].SimulatePress(); // MY ROOM
             yield return null;
         }
@@ -103,6 +104,7 @@ namespace DJMaster.Tests
         {
             var menu = Object.FindAnyObjectByType<StartMenu>();
             yield return Poke(menu.buttons[2]); // FREESTYLE
+            yield return Poke(menu.buttons[1]); // INTERMEDIATE
             yield return Poke(menu.buttons[0]); // MY ROOM
             Assert.IsNull(finger.Owner);
             var board = Object.FindAnyObjectByType<DJBoard>();
@@ -179,6 +181,7 @@ namespace DJMaster.Tests
         {
             var menu = Object.FindAnyObjectByType<StartMenu>();
             menu.buttons[1].SimulatePress(); // BUILD A SET
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[0].SimulatePress(); // MY ROOM
             yield return null;
             var builder = Object.FindAnyObjectByType<SetBuilderPanel>();
@@ -234,6 +237,9 @@ namespace DJMaster.Tests
             Assert.IsFalse(board.gameObject.activeSelf, "the booth is hidden on the start screen");
 
             yield return Poke(menu.buttons[0]); // LEARN
+            Assert.AreEqual(GameMode.ChooseLevel, game.Mode);
+            yield return new WaitForSeconds(0.3f);
+            yield return Poke(menu.buttons[1]); // INTERMEDIATE
             Assert.AreEqual(GameMode.ChooseVenue, game.Mode);
             yield return new WaitForSeconds(0.3f);
             yield return Poke(menu.buttons[2]); // FESTIVAL

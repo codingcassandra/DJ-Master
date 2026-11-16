@@ -1,6 +1,6 @@
 namespace DJMaster
 {
-    // The level picker's side of the skill levels: names, what each one opens, and what the screens show.
+    // The level screen's side of the skill levels: names and what the screens show.
     // The level itself (saved, default INTERMEDIATE) and its rules live in SkillLevels (#15).
     public static class Skill
     {
@@ -20,18 +20,10 @@ namespace DJMaster
 
         public static string Describe(SkillLevel l) => l switch
         {
-            SkillLevel.Beginner => "Never touched a deck? The lessons, with all the help on.",
-            SkillLevel.Advanced => "Play a set live: no checklist, no SYNC, no phrase countdown.",
+            SkillLevel.Beginner => "Never touched a deck? All the help on: easy timing, quick hints.",
+            SkillLevel.Advanced => "No checklist, no SYNC, no phrase countdown.",
             SkillLevel.Solo => "Just DJ. No rules, no score.",
-            _ => "Build a set and play it live, with the checklist.",
-        };
-
-        // The mode each level opens.
-        public static GameMode ModeFor(SkillLevel l) => l switch
-        {
-            SkillLevel.Beginner => GameMode.Learn,
-            SkillLevel.Solo => GameMode.Freestyle,
-            _ => GameMode.Build,
+            _ => "SYNC, the checklist and the phrase countdown.",
         };
 
         // The deck screens count down to the next phrase for everyone but ADVANCED players, who count it themselves.

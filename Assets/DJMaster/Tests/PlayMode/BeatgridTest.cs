@@ -73,6 +73,7 @@ namespace DJMaster.Tests
             var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
             var menu = Object.FindAnyObjectByType<StartMenu>();
             menu.buttons[2].SimulatePress(); // FREESTYLE
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
 
             game.EditGrid(Song);

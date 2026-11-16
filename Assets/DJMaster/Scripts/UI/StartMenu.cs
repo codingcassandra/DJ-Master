@@ -3,8 +3,9 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    // The start screen: a purple menu floating in black, shown before you enter the booth.
-    // Each row is a big button with a description beside it.
+    // The start screens: a purple menu floating in black, shown before you enter the booth.
+    // The first screen is just big buttons down the middle. The next ones (level, venue, lesson) put a
+    // description beside each button.
     public class StartMenu : MonoBehaviour
     {
         public static readonly Color Purple = new Color(0.66f, 0.3f, 1f);
@@ -16,20 +17,27 @@ namespace DJMaster
         public TextMeshPro[] labels = new TextMeshPro[Rows];
         public TextMeshPro[] descriptions = new TextMeshPro[Rows];
         public int wrapChars = 40;
-        [Tooltip("The skill level picker on the title screen, in SkillLevel order.")]
-        public PokeButton[] levelButtons = new PokeButton[4];
-        public GameObject levelRow;
         [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
         public Transform corner;
 
-        // The level picker only shows on the title screen. The picked level stays lit.
-        public void ShowLevels(bool on)
+        [Header("Buttons-only layout (the first screen)")]
+        [Tooltip("Row centers on the buttons-only screen, top to bottom.")]
+        public float centeredTop = 0.085f, centeredStep = 0.058f;
+        [Tooltip("How much bigger the buttons are when they're alone in the middle.")]
+        public float centeredScale = 1.3f;
+
+        Vector3[] rowPos;
+
+        void Awake() => Remember();
+
+        void Remember()
         {
-            if (levelRow == null) return;
-            levelRow.SetActive(on);
-            for (int i = 0; i < levelButtons.Length; i++)
-                if (levelButtons[i] != null) levelButtons[i].Lit = (int)Skill.Current == i;
+            if (rowPos != null) return;
+            rowPos = new Vector3[buttons.Length];
+            for (int i = 0; i < buttons.Length; i++) rowPos[i] = buttons[i].transform.localPosition;
         }
+
+        public bool Centered { get; private set; }
 
         public void Show(string titleText, string subtitleText, string footerText)
         {
@@ -38,19 +46,33 @@ namespace DJMaster
             if (footer.text != footerText) footer.text = footerText;
         }
 
-        // One row per (label, description). Missing rows are hidden.
-        public void SetRows(params (string label, string description)[] rows)
+        // Just the buttons, centered and bigger. Missing rows are hidden.
+        public void SetButtons(params string[] rows)
         {
+            var r = new (string, string)[rows.Length];
+            for (int i = 0; i < rows.Length; i++) r[i] = (rows[i], null);
+            Layout(true, r);
+        }
+
+        // One row per (label, description). Missing rows are hidden.
+        public void SetRows(params (string label, string description)[] rows) => Layout(false, rows);
+
+        void Layout(bool centered, (string label, string description)[] rows)
+        {
+            Remember();
+            Centered = centered;
             for (int i = 0; i < buttons.Length; i++)
             {
-                buttons[i].Lit = false; // a row lit on one screen (like COLOR-BLIND) shouldn't stay lit on the next
+                var b = buttons[i];
+                b.Lit = false; // a row lit on one screen shouldn't stay lit on the next
                 bool on = i < rows.Length && rows[i].label != null;
-                buttons[i].Lit = false;
-                buttons[i].gameObject.SetActive(on);
-                descriptions[i].gameObject.SetActive(on);
+                b.gameObject.SetActive(on);
+                descriptions[i].gameObject.SetActive(on && !centered);
+                b.transform.localPosition = centered ? new Vector3(0, centeredTop - i * centeredStep, rowPos[i].z) : rowPos[i];
+                b.transform.localScale = Vector3.one * (centered ? centeredScale : 1f);
                 if (!on) continue;
                 labels[i].text = rows[i].label;
-                descriptions[i].text = TextUtil.Wrap(rows[i].description ?? "", wrapChars);
+                descriptions[i].text = centered ? "" : TextUtil.Wrap(rows[i].description ?? "", wrapChars);
             }
         }
     }

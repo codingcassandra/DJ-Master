@@ -48,6 +48,7 @@ namespace DJMaster.Tests
         {
             var menu = Object.FindAnyObjectByType<StartMenu>();
             menu.buttons[0].SimulatePress(); // LEARN
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[0].SimulatePress(); // MY ROOM
             menu.buttons[lesson].SimulatePress();
             yield return WaitFor(() => lessons.Running && board.A.deck.IsPlaying && board.B.deck.IsLoaded, 20f, "lesson start");

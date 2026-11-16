@@ -5,7 +5,7 @@ using UnityEngine.TestTools;
 
 namespace DJMaster.Tests
 {
-    // The level chips on the title screen: poked with a fingertip, saved, shown while you play, and each opens its mode.
+    // The level screen (step 2, after the mode): poked with a fingertip, saved, lit next time, and shown while you play.
     public class SkillLevelTest
     {
         Pointer finger;
@@ -53,35 +53,36 @@ namespace DJMaster.Tests
             var panel = Object.FindAnyObjectByType<InstructionPanel>(FindObjectsInactive.Include);
             var system = Object.FindAnyObjectByType<SystemButtons>(FindObjectsInactive.Include);
 
-            Assert.IsTrue(menu.levelRow.activeSelf, "the picker is on the title screen");
-            Assert.IsTrue(menu.levelButtons[(int)SkillLevel.Intermediate].Lit, "INTERMEDIATE until you pick");
-
-            // ADVANCED opens BUILD A SET, and the picker hides on the next screen
-            yield return Poke(menu.levelButtons[(int)SkillLevel.Advanced]);
+            // ADVANCED for BUILD A SET: saved, then on to the venue
+            yield return Poke(menu.buttons[1]); // BUILD A SET
+            Assert.AreEqual(GameMode.ChooseLevel, game.Mode);
+            Assert.AreEqual("ADVANCED", menu.labels[(int)SkillLevel.Advanced].text);
+            Assert.IsTrue(menu.buttons[(int)SkillLevel.Intermediate].Lit, "INTERMEDIATE until you pick");
+            yield return Poke(menu.buttons[(int)SkillLevel.Advanced]);
             Assert.AreEqual(SkillLevel.Advanced, Skill.Current);
             Assert.AreEqual(GameMode.ChooseVenue, game.Mode);
             Assert.AreEqual(GameMode.Build, game.ChosenMode);
-            Assert.IsFalse(menu.levelRow.activeSelf);
             StringAssert.Contains("Level: ADVANCED", menu.subtitle.text);
             Assert.AreEqual((int)SkillLevel.Advanced, PlayerPrefs.GetInt(SkillLevels.PrefKey, -1), "saved between sessions");
 
-            // Back home, it's still lit
+            // Back home and into FREESTYLE: ADVANCED is still the lit one
             system.home.SimulatePress();
             Assert.AreEqual(GameMode.Title, game.Mode);
-            Assert.IsTrue(menu.levelRow.activeSelf);
-            Assert.IsTrue(menu.levelButtons[(int)SkillLevel.Advanced].Lit);
-            Assert.IsFalse(menu.levelButtons[(int)SkillLevel.Intermediate].Lit);
+            yield return Poke(menu.buttons[2]); // FREESTYLE
+            Assert.IsTrue(menu.buttons[(int)SkillLevel.Advanced].Lit);
+            Assert.IsFalse(menu.buttons[(int)SkillLevel.Intermediate].Lit);
 
-            // SOLO opens FREESTYLE, with the level on the panel
-            yield return Poke(menu.levelButtons[(int)SkillLevel.Solo]);
+            // SOLO, with the level on the panel while you play
+            yield return Poke(menu.buttons[(int)SkillLevel.Solo]);
             yield return Poke(menu.buttons[1]); // CLUB
             Assert.AreEqual(GameMode.Freestyle, game.Mode);
             yield return null;
             StringAssert.Contains("Level: SOLO", panel.status.text);
 
-            // BEGINNER opens the lessons
+            // BEGINNER lessons
             system.home.SimulatePress();
-            yield return Poke(menu.levelButtons[(int)SkillLevel.Beginner]);
+            yield return Poke(menu.buttons[0]); // LEARN
+            yield return Poke(menu.buttons[(int)SkillLevel.Beginner]);
             Assert.AreEqual(GameMode.Learn, game.ChosenMode);
             yield return Poke(menu.buttons[1]); // CLUB
             Assert.AreEqual(GameMode.ChooseLesson, game.Mode);

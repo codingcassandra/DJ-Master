@@ -31,6 +31,7 @@ namespace DJMaster.Tests
             env.MenuScreenChanged += events.Add;
 
             menu.buttons[2].SimulatePress(); // FREESTYLE
+            menu.buttons[1].SimulatePress(); // INTERMEDIATE
             Assert.IsEmpty(events, "the venue picker is still the menu screen");
             StringAssert.Contains("room scan", menu.descriptions[0].text, "MY ROOM says why we'll ask");
 
