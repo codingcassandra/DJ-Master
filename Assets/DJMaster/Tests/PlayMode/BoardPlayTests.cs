@@ -445,6 +445,23 @@ namespace DJMaster.Tests
         }
 
         [UnityTest]
+        public IEnumerator DeskShadowAndGlowOnlyInMyRoom()
+        {
+            var grounding = Object.FindAnyObjectByType<BoardGrounding>(FindObjectsInactive.Include);
+            var env = Object.FindAnyObjectByType<EnvironmentManager>();
+            yield return EnterBooth(); // FREESTYLE in MY ROOM
+            yield return null;
+            Assert.IsTrue(grounding.shadow.enabled && grounding.glow.enabled, "MY ROOM: the board sits on your desk");
+            Assert.IsTrue(grounding.shadow.transform.IsChildOf(Object.FindAnyObjectByType<DJBoard>().transform), "it moves with the board");
+            env.clubButton.SimulatePress();
+            yield return null;
+            Assert.IsFalse(grounding.shadow.enabled || grounding.glow.enabled, "the club has its own floor and lights");
+            env.roomButton.SimulatePress();
+            yield return null;
+            Assert.IsTrue(grounding.shadow.enabled);
+        }
+
+        [UnityTest]
         public IEnumerator SlowPokePressesOnce()
         {
             yield return EnterBooth();

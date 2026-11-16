@@ -104,6 +104,7 @@ namespace DJMaster.EditorTools
             // ---------- Directors ----------
             var directors = new GameObject("Directors");
             var env = directors.AddComponent<EnvironmentManager>();
+            board.GetComponent<BoardGrounding>().environment = env;
             env.cam = cam;
             env.keyLight = keyLight;
             env.passthrough = rig.GetComponent<OVRPassthroughLayer>();
@@ -299,6 +300,26 @@ namespace DJMaster.EditorTools
             board.browser.sortButton = sort;
 
             foreach (var b in t.GetComponentsInChildren<PokeButton>(true)) AddLeds(b);
+
+            // MY ROOM: a soft contact shadow under the board and a faint LED glow on the desk around it (#36)
+            var grounding = boardGo.AddComponent<BoardGrounding>();
+            var shadowMat = MaterialAsset("ContactShadow", "DJMaster/ContactShadow");
+            shadowMat.color = Color.black;
+            shadowMat.SetFloat("_Alpha", 0.7f);
+            shadowMat.SetVector("_Size", new Vector4(0.385f, 0.335f, 0, 0)); // the body footprint, so the edge of the shadow peeks out
+            shadowMat.SetFloat("_Soft", 0.11f);
+            var shadow = Prim(PrimitiveType.Quad, "ContactShadow", t, new Vector3(0, -0.053f, 0.0175f), new Vector3(1.0f, 0.7f, 1), shadowMat);
+            shadow.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            grounding.shadow = shadow.GetComponent<Renderer>();
+            var glowMatDesk = MaterialAsset("DeskGlow", "DJMaster/ContactShadow");
+            glowMatDesk.color = new Color(0.45f, 0.35f, 1f); // between the two deck colors, our purple
+            glowMatDesk.SetFloat("_Alpha", 0.07f);
+            glowMatDesk.SetVector("_Size", new Vector4(0.3f, 0.26f, 0, 0));
+            glowMatDesk.SetFloat("_Soft", 0.2f);
+            glowMatDesk.renderQueue = 2991; // after the shadow, so the light lands on top of it
+            var deskGlow = Prim(PrimitiveType.Quad, "DeskGlow", t, new Vector3(0, -0.0532f, 0.0175f), new Vector3(1.35f, 0.95f, 1), glowMatDesk);
+            deskGlow.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            grounding.glow = deskGlow.GetComponent<Renderer>();
 
             // One probe for the whole board with a made-up studio around it (soft lights above, dark below), so the
             // metal has something to reflect even in passthrough, where the real room isn't in the scene
@@ -1484,6 +1505,8 @@ namespace DJMaster.EditorTools
                 RenderPreview($"Preview_{mode}_Crowd.png", eye, new Vector3(2, 0, 0), 90f, mode != EnvMode.Room);
             }
             SetPreviewMode(env, EnvMode.Room);
+            // Low and from the side, to see the board sitting on the desk with its shadow and glow (#36)
+            RenderPreview("Preview_Room_Side.png", world.TransformPoint(new Vector3(0.75f, 0.98f, 0.0f)), new Vector3(14, -58, 0), 45f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
             // The start screen and Build mode, filled in the way they look at runtime.
@@ -1590,6 +1613,9 @@ namespace DJMaster.EditorTools
             env.club.root.SetActive(mode == EnvMode.Club);
             env.festival.root.SetActive(mode == EnvMode.Festival);
             env.editorRoomStandIn.SetActive(mode == EnvMode.Room);
+            // What BoardGrounding does at runtime: the desk shadow and glow only in MY ROOM
+            var grounding = Object.FindAnyObjectByType<BoardGrounding>();
+            if (grounding != null) { grounding.shadow.enabled = mode == EnvMode.Room; grounding.glow.enabled = mode == EnvMode.Room; }
             var look = mode == EnvMode.Club ? env.club : mode == EnvMode.Festival ? env.festival : env.room;
             RenderSettings.skybox = look.skybox;
             RenderSettings.ambientLight = look.ambient;
