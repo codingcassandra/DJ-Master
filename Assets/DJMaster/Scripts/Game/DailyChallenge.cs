@@ -61,14 +61,14 @@ namespace DJMaster
         }
 
         public const int UnlockStreak = 3; // days in a row that unlock the bonus song
-        const string PrefKey = "daily";
+        public const string PrefKey = "daily"; // per player, through Players.Key
         static readonly DateTime Epoch = new DateTime(2026, 1, 1);
 
         public static int DayNumber(DateTime date) => (int)(date.Date - Epoch).TotalDays;
         public static int Today => DayNumber(DateTime.Now);
 
         static DailyProgress progress;
-        public static DailyProgress Progress => progress ??= DailyProgress.Parse(PlayerPrefs.GetString(PrefKey, ""));
+        public static DailyProgress Progress => progress ??= DailyProgress.Parse(PlayerPrefs.GetString(Players.Key(PrefKey), ""));
 
         public static bool BonusUnlocked => Progress.bestStreak >= UnlockStreak;
 
@@ -77,7 +77,7 @@ namespace DJMaster
         {
             bool wasUnlocked = BonusUnlocked;
             Progress.Record(Today, grade);
-            PlayerPrefs.SetString(PrefKey, Progress.Serialize());
+            PlayerPrefs.SetString(Players.Key(PrefKey), Progress.Serialize());
             PlayerPrefs.Save();
             return !wasUnlocked && BonusUnlocked;
         }
@@ -86,8 +86,11 @@ namespace DJMaster
         public static void ResetProgress()
         {
             progress = new DailyProgress();
-            PlayerPrefs.DeleteKey(PrefKey);
+            PlayerPrefs.DeleteKey(Players.Key(PrefKey));
         }
+
+        // Read the save again next time (after switching player)
+        public static void Reload() => progress = null;
 
         // The same day always gives the same challenge, on every headset. Uses its own hash (not System.Random, whose
         // sequence isn't promised to stay the same between .NET versions).

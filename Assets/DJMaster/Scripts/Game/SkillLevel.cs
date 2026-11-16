@@ -115,7 +115,7 @@ namespace DJMaster
             {
                 if (current < 0)
                 {
-                    int saved = PlayerPrefs.GetInt(PrefKey, (int)SkillLevel.Intermediate);
+                    int saved = PlayerPrefs.GetInt(Players.Key(PrefKey), (int)SkillLevel.Intermediate);
                     current = Enum.IsDefined(typeof(SkillLevel), saved) ? saved : (int)SkillLevel.Intermediate;
                 }
                 return (SkillLevel)current;
@@ -127,7 +127,7 @@ namespace DJMaster
         {
             bool changed = level != Current;
             current = (int)level;
-            PlayerPrefs.SetInt(PrefKey, current);
+            PlayerPrefs.SetInt(Players.Key(PrefKey), current);
             PlayerPrefs.Save();
             if (changed) Changed?.Invoke(level);
         }

@@ -324,17 +324,18 @@ namespace DJMaster.EditorTools
 
         // Saved progress
 
-        // Every PlayerPrefs key the game saves (the lesson ones come from LessonDirector.DoneKey)
+        // Every PlayerPrefs key the game saves: the shared settings, then each player's progress (Players, #49)
         static IEnumerable<string> SavedKeys()
         {
-            yield return "bestSet";       // GameDirector, best set score
             yield return "env";           // EnvironmentManager, room / club / festival
             yield return "boardHeight";   // SeatedAnchor, how high the board sits
-            yield return "set";           // SetBuilderPanel, the saved set list
             yield return "colorSafe";     // BoardColors, color-blind mode
-            yield return "vocabQuizBest"; // DJVocab, best quiz score
-            yield return "skillLevel";    // SkillLevels, beginner / intermediate / advanced / solo
-            for (int i = 0; i < LessonDirector.LessonNames.Length; i++) yield return LessonDirector.DoneKey(i);
+            foreach (var p in Players.All)
+                foreach (var key in Players.ProgressKeys()) // lessons, best set, daily, vocab best, level, saved set
+                    yield return Players.KeyFor(p.id, key);
+            yield return Players.ListKey;
+            yield return Players.CurrentKey;
+            yield return Players.NextIdKey;
         }
 
         [MenuItem("DJ Master/Reset Saved Progress")]
@@ -344,9 +345,11 @@ namespace DJMaster.EditorTools
                     "Erase the finished lessons, best scores, saved set and settings on this computer?\n(The headset keeps its own, uninstall the app there to wipe it.)",
                     "Erase", "Cancel")) return;
 
-            foreach (var key in SavedKeys()) PlayerPrefs.DeleteKey(key);
+            var keys = SavedKeys().ToList(); // read the player list before it's erased
+            foreach (var key in keys) PlayerPrefs.DeleteKey(key);
             PlayerPrefs.Save();
-            Debug.Log("[DJMaster] Progress erased: " + string.Join(", ", SavedKeys()));
+            Players.ResetAll(); // forget the cached player list too
+            Debug.Log("[DJMaster] Progress erased: " + string.Join(", ", keys));
         }
     }
 }

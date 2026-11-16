@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid, ChooseLevel }
+    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid, ChooseLevel, ChoosePlayer }
 
     // Top-level flow: on the black start screen, pick a mode (Learn / Build a set / Freestyle / DJ Vocab / Daily), then your
     // level, then where to play (your room, a club or a festival), then step into the booth. Also wires up the scene and comfort buttons.
@@ -56,6 +56,7 @@ namespace DJMaster
                 int idx = i;
                 startMenu.buttons[i].Pressed += () => MenuAction(idx);
             }
+            if (startMenu.playerButton != null) startMenu.playerButton.Pressed += ChoosePlayer;
             roomButton.Pressed += () => environment.SetMode(EnvMode.Room);
             clubButton.Pressed += () => environment.SetMode(EnvMode.Club);
             festivalButton.Pressed += () => environment.SetMode(EnvMode.Festival);
@@ -96,7 +97,7 @@ namespace DJMaster
             Time.timeScale = p ? 0f : 1f;
         }
 
-        public bool OnStartScreen => Mode == GameMode.Title || Mode == GameMode.ChooseLevel || Mode == GameMode.ChooseVenue || Mode == GameMode.ChooseLesson || Mode == GameMode.Vocab;
+        public bool OnStartScreen => Mode == GameMode.Title || Mode == GameMode.ChoosePlayer || Mode == GameMode.ChooseLevel || Mode == GameMode.ChooseVenue || Mode == GameMode.ChooseLesson || Mode == GameMode.Vocab;
 
         void SetMode(GameMode mode)
         {
@@ -161,7 +162,32 @@ namespace DJMaster
             // Just the buttons (#47). What each one does is on the next screen.
             startMenu.Show("", "", ""); // the wordmark takes the title's place
             startMenu.SetButtons("LEARN", "BUILD A SET", "FREESTYLE", "DJ VOCAB", "DAILY");
+            startMenu.ShowPlayer(Players.Current.name);
             startMenu.buttons[4].Lit = !DailyChallenge.Progress.PassedOn(DailyChallenge.Today); // a new challenge is waiting
+        }
+
+        // PICK PLAYER (#49): everyone on this headset, with their progress. Up to 4, then + NEW PLAYER, then BACK.
+        void ChoosePlayer()
+        {
+            SetMode(GameMode.ChoosePlayer);
+            startMenu.Show("WHO'S PLAYING?", "Everyone keeps their own lessons, scores, streak and level", Players.Full ? $"That's the most: {Players.MaxPlayers} players." : "");
+            var all = Players.All;
+            var rows = new (string, string)[StartMenu.Rows];
+            for (int i = 0; i < all.Count && i < StartMenu.Rows - 1; i++) rows[i] = (all[i].name, Players.Summary(all[i].id));
+            if (!Players.Full) rows[all.Count] = ("+ NEW PLAYER", $"Adds {Players.NextName()}, with a fresh start.");
+            rows[StartMenu.Rows - 1] = ("BACK", "");
+            startMenu.SetRows(rows);
+            for (int i = 0; i < all.Count && i < StartMenu.Rows - 1; i++) startMenu.buttons[i].Lit = all[i].id == Players.CurrentId;
+        }
+
+        void PickPlayerRow(int i)
+        {
+            var all = Players.All;
+            if (i == StartMenu.Rows - 1) { EnterTitle(); return; }
+            if (i < all.Count) Players.Pick(all[i].id);
+            else if (i == all.Count && !Players.Full) Players.Pick(Players.Add());
+            else return;
+            EnterTitle();
         }
 
         static string ModeName(GameMode m) => m == GameMode.Learn ? "LEARN" : m == GameMode.Build ? "BUILD A SET" : m == GameMode.Daily ? "DAILY CHALLENGE" : "FREESTYLE";
@@ -173,7 +199,7 @@ namespace DJMaster
             {
                 case GameMode.Learn: return "Three short lessons: your first mix, fades and cuts, then sync, loops and effects.";
                 case GameMode.Build:
-                    int best = PlayerPrefs.GetInt("bestSet", 0);
+                    int best = Players.BestSet;
                     return "Pick songs and transitions, then perform them live for a crowd." + (best > 0 ? $"  Best live set: {best} pts" : "");
                 case GameMode.Daily: return DailyInfo(DailyChallenge.Today, DailyChallenge.Progress);
                 default: return "Just play. No timer, no rules.";
@@ -258,6 +284,9 @@ namespace DJMaster
                     // DJ VOCAB is a menu of its own, not graded and not in a venue, so it skips the level and venue steps
                     if (i == 3) ShowVocab();
                     else ChooseLevel(i == 0 ? GameMode.Learn : i == 1 ? GameMode.Build : i == 2 ? GameMode.Freestyle : GameMode.Daily);
+                    break;
+                case GameMode.ChoosePlayer:
+                    PickPlayerRow(i);
                     break;
                 case GameMode.ChooseLevel:
                     if (i == 4) EnterTitle();
@@ -397,7 +426,7 @@ namespace DJMaster
                     dailyCounted = DailyChallenge.Progress.StreakOn(DailyChallenge.Today) > before;
                 }
             }
-            else if (lastScore > PlayerPrefs.GetInt("bestSet", 0)) { PlayerPrefs.SetInt("bestSet", (int)lastScore); PlayerPrefs.Save(); }
+            else if (lastScore > Players.BestSet) Players.BestSet = (int)lastScore;
             Sfx.Cheer(1f);
             BeatBus.FireDrop();
             replayIndex = 0;
@@ -476,7 +505,7 @@ namespace DJMaster
                     if (dailyRun) sb.Insert(0, DailyResult(results));
                     bool listening = recorder.Replaying;
                     panel.Show(dailyRun ? "DAILY CHALLENGE" : "SET COMPLETE!", sb.ToString(),
-                        listening ? replaying : $"Score {lastScore:0}   Best {PlayerPrefs.GetInt("bestSet", 0)} pts",
+                        listening ? replaying : $"Score {lastScore:0}   Best {Players.BestSet} pts",
                         new string('*', stars) + new string('-', 3 - stars));
                     break;
 

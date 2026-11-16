@@ -14,10 +14,11 @@ namespace DJMaster
 
         public static readonly Word[] Words = Build();
 
+        public const string QuizBestKey = "vocabQuizBest";
         public static int BestQuizScore
         {
-            get => PlayerPrefs.GetInt("vocabQuizBest", 0);
-            set { PlayerPrefs.SetInt("vocabQuizBest", value); PlayerPrefs.Save(); }
+            get => PlayerPrefs.GetInt(Players.Key(QuizBestKey), 0);
+            set { PlayerPrefs.SetInt(Players.Key(QuizBestKey), value); PlayerPrefs.Save(); }
         }
 
         // The meaning with the word itself blanked out, so the quiz doesn't give the answer away.

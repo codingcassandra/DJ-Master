@@ -702,6 +702,13 @@ namespace DJMaster.EditorTools
             m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
             m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
+            // Who's playing, on a tab above the top left corner, mirroring HOME / COLOR-BLIND on the right (#49)
+            const float PW = 0.2f, PH = 0.036f;
+            m.playerTab = Box("PlayerTab", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, 0.004f), new Vector3(PW, PH, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f)));
+            m.playerButton = MakeButton("menu.player", "", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, -0.004f), new Vector2(PW - 0.014f, 0.026f), Unlit("Cap", Color.gray), StartMenu.Purple,
+                out m.playerLabel, faceUser, 0.0012f, Color.white);
+            m.playerButton.offColor = new Color(0.2f, 0.2f, 0.28f);
+            m.playerLabel.text = "PLAYER: DJ  >";
 
             for (int i = 0; i < StartMenu.Rows; i++)
             {
@@ -1461,10 +1468,14 @@ namespace DJMaster.EditorTools
             menu.GetComponentInChildren<MenuBackdrop>().Apply(3f); // one frame of the moving lights
             menu.Show("", "", "");
             menu.SetButtons("LEARN", "BUILD A SET", "FREESTYLE", "DJ VOCAB", "DAILY");
+            menu.ShowPlayer("DJ NOVA");
             Mount(menu.corner, false);
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime
             tint.SetColor("_Color", menu.buttons[0].offColor);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
+            var playerTint = new MaterialPropertyBlock();
+            playerTint.SetColor("_Color", menu.playerButton.offColor);
+            menu.playerButton.capRenderer.SetPropertyBlock(playerTint);
             boardGo.SetActive(false);
             env.editorRoomStandIn.SetActive(false);
             RenderPreview("Preview_Menu.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
@@ -1477,6 +1488,13 @@ namespace DJMaster.EditorTools
             levelLit.SetColor("_Color", menu.buttons[1].onColor);
             menu.buttons[1].capRenderer.SetPropertyBlock(levelLit);
             RenderPreview("Preview_MenuLevel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
+            // PICK PLAYER, with two players and the first one picked
+            menu.Show("WHO'S PLAYING?", "Everyone keeps their own lessons, scores, streak and level", "");
+            menu.SetRows(("DJ", "INTERMEDIATE.  Lessons done: 3.  Best set 340.  Streak 2."), ("DJ NOVA", "BEGINNER.  Lessons done: 1."),
+                ("+ NEW PLAYER", "Adds DJ ECHO, with a fresh start."), (null, null), ("BACK", ""));
+            foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
+            menu.buttons[0].capRenderer.SetPropertyBlock(levelLit);
+            RenderPreview("Preview_MenuPlayers.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(null);
             menu.gameObject.SetActive(false);
             boardGo.SetActive(true);

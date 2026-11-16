@@ -32,7 +32,7 @@ namespace DJMaster
         // For tests: forget the saved level (back to the default, INTERMEDIATE).
         public static void Reset()
         {
-            UnityEngine.PlayerPrefs.DeleteKey(SkillLevels.PrefKey);
+            UnityEngine.PlayerPrefs.DeleteKey(Players.Key(SkillLevels.PrefKey));
             SkillLevels.Reload();
         }
     }

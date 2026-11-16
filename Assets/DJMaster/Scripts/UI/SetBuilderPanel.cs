@@ -32,9 +32,21 @@ namespace DJMaster
         string message = "";
         float messageTimer;
 
+        public const string SetKey = "set"; // per player, through Players.Key
+
+        // Each player has their own set
+        void LoadPlayersSet()
+        {
+            Set = SetList.Parse(PlayerPrefs.GetString(Players.Key(SetKey), ""));
+            if (isActiveAndEnabled) Refresh();
+        }
+
+        void OnDestroy() => Players.Switched -= LoadPlayersSet;
+
         void Awake()
         {
-            Set = SetList.Parse(PlayerPrefs.GetString("set", ""));
+            Set = SetList.Parse(PlayerPrefs.GetString(Players.Key(SetKey), ""));
+            Players.Switched += LoadPlayersSet;
             for (int i = 0; i < crateButtons.Length; i++)
             {
                 int button = i;
@@ -87,7 +99,7 @@ namespace DJMaster
         {
             if (Application.isPlaying)
             {
-                PlayerPrefs.SetString("set", Set.Serialize());
+                PlayerPrefs.SetString(Players.Key(SetKey), Set.Serialize());
                 PlayerPrefs.Save();
             }
             Refresh();

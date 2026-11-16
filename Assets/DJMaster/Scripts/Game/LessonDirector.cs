@@ -38,7 +38,7 @@ namespace DJMaster
         public int LessonIndex { get; private set; }
         public static readonly string[] LessonNames = { "FIRST MIX", "FADE & CUT", "SYNC, LOOPS & FX" };
         public static string DoneKey(int lesson) => lesson == 0 ? "lessonComplete" : $"lesson{lesson + 1}Complete";
-        public static bool IsDone(int lesson) => PlayerPrefs.GetInt(DoneKey(lesson), 0) == 1;
+        public static bool IsDone(int lesson) => PlayerPrefs.GetInt(Players.Key(DoneKey(lesson)), 0) == 1;
         public Step Current => Running && StepIndex < steps.Count ? steps[StepIndex] : null;
         public string Feedback { get; private set; } = "";
         public bool ShowingPraise => praiseTimer > 0;
@@ -146,7 +146,7 @@ namespace DJMaster
         {
             Running = false;
             Finished = true;
-            PlayerPrefs.SetInt(DoneKey(LessonIndex), 1);
+            PlayerPrefs.SetInt(Players.Key(DoneKey(LessonIndex)), 1);
             PlayerPrefs.Save();
             Sfx.Cheer(1f);
             BeatBus.FireDrop();

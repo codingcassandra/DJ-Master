@@ -21,6 +21,10 @@ namespace DJMaster
         public Transform corner;
         [Tooltip("The DJ MASTER wordmark, shown in place of the title on the first screen.")]
         public GameObject wordmark;
+        [Tooltip("Top left of the first screen: who's playing. Poke it to switch player (#49).")]
+        public PokeButton playerButton;
+        public GameObject playerTab;
+        public TextMeshPro playerLabel;
 
         [Header("Buttons-only layout (the first screen)")]
         [Tooltip("Row centers on the buttons-only screen, top to bottom.")]
@@ -40,6 +44,12 @@ namespace DJMaster
         }
 
         public bool Centered { get; private set; }
+
+        public void ShowPlayer(string name)
+        {
+            string text = $"PLAYER: {name}  >";
+            if (playerLabel != null && playerLabel.text != text) playerLabel.text = text;
+        }
 
         public void Show(string titleText, string subtitleText, string footerText)
         {
@@ -64,6 +74,8 @@ namespace DJMaster
             Remember();
             Centered = centered;
             if (wordmark != null) wordmark.SetActive(centered);
+            if (playerButton != null) playerButton.gameObject.SetActive(centered);
+            if (playerTab != null) playerTab.SetActive(centered);
             for (int i = 0; i < buttons.Length; i++)
             {
                 var b = buttons[i];
