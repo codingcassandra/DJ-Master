@@ -8,6 +8,9 @@ namespace DJMaster
     // buttons, GameDirector moves it onto the panel that's showing, so it looks and works the same everywhere.
     public class SystemButtons : MonoBehaviour
     {
+        // The tab buttons' resting color, shared with the BACK and PLAYER tabs so every tab looks the same
+        public static readonly Color OffColor = new Color(0.2f, 0.2f, 0.28f);
+
         public PokeButton home, colorBlind;
         public TextMeshPro colorBlindLabel;
         [Tooltip("The dark backing. It's right-aligned on the corner, so it shrinks to fit when HOME is hidden.")]

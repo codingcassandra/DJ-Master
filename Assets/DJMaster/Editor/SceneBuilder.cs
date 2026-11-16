@@ -696,29 +696,29 @@ namespace DJMaster.EditorTools
             BuildMenuBackdrop(t);
             Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            m.title = Text("Title", t, new Vector3(0, 0.165f, 0), 0.0042f, TextAnchor.UpperCenter, purple);
+            m.title = Text("Title", t, new Vector3(0, 0.165f, 0), UIText.Title, TextAnchor.UpperCenter, purple);
             m.wordmark = BuildWordmark(t);
-            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
-            m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
+            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), UIText.Heading, TextAnchor.UpperCenter, StartMenu.Lavender);
+            m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), UIText.Small, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
             m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
             // Who's playing, on a tab above the top left corner, mirroring HOME / COLOR-BLIND on the right (#49)
-            const float PW = 0.2f, PH = 0.036f;
+            const float PW = 0.2f, PH = UIText.TabHeight;
             m.playerTab = Box("PlayerTab", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, 0.004f), new Vector3(PW, PH, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f)));
-            m.playerButton = MakeButton("menu.player", "", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, -0.004f), new Vector2(PW - 0.014f, 0.026f), Unlit("Cap", Color.gray), StartMenu.Purple,
-                out m.playerLabel, faceUser, 0.0012f, Color.white);
-            m.playerButton.offColor = new Color(0.2f, 0.2f, 0.28f);
+            m.playerButton = MakeButton("menu.player", "", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, -0.004f), new Vector2(PW - 0.014f, UIText.TabButtonHeight), Unlit("Cap", Color.gray), StartMenu.Purple,
+                out m.playerLabel, faceUser, UIText.Tab, Color.white);
+            m.playerButton.offColor = SystemButtons.OffColor;
             m.playerLabel.text = "PLAYER: DJ  >";
 
             for (int i = 0; i < StartMenu.Rows; i++)
             {
                 float y = 0.05f - i * 0.046f;
                 var b = MakeButton($"menu.{i}", "", t, new Vector3(-0.155f, y, -0.004f), new Vector2(0.22f, 0.04f), menuGlass, new Color(0.62f, 0.28f, 1f, 0.92f),
-                    out m.labels[i], faceUser, 0.0017f, Color.white);
+                    out m.labels[i], faceUser, UIText.Button, Color.white);
                 b.offColor = new Color(0.3f, 0.1f, 0.5f, 0.42f); // glass rows: see-through until lit
                 b.transform.Find("Bezel").GetComponent<Renderer>().enabled = false; // a black bezel would show through the glass
                 m.buttons[i] = b;
-                m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), 0.00145f, TextAnchor.MiddleLeft, StartMenu.Lavender);
+                m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), UIText.Body, TextAnchor.MiddleLeft, StartMenu.Lavender);
             }
 
             return m;
@@ -815,18 +815,20 @@ namespace DJMaster.EditorTools
             Box("Back", t, new Vector3(0, (Top + Bottom) / 2, 0.004f), new Vector3(W, Top - Bottom, 0.006f), Unlit("MenuBack", new Color(0.035f, 0.01f, 0.06f)));
             Box("EdgeTop", t, new Vector3(0, Top, 0.003f), new Vector3(W, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, Bottom, 0.003f), new Vector3(W, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            Text("Title", t, new Vector3(0, Top - 0.015f, 0), 0.0036f, TextAnchor.UpperCenter, purple).text = "DJ VOCAB";
+            Text("Title", t, new Vector3(0, Top - 0.015f, 0), UIText.Title, TextAnchor.UpperCenter, purple).text = "DJ VOCAB";
 
-            PokeButton Btn(string id, string label, Vector3 pos, Vector2 size, out TextMeshPro text, float labelSize = 0.0016f)
+            PokeButton Btn(string id, string label, Vector3 pos, Vector2 size, out TextMeshPro text, float labelSize = UIText.Button)
             {
                 var b = MakeButton(id, label, t, pos + new Vector3(0, 0, -0.004f), size, Unlit("Cap", Color.gray), purple, out text, faceUser, labelSize, Color.white);
                 b.offColor = new Color(0.3f, 0.1f, 0.5f);
                 return b;
             }
             v.quizButton = Btn("vocab.quiz", "QUIZ ME", new Vector3(0, Top - 0.085f, 0), new Vector2(0.22f, 0.04f), out v.quizButtonLabel);
-            v.menuButton = Btn("vocab.menu", "BACK", new Vector3(W / 2 - 0.075f, Top - 0.04f, 0), new Vector2(0.11f, 0.035f), out _, 0.0013f);
+            // BACK on a tab above the top left corner: the same size, font and look as HOME on the tab at the top right (#44)
+            // Both tabs sit in from the corners: the panel is wide, and its far corners are past arm's reach (ReachTests)
             v.corner = Corner(t, new Vector3(W / 2 - 0.13f, Top + 0.002f, 0));
-            v.info = Text("Info", t, new Vector3(0, Top - 0.125f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
+            v.menuButton = BackTab(t, new Vector3(-W / 2 + 0.15f, Top + 0.002f, 0));
+            v.info = Text("Info", t, new Vector3(0, Top - 0.125f, 0), UIText.Heading, TextAnchor.MiddleCenter, StartMenu.Lavender);
 
             // The list: 12 words per column.
             var list = new GameObject("List");
@@ -838,7 +840,7 @@ namespace DJMaster.EditorTools
             for (int i = 0; i < count; i++)
             {
                 int col = i / perColumn, row = i % perColumn;
-                v.entries[i] = Text($"Word{i}", list.transform, new Vector3(-W / 2 + 0.03f + col * (W / 2), listTop - row * step, 0), 0.0015f, TextAnchor.UpperLeft, StartMenu.Lavender);
+                v.entries[i] = Text($"Word{i}", list.transform, new Vector3(-W / 2 + 0.03f + col * (W / 2), listTop - row * step, 0), UIText.Body, TextAnchor.UpperLeft, StartMenu.Lavender);
             }
             v.wrapChars = 68;
 
@@ -847,18 +849,18 @@ namespace DJMaster.EditorTools
             quiz.transform.SetParent(t, false);
             v.quizRoot = quiz;
             var q = quiz.transform;
-            v.progress = Text("Progress", q, new Vector3(0, Top - 0.16f, 0), 0.0014f, TextAnchor.MiddleCenter, purple);
-            v.question = Text("Question", q, new Vector3(0, Top - 0.19f, 0), 0.0019f, TextAnchor.UpperCenter, Color.white);
+            v.progress = Text("Progress", q, new Vector3(0, Top - 0.16f, 0), UIText.Heading, TextAnchor.MiddleCenter, purple);
+            v.question = Text("Question", q, new Vector3(0, Top - 0.19f, 0), UIText.Lead, TextAnchor.UpperCenter, Color.white);
             v.questionWrapChars = 40;
             for (int i = 0; i < 4; i++)
             {
-                var pos = new Vector3((i % 2 == 0 ? -1 : 1) * 0.15f, -0.03f - (i / 2) * 0.075f, 0);
+                var pos = new Vector3((i % 2 == 0 ? -1 : 1) * 0.15f, 0.015f - (i / 2) * 0.075f, 0);
                 v.answers[i] = MakeButton($"vocab.answer{i}", "", q, pos + new Vector3(0, 0, -0.004f), new Vector2(0.26f, 0.055f), Unlit("Cap", Color.gray), BoardColors.Play,
-                    out v.answerLabels[i], faceUser, 0.0019f, Color.white);
+                    out v.answerLabels[i], faceUser, UIText.Button, Color.white);
                 v.answers[i].offColor = new Color(0.3f, 0.1f, 0.5f);
             }
-            v.feedback = Text("Feedback", q, new Vector3(0, -0.185f, 0), 0.0017f, TextAnchor.MiddleCenter, Color.white);
-            v.next = Btn("vocab.next", "NEXT", new Vector3(0, -0.25f, 0), new Vector2(0.2f, 0.04f), out v.nextLabel);
+            v.feedback = Text("Feedback", q, new Vector3(0, -0.135f, 0), UIText.Heading, TextAnchor.MiddleCenter, Color.white);
+            v.next = Btn("vocab.next", "NEXT", new Vector3(0, -0.2f, 0), new Vector2(0.2f, 0.04f), out v.nextLabel);
             v.next.transform.SetParent(q, true);
 
             quiz.SetActive(false);
@@ -868,6 +870,18 @@ namespace DJMaster.EditorTools
 
         // An empty spot at a panel's top right corner. The HOME / COLOR-BLIND tab hangs off it, right-aligned,
         // just above the panel's top edge, so it never covers the panel's own text
+        // A BACK button on its own tab above a panel's top left corner: built like the HOME button on the HOME / COLOR-BLIND tab
+        static PokeButton BackTab(Transform panel, Vector3 topLeft)
+        {
+            const float W = UIText.TabButtonWidth + 0.02f, H = UIText.TabHeight;
+            var faceUser = Quaternion.Euler(-90, 0, 0);
+            Box("BackTab", panel, topLeft + new Vector3(W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f)));
+            var b = MakeButton("vocab.menu", "BACK", panel, topLeft + new Vector3(W / 2, H / 2, -0.004f), new Vector2(UIText.TabButtonWidth, UIText.TabButtonHeight),
+                Unlit("Cap", Color.gray), Color.white, out _, faceUser, UIText.Tab, Color.white);
+            b.offColor = SystemButtons.OffColor;
+            return b;
+        }
+
         static Transform Corner(Transform panel, Vector3 topRight)
         {
             var go = new GameObject("Corner");
@@ -884,19 +898,19 @@ namespace DJMaster.EditorTools
             var s = go.AddComponent<SystemButtons>();
             var t = go.transform;
             var faceUser = Quaternion.Euler(-90, 0, 0);
-            const float W = 0.215f, H = 0.036f;
+            const float W = 0.215f, H = UIText.TabHeight;
             // The tab's local origin is the panel's top right corner, so it all sits left of x = 0 and above y = 0
             s.tab = Box("Tab", t, new Vector3(-W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f))).transform;
             s.fullWidth = W;
             s.shortWidth = 0.14f;
             PokeButton Btn(string id, float x, float w, out TextMeshPro label)
             {
-                var b = MakeButton(id, "", t, new Vector3(x, H / 2, -0.004f), new Vector2(w, 0.026f), Unlit("Cap", Color.gray), Color.white,
-                    out label, faceUser, 0.0012f, Color.white);
-                b.offColor = new Color(0.2f, 0.2f, 0.28f);
+                var b = MakeButton(id, "", t, new Vector3(x, H / 2, -0.004f), new Vector2(w, UIText.TabButtonHeight), Unlit("Cap", Color.gray), Color.white,
+                    out label, faceUser, UIText.Tab, Color.white);
+                b.offColor = SystemButtons.OffColor;
                 return b;
             }
-            s.home = Btn("system.home", -W + 0.04f, 0.064f, out var homeLabel);
+            s.home = Btn("system.home", -W + 0.04f, UIText.TabButtonWidth, out var homeLabel);
             homeLabel.text = "HOME";
             s.colorBlind = Btn("system.colorblind", -0.07f, 0.124f, out s.colorBlindLabel);
             s.colorBlind.onColor = new Color(1f, 0.85f, 0.3f); // not one of the board's color families, so color-blind mode leaves it alone
@@ -1537,7 +1551,14 @@ namespace DJMaster.EditorTools
             vocab.FillList();
             vocab.ShowList();
             tint.SetColor("_Color", vocab.quizButton.offColor);
-            foreach (var b in vocab.GetComponentsInChildren<PokeButton>(true)) b.capRenderer.SetPropertyBlock(tint);
+            foreach (var b in vocab.GetComponentsInChildren<PokeButton>(true))
+            {
+                if (b.GetComponentInParent<SystemButtons>() != null || b == vocab.menuButton) continue; // the tabs are tinted by Mount
+                b.capRenderer.SetPropertyBlock(tint);
+            }
+            var backTint = new MaterialPropertyBlock();
+            backTint.SetColor("_Color", vocab.menuButton.offColor);
+            vocab.menuButton.capRenderer.SetPropertyBlock(backTint);
             Vector3 vocabEye = world.TransformPoint(new Vector3(0, 1.24f, 0.0f));
             RenderPreview("Preview_Vocab.png", vocabEye, new Vector3(18, 0, 0), 64f, false);
             vocab.Seed(1);
