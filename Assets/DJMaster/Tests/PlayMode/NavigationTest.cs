@@ -186,8 +186,8 @@ namespace DJMaster.Tests
             menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
             Assert.AreEqual(GameMode.ChooseLesson, game.Mode);
-            Assert.AreEqual("BACK", menu.labels[3].text);
-            menu.buttons[3].SimulatePress();
+            Assert.AreEqual("BACK", menu.labels[4].text);
+            menu.buttons[4].SimulatePress();
             Assert.AreEqual(GameMode.ChooseVenue, game.Mode);
             Assert.AreEqual(GameMode.Learn, game.ChosenMode);
 

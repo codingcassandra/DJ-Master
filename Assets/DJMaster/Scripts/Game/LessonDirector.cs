@@ -8,6 +8,7 @@ namespace DJMaster
     //   1 FIRST MIX       the color code, the beat, phrases, and the three parts of a beatmix: tempo, beats, phrase
     //   2 FADE & CUT      the DJ loop, plus two transitions that need no beatmatching
     //   3 SYNC LOOPS FX   tap tempo, SYNC, a one-phrase beatmix, loops, and an echo out ("less is more")
+    //   4 NEXT SONG       picking what's next: close in BPM, a key that fits, a bad pick vs a good one, then mix it in
     public class LessonDirector : MonoBehaviour
     {
         public DJBoard board;
@@ -36,7 +37,7 @@ namespace DJMaster
         public int StepIndex { get; private set; }
         public int StepCount => steps.Count;
         public int LessonIndex { get; private set; }
-        public static readonly string[] LessonNames = { "FIRST MIX", "FADE & CUT", "SYNC, LOOPS & FX" };
+        public static readonly string[] LessonNames = { "FIRST MIX", "FADE & CUT", "SYNC, LOOPS & FX", "NEXT SONG" };
         public static string DoneKey(int lesson) => lesson == 0 ? "lessonComplete" : $"lesson{lesson + 1}Complete";
         public static bool IsDone(int lesson) => PlayerPrefs.GetInt(Players.Key(DoneKey(lesson)), 0) == 1;
         public Step Current => Running && StepIndex < steps.Count ? steps[StepIndex] : null;
@@ -46,7 +47,7 @@ namespace DJMaster
 
         public event Action Completed;
 
-        readonly List<Step>[] lessons = { new(), new(), new() };
+        readonly List<Step>[] lessons = { new(), new(), new(), new() };
         List<Step> steps;
         float heldFor, stepTime, praiseTimer;
 
@@ -59,6 +60,8 @@ namespace DJMaster
         bool hotCuePressed, wasPlaying, timingOk, heard, sawRepeat, tooFast;
         float timer, together;
         int taps, startTrack;
+        int pick = -1;      // Lesson 4: the song you picked in the browser, kept across steps
+        bool badPickStarted;
 
         Deck A => board.A.deck;
         Deck B => board.B.deck;
@@ -68,6 +71,7 @@ namespace DJMaster
             BuildFirstMix(lessons[0]);
             BuildFadeAndCut(lessons[1]);
             BuildSyncLoopsFx(lessons[2]);
+            BuildNextSong(lessons[3]);
             steps = lessons[0];
             board.tap.Pressed += OnTap;
             board.A.hotCues[0].Pressed += () => hotCuePressed = true;
@@ -92,6 +96,17 @@ namespace DJMaster
                 board.A.volume.SetValue(1f);
                 board.crossfader.SetValue(0f);
                 board.A.low.SetValue(0f);
+            }
+            else if (LessonIndex == 3)
+            {
+                // Lesson 4: Neon Tides is playing to the room and Deck B is empty, waiting for your pick
+                A.Play();
+                board.A.volume.SetValue(1f);
+                board.crossfader.SetValue(0f);
+                B.Unload();
+                pick = -1;
+                badPickStarted = false;
+                if (board.browser != null) { board.browser.SetSort(BrowseSort.Crate); board.browser.Select(0); }
             }
             else
             {
@@ -754,6 +769,124 @@ namespace DJMaster
                 highlight = new[] { "B.echo", "B.volume" },
                 done = () => !B.Strip.echo && board.B.volume.value > 0.85f,
                 praise = "LESSON COMPLETE!",
+            });
+        }
+
+        // ================= Lesson 4: NEXT SONG =================
+
+        // Concrete Bloom: 130 BPM, close enough to beatmix, but F minor (4A) against Neon Tides' A minor (8A) clashes
+        public const int BadPick = 2;
+
+        SongBrowser Browser => board.browser;
+        TrackInfo Picked(int i) => TrackLibrary.Tracks[i];
+        bool TempoFits(int i) => i != A.TrackIndex && MixMatch.Tempo(A.Track, Picked(i)) == TempoMatch.Green;
+        public bool GoodPick(int i) => TempoFits(i) && MixMatch.Keys(A.Track, Picked(i)) is KeyMatch.Perfect or KeyMatch.Good;
+
+        void BuildNextSong(List<Step> steps)
+        {
+            string deckA = BoardColors.Blue("Deck A"), deckB = BoardColors.Pink("Deck B");
+            string green = BoardColors.Green("green"), red = BoardColors.Red("red");
+            string tides = TrackLibrary.Tracks[0].title, bad = TrackLibrary.Tracks[BadPick].title;
+
+            steps.Add(new Step
+            {
+                title = "Read the room",
+                text = $"{tides} is rocking the room at 128 BPM. Picking what's next is half of DJing: it has to fit in TEMPO and in KEY. The middle screen is your crate. Press SORT until it sorts by BPM.",
+                hint = "SORT is the small white button just below the BROWSE knob in the middle of the mixer. Each press changes the order: CRATE, BPM, KEY.",
+                highlight = new[] { "browse.sort" },
+                done = () => Browser != null && Browser.Sort == BrowseSort.Bpm,
+                praise = "Slowest to fastest.",
+            });
+            steps.Add(new Step
+            {
+                title = "Close in tempo",
+                text = $"Songs within about 4% of 128 BPM can be beatmixed: the browser shows their BPM in {green}. {red} is too far for the TEMPO fader. Turn the BROWSE knob to a song with a {green} BPM (not {tides}, that's already playing).",
+                hint = "Rest a fingertip on the BROWSE knob and slide it away from you to scroll down. Look around 124 to 132 BPM.",
+                highlight = new[] { "browse" },
+                done = () => Browser != null && TempoFits(Browser.Selected),
+                hold = 0.6f,
+                praise = "That tempo will mix.",
+            });
+            steps.Add(new Step
+            {
+                title = "Now the key",
+                text = $"Tempo is only half of it. Two songs in clashing keys make their melodies fight. Every song has a key code like 8A on the Camelot wheel: the same number, or one step away, sounds good together. Press SORT until it sorts by KEY.",
+                hint = "Press SORT again. KEY order puts songs that fit together next to each other.",
+                highlight = new[] { "browse.sort" },
+                done = () => Browser != null && Browser.Sort == BrowseSort.Key,
+                praise = "Keys that fit are neighbors now.",
+            });
+            steps.Add(new Step
+            {
+                title = "A perfect fit",
+                text = $"{tides} is in 8A. Find a song where the BPM AND the key are both {green}: that's 7A, 8A or 9A, close to 128 BPM.",
+                hint = "Scroll with BROWSE and look for a row where both lines are green. Bouncer, Funky House and Low Orbit all fit.",
+                highlight = new[] { "browse" },
+                done = () => Browser != null && GoodPick(Browser.Selected),
+                hold = 0.6f,
+                tick = () => { if (Browser != null && GoodPick(Browser.Selected)) pick = Browser.Selected; },
+                praise = "Great pick!",
+            });
+            steps.Add(new Step
+            {
+                title = "Hear a bad pick",
+                text = $"First, hear why it matters. I put a bad pick on {deckB}: {bad}. It's close in tempo, but its key clashes. Tap {deckB}'s {BoardColors.Yellow("PHONES")} button and listen to both songs together.",
+                hint = "The PHONES buttons are at the top of the mixer, between the knobs. Press the B one, then listen for a few seconds.",
+                highlight = new[] { "B.headphones" },
+                enter = () => { badPickStarted = false; mixer.headphoneCue[1] = false; B.Load(BadPick); },
+                tick = () =>
+                {
+                    // Once it's loaded: same speed, beats lined up, playing in the headphones only (its fader stays down)
+                    if (!badPickStarted && B.IsLoaded)
+                    {
+                        badPickStarted = true;
+                        board.B.volume.SetValue(0f);
+                        board.B.tempo.SetValue(Mathf.Clamp01(DJMath.TempoFaderFor(A.BPM / B.Track.bpm)));
+                        B.tempoFader = board.B.tempo.value;
+                        B.Play();
+                        B.AlignTo(A);
+                    }
+                    if (mixer.headphoneCue[1] && B.IsPlaying) timer += Time.deltaTime;
+                },
+                done = () => timer > 4f,
+                praise = "Hear the notes fight? That's a key clash. The crowd would hear it too.",
+            });
+            steps.Add(new Step
+            {
+                title = "Load your pick",
+                text = $"Now your pick. It's highlighted in the browser again. Tap {deckB}'s {BoardColors.Pink("LOAD")} button to swap the bad pick out.",
+                hint = "LOAD is the small pink button below Deck B's jog wheel.",
+                highlight = new[] { "B.load" },
+                enter = () =>
+                {
+                    if (pick < 0 || !GoodPick(pick)) pick = 5; // Low Orbit (128, 9A) if the pick got lost
+                    Browser?.Select(pick);
+                },
+                // Any song that fits counts, in case you scrolled to another good one
+                done = () => B.IsLoaded && GoodPick(B.TrackIndex),
+                tick = () => { if (B.HasTrack && GoodPick(B.TrackIndex)) pick = B.TrackIndex; },
+                praise = "Loaded.",
+            });
+            steps.Add(new Step
+            {
+                title = "Hear the good pick",
+                text = $"Tap {BoardColors.Green("PLAY")} on {deckB}, then {BoardColors.Pink("SYNC")} to lock it to {tides}. Listen in your headphones: this time the two songs sit together.",
+                hint = "PLAY is the big round green button, SYNC the small pink one above it. In ADVANCED, match the TEMPO fader and jog wheel by ear instead.",
+                highlight = new[] { "B.play", "B.sync" },
+                enter = () => { mixer.headphoneCue[1] = true; timer = 0; },
+                done = () => B.IsPlaying && mixer.headphoneCue[1] && MixJudge.BeatsLocked(B.BPM - A.BPM, DJMath.PhaseOffset(A.Beat, B.Beat)),
+                hold = 3f,
+                praise = "No fighting. That's a good pick.",
+            });
+            steps.Add(new Step
+            {
+                title = "Mix it in",
+                text = $"The room is ready. Raise {deckB}'s channel fader all the way, then slide the crossfader all the way to the {BoardColors.Pink("B")}.",
+                highlight = new[] { "B.volume", "crossfader" },
+                enter = () => mixer.headphoneCue[1] = false,
+                done = () => B.IsPlaying && board.B.volume.value > 0.85f && board.crossfader.value > 0.92f,
+                cheer = 1f,
+                praise = "LESSON COMPLETE! The crowd loves your pick.",
             });
         }
 
