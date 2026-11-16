@@ -26,7 +26,7 @@ namespace DJMaster
         public event Action BackPressed, GoLivePressed;
 
         public int Page { get; private set; }
-        int PageCount => (TrackLibrary.Tracks.Length + crateButtons.Length - 1) / crateButtons.Length;
+        int PageCount => (TrackLibrary.BuiltInCount + crateButtons.Length - 1) / crateButtons.Length;
         int TrackAt(int button) => Page * crateButtons.Length + button;
 
         string message = "";
@@ -50,7 +50,7 @@ namespace DJMaster
             for (int i = 0; i < crateButtons.Length; i++)
             {
                 int button = i;
-                crateButtons[i].Pressed += () => { if (TrackAt(button) < TrackLibrary.Tracks.Length) AddSong(TrackAt(button)); };
+                crateButtons[i].Pressed += () => { if (TrackAt(button) < TrackLibrary.BuiltInCount) AddSong(TrackAt(button)); };
             }
             if (gameTab != null) gameTab.Pressed += () => ShowPage(0);
             if (freeTab != null) freeTab.Pressed += () => ShowPage(1);

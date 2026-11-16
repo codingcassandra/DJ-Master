@@ -2,7 +2,7 @@ using System;
 
 namespace DJMaster
 {
-    public enum Genre { House, Techno, Disco, Electro, EDM, Synthwave }
+    public enum Genre { House, Techno, Disco, Electro, EDM, Synthwave, Yours }
 
     [Serializable]
     public struct TrackInfo
@@ -20,22 +20,26 @@ namespace DJMaster
         // The beatgrid: seconds from the start of the audio to a downbeat ("the one"). Our songs start right on beat 1,
         // so it's 0 for them. Songs you add get theirs from BeatDetector and the tap-the-one screen.
         public float firstBeat;
+        // A song you added (MyMusic, #22): the full path of the file on the headset. Loaded at runtime, its beatgrid found
+        // the first time it's loaded and saved.
+        public string path;
 
         public TrackInfo(string title, string artist, float bpm, int root, Genre genre, int seed)
         {
             this.title = title; this.artist = artist; this.bpm = bpm;
             this.root = root; this.genre = genre; this.seed = seed;
-            clip = null; license = null; firstBeat = 0; major = false;
+            clip = null; license = null; firstBeat = 0; major = false; path = null;
         }
 
         // What a saved beatgrid is stored under
-        public string GridId => IsRecording ? clip : title;
+        public string GridId => IsUser ? "user:" + System.IO.Path.GetFileName(path) : IsRecording ? clip : title;
 
         public static TrackInfo Recording(string title, string artist, float bpm, Genre genre, string clip, string license = "CC0",
             int root = -1, bool major = false) =>
             new(title, artist, bpm, root, genre, 0) { clip = clip, license = license, major = major };
 
-        public bool IsRecording => !string.IsNullOrEmpty(clip);
+        public bool IsRecording => !string.IsNullOrEmpty(clip) || IsUser;
+        public bool IsUser => !string.IsNullOrEmpty(path);
 
         // Synthesized tracks always know their key, recordings only if we filled it in
         public bool HasKey => !IsRecording || root >= 0;

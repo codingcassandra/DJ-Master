@@ -8,10 +8,10 @@ namespace DJMaster.Tests
         [Test]
         public void EverySortListsAllSongsOnce()
         {
-            foreach (BrowseSort sort in System.Enum.GetValues(typeof(BrowseSort)))
+            foreach (BrowseSort sort in new[] { BrowseSort.Crate, BrowseSort.Bpm, BrowseSort.Key }) // MY MUSIC is only your songs
             {
                 var order = SongBrowser.SortedOrder(sort);
-                var listed = Enumerable.Range(0, TrackLibrary.Tracks.Length).Where(SongBrowser.Listed);
+                var listed = Enumerable.Range(0, TrackLibrary.BuiltInCount).Where(SongBrowser.Listed);
                 Assert.GreaterOrEqual(order.Length, 16, $"{sort} should show at least our 16 songs");
                 CollectionAssert.AreEquivalent(listed, order, $"{sort} lost or doubled a song");
             }
