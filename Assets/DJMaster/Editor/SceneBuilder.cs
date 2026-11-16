@@ -996,10 +996,11 @@ namespace DJMaster.EditorTools
                 for (int z = 0; z < 6; z++)
                     if ((x + z) % 2 == 0)
                         pulsers.Add(Box("Tile", r, new Vector3(-7f + x * 2f, -0.495f, 2.5f + z * 2.2f), new Vector3(1.9f, 0.01f, 2.1f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
-            // LED wall behind the DJ
-            for (int x = 0; x < 10; x++)
-                for (int y = 0; y < 4; y++)
-                    pulsers.Add(Box("LED", r, new Vector3(-6.75f + x * 1.5f, 0.6f + y * 1.0f, -2.05f), new Vector3(1.45f, 0.95f, 0.05f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
+            // LED wall behind the DJ: a music visualizer, row by row from the bottom (LightShow.wall)
+            var clubWall = new List<Renderer>();
+            for (int y = 0; y < 4; y++)
+                for (int x = 0; x < 10; x++)
+                    clubWall.Add(Box("LED", r, new Vector3(-6.75f + x * 1.5f, 0.6f + y * 1.0f, -2.05f), new Vector3(1.45f, 0.95f, 0.05f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
             // Light strip along the booth front, facing the DJ
             pulsers.Add(Box("BoothStrip", r, new Vector3(0, 0.9f, 1.08f), new Vector3(2.6f, 0.03f, 0.02f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
             // Neon strips on the side walls
@@ -1008,6 +1009,16 @@ namespace DJMaster.EditorTools
 
             var show = root.AddComponent<LightShow>();
             show.pulsers = pulsers.ToArray();
+            show.wall = clubWall.ToArray();
+            show.wallColumns = 10;
+            // Haze at the back of the room, catching the light over the crowd
+            var hazeMat = AdditiveVariant("Haze", Color.white, 1);
+            show.haze = new[]
+            {
+                Haze(r, new Vector3(-4f, 2.2f, 13.5f), new Vector2(9f, 5f), hazeMat),
+                Haze(r, new Vector3(4f, 2.4f, 14.2f), new Vector2(9f, 5f), hazeMat),
+                Haze(r, new Vector3(0f, 3.4f, 10f), new Vector2(14f, 3.5f), hazeMat),
+            };
             MakeLasers(show, r, 6, i => new Vector3(-2.5f + i, 3.4f, -1.6f), Quaternion.LookRotation(new Vector3(0, -0.18f, 1)), 22f);
             MakeBeams(show, r, new[]
             {
@@ -1089,10 +1100,15 @@ namespace DJMaster.EditorTools
                 pulsers.Add(screen.GetComponent<Renderer>());
                 Box("ScreenPole", r, new Vector3(x, 1f, 8.3f), new Vector3(0.3f, 6f, 0.3f), trussMat);
             }
-            // Giant LED wall behind the DJ
-            for (int x = 0; x < 8; x++)
-                for (int y = 0; y < 4; y++)
-                    pulsers.Add(Box("LEDWall", r, new Vector3(-10.5f + x * 3f, 1.5f + y * 2.4f, -5.8f), new Vector3(2.9f, 2.3f, 0.1f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
+            // Giant LED wall behind the DJ: a music visualizer, row by row from the bottom (LightShow.wall)
+            var festWall = new List<Renderer>();
+            for (int y = 0; y < 4; y++)
+                for (int x = 0; x < 8; x++)
+                    festWall.Add(Box("LEDWall", r, new Vector3(-10.5f + x * 3f, 1.5f + y * 2.4f, -5.8f), new Vector3(2.9f, 2.3f, 0.1f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
+            // Blinders along the front of the roof, facing the crowd and the DJ
+            var blinders = new List<Renderer>();
+            for (int i = 0; i < 6; i++)
+                blinders.Add(Box("Blinder", r, new Vector3(-10f + i * 4f, 11.05f, 2.75f), new Vector3(1.2f, 0.45f, 0.1f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
             // Stage-front strip
             pulsers.Add(Box("StageStrip", r, new Vector3(0, 0.02f, 2.85f), new Vector3(25f, 0.04f, 0.08f), Unlit("LEDTile", Color.white)).GetComponent<Renderer>());
             // Flags in the crowd
@@ -1106,6 +1122,10 @@ namespace DJMaster.EditorTools
 
             var show = root.AddComponent<LightShow>();
             show.pulsers = pulsers.ToArray();
+            show.wall = festWall.ToArray();
+            show.wallColumns = 8;
+            show.blinders = blinders.ToArray();
+            show.haze = new[] { Haze(r, new Vector3(0f, 6f, 10f), new Vector2(40f, 10f), AdditiveVariant("Haze", Color.white, 1)) };
             MakeLasers(show, r, 8, i => new Vector3(-7f + i * 2f, 0.3f, 2.8f), Quaternion.LookRotation(new Vector3(0, 0.1f, 1)), 70f);
             MakeBeams(show, r, new[]
             {
@@ -1201,6 +1221,13 @@ namespace DJMaster.EditorTools
                 show.beams[i] = go.transform;
                 show.beamRenderers[i] = mr;
             }
+        }
+
+        // A big soft additive sheet facing the DJ: haze lit by the show
+        static Renderer Haze(Transform parent, Vector3 pos, Vector2 size, Material mat)
+        {
+            var q = Prim(PrimitiveType.Quad, "Haze", parent, pos, new Vector3(size.x, size.y, 1), mat);
+            return q.GetComponent<Renderer>(); // a Quad faces -Z, toward the booth
         }
 
         static ParticleSystem Firework(Transform parent, Vector3 pos, Color a, Color b)
@@ -1517,6 +1544,8 @@ namespace DJMaster.EditorTools
                 SetPreviewMode(env, mode);
                 RenderPreview($"Preview_{mode}.png", eye, new Vector3(28, 0, 0), 90f, mode != EnvMode.Room);
                 RenderPreview($"Preview_{mode}_Crowd.png", eye, new Vector3(2, 0, 0), 90f, mode != EnvMode.Room);
+                // Turned round: the LED wall behind the DJ (and the festival's blinders above it)
+                if (mode != EnvMode.Room) RenderPreview($"Preview_{mode}_Back.png", eye, new Vector3(-12, 180, 0), 90f, true);
             }
             SetPreviewMode(env, EnvMode.Room);
             // Low and from the side, to see the board sitting on the desk with its shadow and glow (#36)
@@ -1662,6 +1691,27 @@ namespace DJMaster.EditorTools
                 foreach (var b in show.beamRenderers)
                 {
                     block.SetColor("_Color", new Color(0.6f, 0.4f, 1f, 0.2f));
+                    b.SetPropertyBlock(block);
+                }
+                // The LED wall mid-song: columns at different heights, like LightShow draws it
+                int cols = Mathf.Max(1, show.wallColumns), rows = Mathf.Max(1, show.wall.Length / cols);
+                for (int i = 0; i < show.wall.Length; i++)
+                {
+                    int col = i % cols, row = i / cols;
+                    bool lit = (row + 0.5f) / rows <= LightShow.ColumnLevel(col, 7, 0.8f, 0.5f, 0.7f);
+                    var c = Color.Lerp(show.palette[0], show.palette[1], rows > 1 ? row / (rows - 1f) : 0) * (lit ? 0.9f : 0.07f);
+                    c.a = 1;
+                    block.SetColor("_Color", c);
+                    show.wall[i].SetPropertyBlock(block);
+                }
+                for (int i = 0; i < show.haze.Length; i++)
+                {
+                    block.SetColor("_Color", show.palette[i % 2] * 0.12f);
+                    show.haze[i].SetPropertyBlock(block);
+                }
+                foreach (var b in show.blinders)
+                {
+                    block.SetColor("_Color", new Color(1f, 0.92f, 0.8f) * 0.5f);
                     b.SetPropertyBlock(block);
                 }
             }
