@@ -24,8 +24,11 @@ Material:
     serializedVersion: 3
     m_TexEnvs: []
     m_Ints: []
-    m_Floats: []
+    m_Floats:
+    - _RimPixels: 1.5
+    - _Sheen: 0.12
     m_Colors:
     - _Color: {r: 0.035, g: 0.01, b: 0.06, a: 1}
+    - _Rim: {r: 0.66, g: 0.3, b: 1, a: 0.35}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

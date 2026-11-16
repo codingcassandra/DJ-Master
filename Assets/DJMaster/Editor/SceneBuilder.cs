@@ -564,11 +564,15 @@ namespace DJMaster.EditorTools
             var t = go.transform;
             var faceUser = Quaternion.Euler(-90, 0, 0);
             var purple = StartMenu.Purple;
+            var menuGlass = Glass("MenuRow", new Color(0.3f, 0.1f, 0.5f, 0.42f), new Color(0.85f, 0.7f, 1f, 0.9f), 0.3f);
 
-            Box("Back", t, new Vector3(0, -0.015f, 0.004f), new Vector3(0.62f, 0.39f, 0.006f), Unlit("MenuBack", new Color(0.035f, 0.01f, 0.06f)));
+            // Dark glass, so the slow lights behind it glow through (#40)
+            Box("Back", t, new Vector3(0, -0.015f, 0.004f), new Vector3(0.62f, 0.39f, 0.006f), Glass("MenuGlassBack", new Color(0.03f, 0.008f, 0.06f, 0.5f), new Color(0.66f, 0.3f, 1f, 0.35f), 0.12f));
+            BuildMenuBackdrop(t);
             Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
             m.title = Text("Title", t, new Vector3(0, 0.165f, 0), 0.0042f, TextAnchor.UpperCenter, purple);
+            m.wordmark = BuildWordmark(t);
             m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), 0.0017f, TextAnchor.UpperCenter, StartMenu.Lavender);
             m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), 0.0013f, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
@@ -577,13 +581,87 @@ namespace DJMaster.EditorTools
             for (int i = 0; i < StartMenu.Rows; i++)
             {
                 float y = 0.05f - i * 0.046f;
-                var b = MakeButton($"menu.{i}", "", t, new Vector3(-0.155f, y, -0.004f), new Vector2(0.22f, 0.04f), Unlit("Cap", Color.gray), purple,
+                var b = MakeButton($"menu.{i}", "", t, new Vector3(-0.155f, y, -0.004f), new Vector2(0.22f, 0.04f), menuGlass, new Color(0.62f, 0.28f, 1f, 0.92f),
                     out m.labels[i], faceUser, 0.0017f, Color.white);
-                b.offColor = new Color(0.3f, 0.1f, 0.5f);
+                b.offColor = new Color(0.3f, 0.1f, 0.5f, 0.42f); // glass rows: see-through until lit
+                b.transform.Find("Bezel").GetComponent<Renderer>().enabled = false; // a black bezel would show through the glass
                 m.buttons[i] = b;
-                m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), 0.00145f, TextAnchor.MiddleLeft, purple);
+                m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), 0.00145f, TextAnchor.MiddleLeft, StartMenu.Lavender);
             }
 
+            return m;
+        }
+
+        // Slow soft lights behind the start menu, purple and a little cyan and magenta, drawn before the glass so they glow through it.
+        static void BuildMenuBackdrop(Transform menu)
+        {
+            var root = new GameObject("Backdrop");
+            root.transform.SetParent(menu, false);
+            var bd = root.AddComponent<MenuBackdrop>();
+            var mat = AdditiveVariant("MenuLight", new Color(0.55f, 0.2f, 1f, 0.3f), 1f);
+            mat.renderQueue = 2990; // before the glass (Transparent-1)
+            var spots = new[] { new Vector3(-0.22f, 0.08f, 0.09f), new Vector3(0.24f, -0.06f, 0.1f), new Vector3(0.02f, 0.14f, 0.12f), new Vector3(-0.1f, -0.17f, 0.11f), new Vector3(0.3f, 0.16f, 0.13f) };
+            float[] sizes = { 0.55f, 0.5f, 0.42f, 0.45f, 0.36f };
+            bd.lights = new Renderer[spots.Length];
+            for (int i = 0; i < spots.Length; i++)
+            {
+                var q = Prim(PrimitiveType.Quad, $"Light{i}", root.transform, spots[i], Vector3.one * sizes[i], mat);
+                bd.lights[i] = q.GetComponent<Renderer>();
+            }
+            bd.lightColors = new[]
+            {
+                new Color(0.55f, 0.2f, 1f, 0.32f),  // brand purple
+                new Color(0.1f, 0.75f, 1f, 0.18f),  // cyan
+                new Color(0.9f, 0.2f, 0.8f, 0.2f),  // magenta
+                new Color(0.4f, 0.15f, 0.9f, 0.28f),
+                new Color(0.2f, 0.5f, 1f, 0.16f),
+            };
+        }
+
+        // Our own DJ MASTER wordmark: a little bouncing EQ meter, then the name in wide bold letters fading from white to
+        // purple, on a thin glowing line. Only on the first screen; the other screens use the plain title.
+        static GameObject BuildWordmark(Transform menu)
+        {
+            var root = new GameObject("Wordmark");
+            root.transform.SetParent(menu, false);
+            root.transform.localPosition = new Vector3(0, 0.15f, -0.002f);
+            var name = Text("Name", root.transform, new Vector3(0.022f, 0, 0), 0.0046f, TextAnchor.MiddleCenter, Color.white);
+            name.text = "DJ MASTER";
+            name.fontStyle = FontStyles.Bold;
+            name.characterSpacing = 14;
+            name.enableVertexGradient = true;
+            name.colorGradient = new VertexGradient(Color.white, Color.white, StartMenu.Lavender, StartMenu.Purple);
+            name.ForceMeshUpdate();
+            float half = name.textBounds.extents.x * name.transform.lossyScale.x / Mathf.Max(1e-6f, menu.lossyScale.x);
+            if (half <= 0) half = 0.13f;
+
+            // The EQ meter, just left of the name: five bars growing up from a shared base
+            var cyan = Unlit("WordmarkCyan", new Color(0.2f, 0.85f, 1f));
+            var bars = new Transform[5];
+            float x0 = 0.022f - half - 0.04f;
+            for (int i = 0; i < bars.Length; i++)
+            {
+                var pivot = new GameObject($"Bar{i}").transform;
+                pivot.SetParent(root.transform, false);
+                pivot.localPosition = new Vector3(x0 + i * 0.0085f, -0.016f, 0);
+                pivot.localScale = new Vector3(0.0055f, 0.034f, 0.002f);
+                Prim(PrimitiveType.Cube, "Cap", pivot, new Vector3(0, 0.5f, 0), Vector3.one, i == 2 ? cyan : Unlit("MenuEdge", StartMenu.Purple));
+                bars[i] = pivot;
+            }
+            root.transform.parent.GetComponentInChildren<MenuBackdrop>().bars = bars;
+
+            // The line under it, purple fading into cyan at the ends
+            Box("Underline", root.transform, new Vector3(0, -0.027f, 0), new Vector3(half * 2 + 0.12f, 0.0015f, 0.001f), Unlit("MenuEdge", StartMenu.Purple));
+            Box("UnderlineGlow", root.transform, new Vector3(0, -0.027f, 0.0005f), new Vector3(half * 2 + 0.16f, 0.006f, 0.001f), AdditiveVariant("WordmarkGlow", new Color(0.66f, 0.3f, 1f, 0.15f), 0f));
+            return root;
+        }
+
+        static Material Glass(string name, Color tint, Color rim, float sheen)
+        {
+            var m = MaterialAsset(name, "DJMaster/Glass");
+            m.color = tint;
+            m.SetColor("_Rim", rim);
+            m.SetFloat("_Sheen", sheen);
             return m;
         }
 
@@ -1177,7 +1255,8 @@ namespace DJMaster.EditorTools
             var builder = Object.FindAnyObjectByType<SetBuilderPanel>(FindObjectsInactive.Include);
             menu.gameObject.SetActive(true);
             var boardGo = Object.FindAnyObjectByType<DJBoard>().gameObject;
-            menu.Show("DJ MASTER", "", "");
+            menu.GetComponentInChildren<MenuBackdrop>().Apply(3f); // one frame of the moving lights
+            menu.Show("", "", "");
             menu.SetButtons("LEARN", "BUILD A SET", "FREESTYLE", "DJ VOCAB", "DAILY");
             Mount(menu.corner, false);
             var tint = new MaterialPropertyBlock(); // what PokeButton does at runtime

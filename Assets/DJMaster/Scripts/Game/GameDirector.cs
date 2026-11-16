@@ -30,6 +30,10 @@ namespace DJMaster
         public GameMode Mode { get; private set; }
         public GameMode ChosenMode { get; private set; } // what starts after the venue is picked
 
+        [Tooltip("How loud deck A plays under the start screens.")]
+        public float menuMusicLevel = 0.3f;
+
+        bool menuMusicOn;
         bool paused, focusLost, appPaused, appUnfocused;
         // The live set running now is today's daily challenge (not a set from BUILD A SET)
         bool dailyRun, dailyCounted, dailyUnlocked;
@@ -71,10 +75,10 @@ namespace DJMaster
             OVRManager.InputFocusLost += () => { focusLost = true; RefreshPause(); };
             OVRManager.InputFocusAcquired += () => { focusLost = false; RefreshPause(); };
 
-            EnterTitle();
-            // Something to listen to straight away while you look around the menu.
+            // Something to listen to straight away while you look around the menu (loaded first so the menu can start it)
             board.A.deck.Load(0);
             board.B.deck.Load(1);
+            EnterTitle();
         }
 
         void OnApplicationPause(bool pause) { appPaused = pause; RefreshPause(); }
@@ -110,6 +114,28 @@ namespace DJMaster
             // The same HOME / COLOR-BLIND tab on the corner of whatever is showing. No HOME on the start menu itself
             var corner = mode == GameMode.Vocab ? vocab.corner : menu ? startMenu.corner : building ? builder.corner : panel.corner;
             systemButtons.MountOn(corner, mode != GameMode.Title);
+            SetMenuMusic(menu);
+        }
+
+        // Deck A plays quietly behind the start screens (#40). Stepping into the booth stops it and cues it back to the top,
+        // so every mode starts with the decks still, like before.
+        void SetMenuMusic(bool on)
+        {
+            var a = board.A.deck;
+            if (on)
+            {
+                board.B.deck.Pause();
+                if (!a.HasTrack) a.Load(0);
+                a.Play();
+                mixer.menuMusic = menuMusicLevel;
+            }
+            else if (menuMusicOn)
+            {
+                a.Pause(); // also cancels a play that was waiting for the song to load
+                a.Cue();
+                mixer.menuMusic = -1f;
+            }
+            menuMusicOn = on;
         }
 
         // The tap-the-one screen for a song that doesn't start on beat 1 (songs you add yourself). Saves its beatgrid,
@@ -133,7 +159,7 @@ namespace DJMaster
             board.B.deck.Pause();
             SetMode(GameMode.Title);
             // Just the buttons (#47). What each one does is on the next screen.
-            startMenu.Show("DJ MASTER", "", "");
+            startMenu.Show("", "", ""); // the wordmark takes the title's place
             startMenu.SetButtons("LEARN", "BUILD A SET", "FREESTYLE", "DJ VOCAB", "DAILY");
             startMenu.buttons[4].Lit = !DailyChallenge.Progress.PassedOn(DailyChallenge.Today); // a new challenge is waiting
         }

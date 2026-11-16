@@ -11,6 +11,8 @@ namespace DJMaster
         public bool[] headphoneCue = { false, false };
         [Tooltip("Level of a cued (headphone) channel that's otherwise silent, so you can preview it.")]
         public float cueLevel = 0.35f;
+        [Tooltip("Quiet music on the start screens: deck A at this level, whatever the board's faders say. Below 0 is off.")]
+        public float menuMusic = -1f;
 
         // What the crowd hears from each deck (ignores headphone cue).
         public float CrowdGain(int i)
@@ -39,6 +41,7 @@ namespace DJMaster
             for (int i = 0; i < decks.Length; i++)
             {
                 if (decks[i] == null) continue;
+                if (menuMusic >= 0f) { decks[i].Strip.gain = i == 0 ? menuMusic : 0f; continue; }
                 float crowd = CrowdGain(i);
                 float cue = headphoneCue[i] && decks[i].IsPlaying ? cueLevel : 0f;
                 decks[i].Strip.gain = Mathf.Max(crowd, cue);

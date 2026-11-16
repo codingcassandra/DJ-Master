@@ -19,10 +19,12 @@ namespace DJMaster
         public int wrapChars = 40;
         [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
         public Transform corner;
+        [Tooltip("The DJ MASTER wordmark, shown in place of the title on the first screen.")]
+        public GameObject wordmark;
 
         [Header("Buttons-only layout (the first screen)")]
         [Tooltip("Row centers on the buttons-only screen, top to bottom.")]
-        public float centeredTop = 0.085f, centeredStep = 0.058f;
+        public float centeredTop = 0.073f, centeredStep = 0.056f;
         [Tooltip("How much bigger the buttons are when they're alone in the middle.")]
         public float centeredScale = 1.3f;
 
@@ -61,6 +63,7 @@ namespace DJMaster
         {
             Remember();
             Centered = centered;
+            if (wordmark != null) wordmark.SetActive(centered);
             for (int i = 0; i < buttons.Length; i++)
             {
                 var b = buttons[i];

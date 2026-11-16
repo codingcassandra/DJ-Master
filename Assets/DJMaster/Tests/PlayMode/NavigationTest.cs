@@ -77,7 +77,9 @@ namespace DJMaster.Tests
             Assert.AreEqual(GameMode.Title, game.Mode, $"HOME from {from} should land on the start menu");
             Assert.IsTrue(menu.gameObject.activeInHierarchy);
             Assert.IsFalse(board.gameObject.activeInHierarchy);
-            Assert.IsFalse(board.A.deck.IsPlaying || board.B.deck.IsPlaying, $"HOME from {from} should pause the decks");
+            Assert.IsFalse(board.B.deck.IsPlaying, $"HOME from {from} should stop the set");
+            Assert.IsTrue(board.A.deck.IsPlaying, $"HOME from {from} brings back the quiet menu music");
+            Assert.AreEqual(game.menuMusicLevel, Object.FindAnyObjectByType<Mixer>().menuMusic, "menu music is quiet, whatever the faders said");
             Assert.IsFalse(system.home.gameObject.activeInHierarchy, "no HOME on the start menu itself");
             Assert.IsTrue(system.colorBlind.gameObject.activeInHierarchy, "COLOR-BLIND stays on the start menu");
         }
