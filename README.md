@@ -212,6 +212,8 @@ Tip: set the Game view to **Play Maximized** so small text is easy to read.
 4. **Edit > Project Settings > XR Plug-in Management > Android tab:** check **OpenXR**, then under OpenXR enable the **Meta XR** feature group. Then open **Edit > Project Settings > Meta XR**, pick the Android tab and click **Fix All**.
 5. Put the Quest in developer mode, connect over USB, then **Build And Run**.
 
+**Sharp rendering:** nothing to set by hand. 4x MSAA is in Quality settings, and the board's textures are mipmapped with anisotropic filtering. On the headset, `RenderQuality` starts at 1.2x eye resolution with dynamic foveation capped at Low, then steps down 0.1 at a time (never below 1.0x) if the frame rate stays under the display rate (72 Hz) for a few seconds. The log line `[DJMaster] Eye resolution ...` shows where it settled. There are no post effects. To check the frame rate, run OVR Metrics Tool in MY ROOM, CLUB and FESTIVAL with the full crowd.
+
 **Meta sign-in (entitlement check + the player's name):** in the Meta Developer Dashboard, open the app, copy its **App ID**, then in Unity open **Meta > Platform > Edit Settings** and paste it into **Meta Quest/2/Pro**. On the Quest the game then checks the store entitlement at startup (it quits if that fails, as the store requires) and greets the signed-in user by name. With no App ID, in the editor or offline, it plays on as the local player.
 
 **For the competition:** upload the APK to a release channel named **Competition** in the Meta Developer Dashboard and create an Invite URL for the judges.

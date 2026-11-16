@@ -90,6 +90,7 @@ namespace DJMaster
             board.A.deck.Load(0);
             board.B.deck.Load(1);
             // Meta sign-in (#46): the signed-in name arrives a moment later and the greeting updates with it
+            gameObject.AddComponent<RenderQuality>(); // sharp as the frame rate allows, headset only (#33)
             signIn = gameObject.AddComponent<MetaSignIn>();
             signIn.NameReady += _ => { if (Mode == GameMode.Greeting) EnterGreeting(); else if (Mode == GameMode.Title) startMenu.ShowPlayer(Players.Current.name); };
             if (GreetOnStart) EnterGreeting();
