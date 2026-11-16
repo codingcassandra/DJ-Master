@@ -247,6 +247,7 @@ namespace DJMaster
                 ("1 FIRST MIX", Done(0) + "The color code, the beat, and your first beatmix. About 7 minutes."),
                 ("2 FADE & CUT", Done(1) + "The DJ loop, fades and cuts. No beatmatching needed. About 4 minutes."),
                 ("3 SYNC & FX", Done(2) + "Tap tempo, SYNC, an 8-bar mix, loops and echo. About 5 minutes."),
+                ("4 NEXT SONG", Done(3) + "Pick what's next by tempo and key, hear a bad pick, then mix yours in. About 5 minutes."),
                 ("BACK", ""));
         }
 
@@ -272,7 +273,7 @@ namespace DJMaster
                     else StartFreestyle();
                     break;
                 case GameMode.ChooseLesson:
-                    if (i == 3) ChooseVenue(GameMode.Learn);
+                    if (i == 4) ChooseVenue(GameMode.Learn);
                     else StartLearn(i);
                     break;
             }
