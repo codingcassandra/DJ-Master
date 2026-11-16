@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid, ChooseLevel, ChoosePlayer, Greeting }
+    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid, ChooseLevel, ChoosePlayer, Greeting, EarDrill }
 
     // Top-level flow: on the black start screen, pick a mode (Learn / Build a set / Freestyle / DJ Vocab / Daily), then your
     // level, then where to play (your room, a club or a festival), then step into the booth. Also wires up the scene and comfort buttons.
@@ -14,6 +14,8 @@ namespace DJMaster
         public LessonDirector lessons;
         public SetPerformer performer;
         public GridEditor gridEditor;
+        [Tooltip("The by-ear beatmatching drill (#21), from Freestyle in ADVANCED.")]
+        public EarDrill earDrill;
         public MixRecorder recorder;
         public InstructionPanel panel;
         public StartMenu startMenu;
@@ -37,6 +39,9 @@ namespace DJMaster
         public float menuMusicLevel = 0.3f;
 
         bool menuMusicOn;
+        // Freestyle by ear: how close your last mix was, shown after each transition
+        int lastTransitions;
+        string lastMixByEar = "";
         bool paused, focusLost, appPaused, appUnfocused;
         // The live set running now is today's daily challenge (not a set from BUILD A SET)
         bool dailyRun, dailyCounted, dailyUnlocked;
@@ -157,6 +162,7 @@ namespace DJMaster
         void EnterTitle()
         {
             gridEditor?.Stop();
+            earDrill?.Stop();
             lessons.Stop();
             performer.Stop();
             recorder.StopReplay();
@@ -347,10 +353,34 @@ namespace DJMaster
             }
         }
 
+        // ADVANCED players get the BY EAR toggle and the ear drill on the panel (#21)
+        void FreestyleActions()
+        {
+            if (Skill.Current == SkillLevel.Advanced) panel.SetActions(ByEar.Enabled ? "BY EAR: ON" : "BY EAR: OFF", "EAR DRILL");
+            else panel.SetActions();
+        }
+
+        void StartEarDrill()
+        {
+            ByEar.Enabled = true; // the drill is all about not looking
+            SetMode(GameMode.EarDrill);
+            panel.SetActions("DONE", "NEW TEMPO", "FREESTYLE");
+            earDrill.Begin();
+        }
+
         void Action(int i)
         {
             switch (Mode)
             {
+                case GameMode.Freestyle:
+                    if (i == 0) { ByEar.Enabled = !ByEar.Enabled; FreestyleActions(); }
+                    else if (i == 1) StartEarDrill();
+                    break;
+                case GameMode.EarDrill:
+                    if (i == 0) earDrill.Finish();
+                    else if (i == 1) earDrill.NewRound();
+                    else StartFreestyle();
+                    break;
                 case GameMode.Grid:
                     if (i == 0) gridEditor.Nudge(-1);
                     else if (i == 1) gridEditor.Nudge(1);
@@ -446,9 +476,12 @@ namespace DJMaster
             gridEditor?.Stop();
             lessons.Stop();
             performer.Stop();
+            earDrill?.Stop();
             SetMode(GameMode.Freestyle);
-            panel.SetActions();
+            FreestyleActions();
             judge.ResetScore();
+            lastTransitions = 0;
+            lastMixByEar = "";
         }
 
         void ShowResults()
@@ -550,10 +583,27 @@ namespace DJMaster
                     break;
 
                 case GameMode.Freestyle:
-                    panel.Show("FREESTYLE",
-                        judge.Warning != "" ? judge.Warning : "No timer, no rules. Turn BROWSE to pick a song and LOAD it, mix with any transition, try bass drops (cut the LOW, slam it back on bar 1), LOOPs and ECHO. Remember: less is more.",
-                        $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}   {LevelTag}", board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout);
+                    // By ear, each finished transition tells you how close the beatmatch was
+                    if (judge.Transitions != lastTransitions)
+                    {
+                        lastTransitions = judge.Transitions;
+                        if (ByEar.Active) lastMixByEar = "Last mix: " + ByEar.HowClose(judge.BpmDifference, judge.PhaseOffset, board.A.deck.BPM);
+                    }
+                    panel.Show(ByEar.Active ? "FREESTYLE  BY EAR" : "FREESTYLE",
+                        judge.Warning != "" ? judge.Warning : ByEar.Active
+                            ? "No numbers, no lights: listen in PHONES, ride TEMPO until the kicks stop drifting, nudge the jog wheel until they sound like one."
+                            : "No timer, no rules. Turn BROWSE to pick a song and LOAD it, mix with any transition, try bass drops (cut the LOW, slam it back on bar 1), LOOPs and ECHO. Remember: less is more.",
+                        $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}   {LevelTag}",
+                        board.SyncMessage != "" ? board.SyncMessage : ByEar.Active && lastMixByEar != "" ? lastMixByEar : judge.Shoutout);
                     break;
+                case GameMode.EarDrill:
+                {
+                    string drillText = earDrill.HasResult
+                        ? $"{ByEar.GradeName(earDrill.LastGrade)}!  {ByEar.HowClose(earDrill.BpmOff, earDrill.LastPhase, board.A.deck.BPM)}.\n{ByEar.Tip(earDrill.BpmOff, earDrill.MsOff)}\nKeep going and press DONE again, or NEW TEMPO for a fresh one."
+                        : "Deck B is in your PHONES at a different tempo, and off the beat. No numbers: listen. Ride Deck B's TEMPO fader until the kicks stop drifting apart, then nudge its jog wheel until they land together. Press DONE when they sound like one.";
+                    panel.Show("EAR DRILL", drillText, $"Round {earDrill.Rounds + (earDrill.HasResult ? 0 : 1)}   Perfect {earDrill.Perfects}   {LevelTag}", "");
+                    break;
+                }
             }
         }
     }
