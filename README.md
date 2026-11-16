@@ -7,7 +7,7 @@ tempo faders, a mixer with GAIN, EQs, filters, level meters, channel faders and 
 waveform on each deck and a song browser in the middle. It looks like club gear at night: brushed metal, rubber pads with LED
 rims, LED rings on every knob, and buttons that flash when you hit them.
 
-It starts on its own start screen: pick who's playing, a mode, your level, then where to play, and step into the booth.
+It starts on its own start screen: a greeting with what to try next, then pick who's playing, a mode, your level, then where to play, and step into the booth.
 
 | Mode | What you do |
 |---|---|

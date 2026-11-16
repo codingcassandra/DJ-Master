@@ -45,6 +45,14 @@ namespace DJMaster
 
         public bool Centered { get; private set; }
 
+        // The wordmark and the PLAYER tab come with the buttons-only layout. The greeting hides them for its own big hello.
+        public void HideExtras()
+        {
+            if (wordmark != null) wordmark.SetActive(false);
+            if (playerButton != null) playerButton.gameObject.SetActive(false);
+            if (playerTab != null) playerTab.SetActive(false);
+        }
+
         public void ShowPlayer(string name)
         {
             string text = $"PLAYER: {name}  >";

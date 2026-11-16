@@ -79,10 +79,13 @@ namespace DJMaster.Tests
             Assert.AreEqual(GameMode.Title, game.Mode);
             Assert.AreEqual(1, Players.All.Count);
 
-            // + NEW PLAYER adds one, switches to them and goes back to the start menu
+            // + NEW PLAYER adds one, switches to them and says hi (#50), then CONTINUE to the start menu
             bool firstHadBest = Players.BestSet > 0;
             yield return Poke(menu.playerButton);
             yield return Poke(menu.buttons[1]);
+            Assert.AreEqual(GameMode.Greeting, game.Mode);
+            Assert.AreEqual(GameDirector.Greeting(Players.Current.name), menu.title.text);
+            yield return Poke(menu.buttons[2]); // CONTINUE
             Assert.AreEqual(GameMode.Title, game.Mode);
             Assert.AreEqual(2, Players.All.Count);
             string newName = Players.Current.name;
@@ -101,6 +104,8 @@ namespace DJMaster.Tests
             yield return Poke(menu.playerButton);
             Assert.IsTrue(menu.buttons[1].Lit, "now the new player is the lit one");
             yield return Poke(menu.buttons[0]);
+            Assert.AreEqual(GameMode.Greeting, game.Mode);
+            yield return Poke(menu.buttons[2]); // CONTINUE
             Assert.AreEqual(0, Players.CurrentId);
             Assert.AreEqual(firstLevel, Skill.Current);
             Assert.AreEqual(firstHadBest, Players.BestSet > 0);
