@@ -282,7 +282,21 @@ namespace DJMaster.EditorTools
             Label(t, "A", new Vector3(-0.065f, 0.001f, -0.175f), 0.0015f, DeckAColor);
             Label(t, "B", new Vector3(0.065f, 0.001f, -0.175f), 0.0015f, DeckBColor);
 
-            sync = MakeSyncMeter(t, new Vector3(0, 0.062f, 0.247f), screenMat);
+            // Browser controls in the middle of the mixer, under the PHONES buttons (#12)
+            var browse = MakeKnob("browse", t, new Vector3(0, 0.02f, 0.112f), capMat, white, LabelColor);
+            browse.endless = true;
+            browse.throw01 = 0.2f; // about 1 cm of finger travel per song
+            browse.ledRing.gameObject.SetActive(false); // an endless encoder has no ends to light between, like on real gear
+            browse.ledRing = null;
+            Label(t, "BROWSE", new Vector3(0, 0.001f, 0.0885f), 0.0008f, LabelColor);
+            // 2 cm or more each way at the board's 70% scale, like the pads
+            var sort = MakeButton("browse.sort", "SORT", t, new Vector3(0, 0.008f, 0.062f), new Vector2(0.032f, 0.029f), capMat, Color.white,
+                out _, null, 0.001f);
+
+            board.browser = MakeCenterScreen(t, new Vector3(0, 0.062f, 0.247f), screenMat, out sync);
+            board.browser.board = board;
+            board.browser.browseKnob = browse;
+            board.browser.sortButton = sort;
 
             foreach (var b in t.GetComponentsInChildren<PokeButton>(true)) AddLeds(b);
 
@@ -514,29 +528,59 @@ namespace DJMaster.EditorTools
             return d;
         }
 
-        static SyncMeter MakeSyncMeter(Transform parent, Vector3 pos, Material screenMat)
+        // The center screen: the song browser on top, the SYNC needle and the crowd meter in a strip along the bottom.
+        static SongBrowser MakeCenterScreen(Transform parent, Vector3 pos, Material screenMat, out SyncMeter s)
         {
-            var go = new GameObject("SyncMeter");
+            const float W = 0.258f, H = 0.1f, L = -W * 0.5f + 0.007f, R = W * 0.5f - 0.007f;
+            var go = new GameObject("CenterScreen");
             go.transform.SetParent(parent, false);
             go.transform.localPosition = pos;
             go.transform.localRotation = Quaternion.Euler(30, 0, 0);
-            var s = go.AddComponent<SyncMeter>();
-            Box("Screen", go.transform, new Vector3(0, 0, 0.002f), new Vector3(0.13f, 0.088f, 0.002f), screenMat);
-            Text("Heading", go.transform, new Vector3(0, 0.04f, 0), 0.0011f, TextAnchor.UpperCenter, LabelColor).text = "SYNC";
-            s.label = Text("Label", go.transform, new Vector3(0, 0.022f, 0), 0.0015f, TextAnchor.UpperCenter, Color.white);
-            Box("Track", go.transform, new Vector3(0, -0.012f, 0), new Vector3(0.1f, 0.006f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
-            Box("Center", go.transform, new Vector3(0, -0.012f, -0.0004f), new Vector3(0.002f, 0.012f, 0.001f), Unlit("White", Color.white));
-            s.needle = Box("Needle", go.transform, new Vector3(0, -0.012f, -0.0008f), new Vector3(0.008f, 0.01f, 0.001f), Unlit("Needle", new Color(1f, 0.8f, 0.2f))).transform;
+            Box("Screen", go.transform, new Vector3(0, 0, 0.002f), new Vector3(W, H, 0.002f), screenMat);
+
+            var b = go.AddComponent<SongBrowser>();
+            b.header = Text("Header", go.transform, new Vector3(L, 0.0445f, 0), 0.001f, TextAnchor.UpperLeft, LabelColor);
+            b.status = Text("Status", go.transform, new Vector3(R, 0.0445f, 0), 0.0009f, TextAnchor.UpperRight, LabelColor);
+            Box("HeaderLine", go.transform, new Vector3(0, 0.0345f, 0), new Vector3(W - 0.01f, 0.0006f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            const int rows = 4;
+            b.rowPitch = 0.015f;
+            b.titles = new TextMeshPro[rows];
+            b.details = new TextMeshPro[rows];
+            b.tags = new TextMeshPro[rows];
+            for (int r = 0; r < rows; r++)
+            {
+                float y = 0.0265f - r * b.rowPitch;
+                b.titles[r] = Text($"Title{r}", go.transform, new Vector3(L + 0.003f, y, 0), 0.001f, TextAnchor.MiddleLeft, Color.white);
+                b.details[r] = Text($"Detail{r}", go.transform, new Vector3(R - 0.022f, y, 0), 0.001f, TextAnchor.MiddleRight, Color.white);
+                b.tags[r] = Text($"Tag{r}", go.transform, new Vector3(R - 0.009f, y, 0), 0.0016f, TextAnchor.MiddleCenter, Color.white);
+            }
+            // Between the screen's face (z 0.001) and the text (z 0), or it hides the text it highlights.
+            b.selectBar = Box("Selected", go.transform, new Vector3(0, 0.0265f, 0.0006f), new Vector3(W - 0.008f, b.rowPitch - 0.001f, 0.0002f),
+                Unlit("BrowseSelect", new Color(0.12f, 0.2f, 0.3f))).transform;
+
+            // SYNC strip
+            float sy = -0.0385f;
+            Box("SyncLine", go.transform, new Vector3(0, -0.0305f, 0), new Vector3(W - 0.01f, 0.0006f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            var sgo = new GameObject("SyncMeter");
+            sgo.transform.SetParent(go.transform, false);
+            s = sgo.AddComponent<SyncMeter>();
+            Text("Heading", sgo.transform, new Vector3(L, sy, 0), 0.0008f, TextAnchor.MiddleLeft, LabelColor).text = "SYNC";
+            s.label = Text("Label", sgo.transform, new Vector3(L + 0.02f, sy, 0), 0.001f, TextAnchor.MiddleLeft, Color.white);
+            float tx = 0.055f;
+            Box("Track", sgo.transform, new Vector3(tx, sy, 0), new Vector3(0.1f, 0.005f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            Box("Center", sgo.transform, new Vector3(tx, sy, -0.0004f), new Vector3(0.0015f, 0.009f, 0.001f), Unlit("White", Color.white));
+            s.needle = Box("Needle", sgo.transform, new Vector3(tx, sy, -0.0008f), new Vector3(0.007f, 0.008f, 0.001f), Unlit("Needle", new Color(1f, 0.8f, 0.2f))).transform;
             s.halfWidth = 0.048f;
-            s.lockLight = Prim(PrimitiveType.Cylinder, "Lock", go.transform, new Vector3(0.05f, 0.033f, -0.0005f), new Vector3(0.01f, 0.0005f, 0.01f), Unlit("Lock", Color.gray)).GetComponent<Renderer>();
+            s.lockLight = Prim(PrimitiveType.Cylinder, "Lock", sgo.transform, new Vector3(R - 0.004f, sy, -0.0005f), new Vector3(0.008f, 0.0005f, 0.008f), Unlit("Lock", Color.gray)).GetComponent<Renderer>();
             s.lockLight.transform.localRotation = Quaternion.Euler(90, 0, 0);
-            Text("CrowdLabel", go.transform, new Vector3(-0.058f, -0.03f, 0), 0.0009f, TextAnchor.MiddleLeft, LabelColor).text = "CROWD";
+            Text("CrowdLabel", sgo.transform, new Vector3(L, -0.0457f, 0), 0.0007f, TextAnchor.MiddleLeft, LabelColor).text = "CROWD";
             var pivot = new GameObject("EnergyPivot").transform;
-            pivot.SetParent(go.transform, false);
-            pivot.localPosition = new Vector3(-0.058f, -0.038f, -0.0005f);
-            s.energyFill = Box("Energy", pivot, new Vector3(0.058f, 0, 0), new Vector3(0.116f, 0.005f, 0.001f), Unlit("Energy", Color.magenta)).GetComponent<Renderer>();
+            pivot.SetParent(sgo.transform, false);
+            float ex = L + 0.02f, ew = R - ex;
+            pivot.localPosition = new Vector3(ex, -0.0457f, -0.0005f);
+            s.energyFill = Box("Energy", pivot, new Vector3(ew * 0.5f, 0, 0), new Vector3(ew, 0.0035f, 0.001f), Unlit("Energy", Color.magenta)).GetComponent<Renderer>();
             s.energyPivot = pivot;
-            return s;
+            return b;
         }
 
         // ================= Panels =================
@@ -1354,6 +1398,7 @@ namespace DJMaster.EditorTools
             var previewBoard = Object.FindAnyObjectByType<DJBoard>();
             foreach (var k in previewBoard.GetComponentsInChildren<Knob>())
             {
+                if (k.ledRing == null) continue; // BROWSE is endless, no ring
                 var kb = new MaterialPropertyBlock();
                 var kc = BoardColors.Of(BoardColors.FamilyOf(k.id));
                 kb.SetColor("_LedColor", kc.a == 0 ? Color.white : kc);
@@ -1395,6 +1440,15 @@ namespace DJMaster.EditorTools
                     m.lights[i].SetPropertyBlock(mb);
                 }
             RenderPreview("Preview_Board.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
+
+            // The song browser close up, sorted by BPM and scrolled a little, with a song on each deck.
+            var browser = Object.FindAnyObjectByType<SongBrowser>();
+            browser.SetSort(BrowseSort.Bpm);
+            browser.Move(6);
+            browser.Draw();
+            Object.FindAnyObjectByType<SyncMeter>().label.text = "BPM +0.0   <size=80%>LOCKED</size>";
+            var bt = browser.transform;
+            RenderPreview("Preview_Browser.png", bt.TransformPoint(new Vector3(0, 0, -0.3f)), bt.eulerAngles, 30f, false);
             RenderPreview("Preview_Screens.png", world.TransformPoint(new Vector3(0, 1.1f, 0.12f)), new Vector3(28, 0, 0), 40f, false);
             RenderPreview("Preview_Mixer.png", world.TransformPoint(new Vector3(0, 1.08f, 0.22f)), new Vector3(46, 0, 0), 40f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);

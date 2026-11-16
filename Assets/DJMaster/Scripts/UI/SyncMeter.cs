@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    // Center screen: how far apart the two decks are in tempo and in beat phase.
+    // The strip along the bottom of the center screen: how far apart the two decks are in tempo and in beat phase.
     // The needle sits in the middle and the light turns green when the beats are locked.
     public class SyncMeter : MonoBehaviour
     {
@@ -18,6 +18,9 @@ namespace DJMaster
 
         MaterialPropertyBlock block;
         string lastText;
+        float needleCenter;
+
+        void Awake() => needleCenter = needle.localPosition.x; // the needle swings around where it was built
 
         void Update()
         {
@@ -27,7 +30,7 @@ namespace DJMaster
             bool both = a.IsPlaying && b.IsPlaying;
 
             float phase = both ? judge.PhaseOffset : 0f;
-            needle.localPosition = new Vector3(phase * 2f * halfWidth, needle.localPosition.y, needle.localPosition.z);
+            needle.localPosition = new Vector3(needleCenter + phase * 2f * halfWidth, needle.localPosition.y, needle.localPosition.z);
 
             // Green when locked, yellow when close, red when far off. Color-blind mode uses the safe colors and
             // puts the same color's shape in front of the word, so the light isn't the only way to tell
@@ -45,7 +48,7 @@ namespace DJMaster
                 float d = Mathf.Round(judge.BpmDifference * 10f) / 10f;
                 string phaseWord = !both ? "" : judge.InSync ? "LOCKED" : phase > 0 ? "B AHEAD" : "B BEHIND";
                 if (both && BoardColors.ColorSafe) phaseWord = $"{BoardColors.Shape(state)} {phaseWord}";
-                text = $"BPM {(d > 0 ? "+" : "")}{d:0.0}\n<size=62.5%>{phaseWord}</size>";
+                text = $"BPM {(d > 0 ? "+" : "")}{d:0.0}   <size=80%>{phaseWord}</size>"; // one line: it's a strip under the browser
             }
             if (text != lastText) { label.text = text; lastText = text; }
 

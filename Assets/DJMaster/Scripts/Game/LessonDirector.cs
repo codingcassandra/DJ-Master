@@ -326,9 +326,10 @@ namespace DJMaster
             steps.Add(new Step
             {
                 title = "Load Deck B",
-                text = $"Time to pick the next record. Tap the {pink} LOAD button on {deckB}.",
-                hint = "LOAD is the small pink button just below Deck B's jog wheel, above the round CUE button.",
+                text = $"Time to pick the next record. The middle screen is your music: the BROWSE knob scrolls it. {TrackLibrary.Tracks[1].title} is picked for you, so tap the {pink} LOAD button on {deckB}.",
+                hint = "LOAD is the small pink button just below Deck B's jog wheel, above the round CUE button. LOAD puts the highlighted song on that deck.",
                 highlight = new[] { "B.load" },
+                enter = () => board.browser?.Select(1), // Velvet Static, 124 BPM: the next steps match its tempo to Neon Tides
                 done = () => B.IsLoaded,
             });
             steps.Add(new Step
@@ -565,8 +566,10 @@ namespace DJMaster
             steps.Add(new Step
             {
                 title = "The cut: load",
-                text = $"A CUT is an instant switch, exactly on the beat. Load a new song: tap {deckA}'s {BoardColors.Blue("LOAD")}.",
+                text = $"A CUT is an instant switch, exactly on the beat. Load a new song: turn BROWSE to any song you like, then tap {deckA}'s {BoardColors.Blue("LOAD")}.",
+                hint = "LOAD won't work on a deck the crowd can hear. Deck A is stopped, so it's safe.",
                 highlight = new[] { "A.load" },
+                enter = () => board.browser?.Select(1), // Velvet Static, so LOAD works even if you don't browse
                 done = () => A.IsLoaded && A.TrackIndex != startTrack,
             });
             steps.Add(new Step

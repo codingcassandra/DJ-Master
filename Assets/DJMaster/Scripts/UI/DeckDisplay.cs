@@ -43,7 +43,7 @@ namespace DJMaster
             {
                 lastTrack = deck.TrackIndex;
                 lastSecondsLeft = -2; // the key changes with the song
-                title.text = !deck.HasTrack ? "NO TRACK  -  tap LOAD"
+                title.text = !deck.HasTrack ? "NO TRACK  -  pick a song, tap LOAD"
                     : deck.IsLoading ? "LOADING..."
                     : $"{deck.Track.title}\n<size=85%>{deck.Track.artist}   {deck.Track.genre}   {(deck.Track.IsRecording ? deck.Track.license : deck.Track.Key)}</size>";
             }

@@ -85,6 +85,7 @@ namespace DJMaster
             Review = new Critique();
             mixTime = mixSynced = 0;
             board.ResetControls();
+            if (board.browser != null) board.browser.LockReason = "In a live set the next song loads for you.";
             board.A.deck.Load(set.songs[0]);
             board.A.deck.Play();
             board.A.volume.SetValue(1f);
@@ -101,6 +102,7 @@ namespace DJMaster
         public void Stop()
         {
             Running = false;
+            if (board.browser != null) board.browser.LockReason = null;
             board.ClearHighlights();
         }
 

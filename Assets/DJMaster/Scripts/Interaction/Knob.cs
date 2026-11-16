@@ -17,6 +17,8 @@ namespace DJMaster
         public Renderer ledRing;
         [Tooltip("Light the ring out from the default value (EQ, FILTER, GAIN) instead of from the left end.")]
         public bool bipolar = true;
+        [Tooltip("An endless encoder, like BROWSE: no stops at either end, and no double-tap reset.")]
+        public bool endless;
 
         public event Action<float> Changed;
 
@@ -68,14 +70,14 @@ namespace DJMaster
                     lastLocal = lp;
                     Engage(p);
                     // Double-tap resets to center, the "home" position DJs return EQs to.
-                    if (Time.time - lastTapEnd < 0.35f) { SetValue(defaultValue); lastTapEnd = -10f; }
+                    if (!endless && Time.time - lastTapEnd < 0.35f) { SetValue(defaultValue); lastTapEnd = -10f; }
                     touchStart = Time.time;
                     valueAtTouch = value;
                     break;
                 }
             }
 
-            if (indicator != null) indicator.localRotation = Quaternion.Euler(0, Mathf.Lerp(-135f, 135f, value), 0);
+            if (indicator != null) indicator.localRotation = Quaternion.Euler(0, Mathf.LerpUnclamped(-135f, 135f, value), 0);
         }
 
         protected override void LateUpdate()
@@ -99,7 +101,7 @@ namespace DJMaster
 
         public void SetValue(float v)
         {
-            v = Mathf.Clamp01(v);
+            if (!endless) v = Mathf.Clamp01(v);
             if (Mathf.Approximately(v, value)) return;
             value = v;
             Changed?.Invoke(value);
