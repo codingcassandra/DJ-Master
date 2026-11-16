@@ -360,7 +360,8 @@ namespace DJMaster
                 case GameMode.Learn:
                     if (i == 0) ChooseLesson();
                     else if (i == 1) lessons.Skip();
-                    else StartLearn(lessons.LessonIndex);
+                    else if (i == 2) StartLearn(lessons.LessonIndex);
+                    else lessons.PressNext();
                     break;
                 case GameMode.Live:
                     if (i == 1) Restart();
@@ -380,6 +381,7 @@ namespace DJMaster
             performer.Stop();
             SetMode(GameMode.Learn);
             panel.SetActions("LESSONS", "SKIP STEP", "RESTART");
+            nextShown = false;
             lessons.Begin(lesson);
         }
 
@@ -401,6 +403,7 @@ namespace DJMaster
         }
 
         string replaying = "";
+        bool nextShown;
 
         void StartBuild()
         {
@@ -505,6 +508,13 @@ namespace DJMaster
                     break;
 
                 case GameMode.Learn:
+                    // NEXT > shows (lit) only while a step is waiting to be read
+                    if (lessons.WaitingForNext != nextShown)
+                    {
+                        nextShown = lessons.WaitingForNext;
+                        panel.SetActions("LESSONS", "SKIP STEP", "RESTART", nextShown ? "NEXT >" : null);
+                        panel.actionButtons[3].Lit = nextShown;
+                    }
                     var s = lessons.Current;
                     if (s == null) break;
                     string body = s.text;
