@@ -9,6 +9,7 @@ Shader "DJMaster/Glass"
         _Rim ("Rim color", Color) = (0.78, 0.6, 1, 1)
         _RimPixels ("Rim width (pixels)", Float) = 1.5
         _Sheen ("Sheen from the top", Range(0, 1)) = 0.25
+        _RadiusPixels ("Corner radius (pixels)", Float) = 0
     }
     SubShader
     {
@@ -24,7 +25,7 @@ Shader "DJMaster/Glass"
             #include "UnityCG.cginc"
 
             fixed4 _Color, _Rim;
-            float _RimPixels, _Sheen;
+            float _RimPixels, _Sheen, _RadiusPixels;
 
             struct appdata { float4 vertex : POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_INPUT_INSTANCE_ID };
             struct v2f { float4 pos : SV_POSITION; float2 uv : TEXCOORD0; UNITY_VERTEX_OUTPUT_STEREO };
@@ -42,14 +43,20 @@ Shader "DJMaster/Glass"
 
             fixed4 frag (v2f i) : SV_Target
             {
-                // Distance to the nearest edge, in pixels
+                // Distance to the nearest edge, in pixels, with the corners rounded off
                 float2 d = min(i.uv, 1 - i.uv) / max(fwidth(i.uv), 1e-5);
-                float rim = saturate(_RimPixels + 0.5 - min(d.x, d.y));
+                float R = _RadiusPixels;
+                float2 c = max(R - d, 0);
+                float edge = (c.x > 0 && c.y > 0) ? R - length(c) : min(d.x, d.y);
+                float inside = saturate(edge + 0.5);
+                float rim = saturate(_RimPixels + 0.5 - edge);
                 // Lighter toward the top edge, like light from above catching the glass
                 float sheen = _Sheen * smoothstep(0.35, 1, 1 - i.uv.y);
                 fixed3 fill = _Color.rgb * (1 + sheen * 2) + sheen * 0.08;
                 fixed4 col = fixed4(fill, saturate(_Color.a + sheen * 0.25));
-                return lerp(col, fixed4(_Rim.rgb, _Rim.a), rim * _Rim.a);
+                col = lerp(col, fixed4(_Rim.rgb, _Rim.a), rim * _Rim.a);
+                col.a *= inside;
+                return col;
             }
             ENDCG
         }

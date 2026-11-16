@@ -619,8 +619,8 @@ namespace DJMaster.EditorTools
             go.transform.localPosition = new Vector3(0, 0.2f, 0.21f);
             go.transform.localRotation = Quaternion.Euler(20, 0, 0);
             var p = go.AddComponent<InstructionPanel>();
-            Box("Back", go.transform, new Vector3(0, 0, 0.004f), new Vector3(0.64f, 0.23f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
-            Box("Edge", go.transform, new Vector3(0, 0.115f, 0.003f), new Vector3(0.64f, 0.004f, 0.007f), Unlit("PanelEdge", DeckAColor));
+            PanelGlass(go.transform, "BoothGlass", new Vector3(0, 0, 0.004f), new Vector2(0.64f, 0.23f), Style.BoothPanelTint);
+            Box("Edge", go.transform, new Vector3(0, 0.115f, 0.003f), new Vector3(0.6f, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", Style.Purple));
             p.title = Text("Title", go.transform, new Vector3(-0.3f, 0.103f, 0), Style.PanelTitle, TextAnchor.UpperLeft, Style.HeadingColor);
             p.body = Text("Body", go.transform, new Vector3(-0.3f, 0.07f, 0), Style.Body, TextAnchor.UpperLeft, Color.white);
             p.feedback = Text("Feedback", go.transform, new Vector3(0, -0.04f, 0), Style.Lead, TextAnchor.MiddleCenter, Style.Good);
@@ -633,9 +633,10 @@ namespace DJMaster.EditorTools
             p.actionLabels = new TextMeshPro[4];
             for (int i = 0; i < 4; i++)
             {
-                var b = MakeButton($"panel.action{i}", "", go.transform, new Vector3(-0.195f + i * 0.13f, -0.088f, -0.004f), new Vector2(0.12f, 0.034f), Unlit("Cap", Color.gray), DeckAColor,
-                    out var label, faceUser, 0.0015f, Color.white);
-                b.offColor = new Color(0.15f, 0.2f, 0.3f);
+                var b = MakeButton($"panel.action{i}", "", go.transform, new Vector3(-0.195f + i * 0.13f, -0.088f, -0.004f), new Vector2(0.12f, 0.034f), ButtonGlass(), DeckAColor,
+                    out var label, faceUser, Style.Body, Color.white);
+                b.offColor = Style.ButtonTint;
+                b.transform.Find("Bezel").GetComponent<Renderer>().enabled = false;
                 p.actionButtons[i] = b;
                 p.actionLabels[i] = label;
             }
@@ -653,10 +654,10 @@ namespace DJMaster.EditorTools
             p.preview = preview;
             var t = go.transform;
             var faceUser = Quaternion.Euler(-90, 0, 0);
-            var capMat = Unlit("Cap", Color.gray);
+            var capMat = ButtonGlass();
 
-            Box("Back", t, new Vector3(0, 0, 0.004f), new Vector3(0.64f, 0.31f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
-            Box("Edge", t, new Vector3(0, 0.155f, 0.003f), new Vector3(0.64f, 0.004f, 0.007f), Unlit("PanelEdgeB", DeckBColor));
+            PanelGlass(t, "BoothGlass", new Vector3(0, 0, 0.004f), new Vector2(0.64f, 0.31f), Style.BoothPanelTint);
+            Box("Edge", t, new Vector3(0, 0.155f, 0.003f), new Vector3(0.6f, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", Style.Purple));
             Text("Title", t, new Vector3(-0.3f, 0.145f, 0), Style.PanelTitle, TextAnchor.UpperLeft, Style.HeadingColor).text = "BUILD YOUR SET";
             Text("HowTo", t, new Vector3(-0.3f, 0.114f, 0), 0.00125f, TextAnchor.UpperLeft, Color.white).text =
                 "1  Pick a transition style     2  Tap songs to add them in order     3  GO LIVE";
@@ -665,7 +666,8 @@ namespace DJMaster.EditorTools
             PokeButton Btn(string id, Vector3 pos, Vector2 size, Color on, float labelSize, out TextMeshPro label)
             {
                 var b = MakeButton(id, "", t, pos, size, capMat, on, out label, faceUser, labelSize, Color.white);
-                b.offColor = new Color(0.15f, 0.15f, 0.22f);
+                b.offColor = Style.ButtonTint;
+                b.transform.Find("Bezel").GetComponent<Renderer>().enabled = false;
                 return b;
             }
 
@@ -715,10 +717,10 @@ namespace DJMaster.EditorTools
             var t = go.transform;
             var faceUser = Quaternion.Euler(-90, 0, 0);
             var purple = StartMenu.Purple;
-            var menuGlass = Glass("MenuRow", Style.RowTint, Style.RowRim, Style.RowSheen);
+            var menuGlass = Glass("MenuRow", Style.RowTint, Style.RowRim, Style.RowSheen, Style.RowRadius);
 
             // Dark glass, so the slow lights behind it glow through (#40)
-            Box("Back", t, new Vector3(0, -0.015f, 0.004f), new Vector3(0.62f, 0.39f, 0.006f), Glass("MenuGlassBack", Style.PanelTint, Style.PanelRim, Style.PanelSheen));
+            PanelGlass(t, "MenuGlassBack", new Vector3(0, -0.015f, 0.004f), new Vector2(0.62f, 0.39f), Style.PanelTint);
             BuildMenuBackdrop(t);
             Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
@@ -814,13 +816,32 @@ namespace DJMaster.EditorTools
             return root;
         }
 
-        static Material Glass(string name, Color tint, Color rim, float sheen)
+        static Material Glass(string name, Color tint, Color rim, float sheen, float radiusPixels = 0f)
         {
             var m = MaterialAsset(name, "DJMaster/Glass");
             m.color = tint;
             m.SetColor("_Rim", rim);
             m.SetFloat("_Sheen", sheen);
+            m.SetFloat("_RadiusPixels", radiusPixels);
             return m;
+        }
+
+        static Material ButtonGlass() => Glass("ButtonGlass", Style.ButtonTint, Style.RowRim, Style.RowSheen, Style.RowRadius);
+
+        // A panel's back (#34): dark glass with rounded corners and a thin purple rim, and a soft shadow behind it
+        static GameObject PanelGlass(Transform panel, string matName, Vector3 center, Vector2 size, Color tint)
+        {
+            var back = Box("Back", panel, center, new Vector3(size.x, size.y, 0.006f), Glass(matName, tint, Style.PanelRim, Style.PanelSheen, Style.PanelRadius));
+            var shadowMat = MaterialAsset("PanelShadow", "DJMaster/ContactShadow");
+            shadowMat.color = Color.black;
+            shadowMat.SetFloat("_Alpha", Style.ShadowAlpha);
+            const float grow = 1.25f; // the quad is bigger than the panel so the shadow can fade out past its edges
+            shadowMat.SetVector("_Size", new Vector4(0.5f / grow - 0.01f, 0.5f / grow - 0.01f, 0, 0));
+            shadowMat.SetFloat("_Soft", 0.08f);
+            shadowMat.renderQueue = 2980; // under the glass
+            var shadow = Prim(PrimitiveType.Quad, "Shadow", panel, center + new Vector3(0.006f, -0.008f, 0.02f), new Vector3(size.x * grow, size.y * grow, 1), shadowMat);
+            if (shadow.GetComponent<Collider>() is { } col) Object.DestroyImmediate(col);
+            return back;
         }
 
         // DJ VOCAB: a bigger purple board than the start menu, with every word listed in two columns
@@ -838,7 +859,7 @@ namespace DJMaster.EditorTools
             var purple = StartMenu.Purple;
             const float W = 0.86f, Top = 0.33f, Bottom = -0.33f;
 
-            Box("Back", t, new Vector3(0, (Top + Bottom) / 2, 0.004f), new Vector3(W, Top - Bottom, 0.006f), Unlit("MenuBack", new Color(0.035f, 0.01f, 0.06f)));
+            PanelGlass(t, "MenuGlassBack", new Vector3(0, (Top + Bottom) / 2, 0.004f), new Vector2(W, Top - Bottom), Style.PanelTint);
             Box("EdgeTop", t, new Vector3(0, Top, 0.003f), new Vector3(W, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
             Box("EdgeBottom", t, new Vector3(0, Bottom, 0.003f), new Vector3(W, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
             Text("Title", t, new Vector3(0, Top - 0.015f, 0), Style.Title, TextAnchor.UpperCenter, purple).text = "DJ VOCAB";
@@ -908,6 +929,68 @@ namespace DJMaster.EditorTools
             return b;
         }
 
+        // A small white icon at the left of a tab button, riding down with its cap; the label moves over to make room (#34)
+        static void AddIcon(PokeButton b, TextMeshPro label, string kind, float buttonWidth)
+        {
+            const float size = 0.013f;
+            var mat = MaterialAsset("Icon" + kind, "Unlit/Transparent");
+            mat.mainTexture = IconTexture(kind);
+            var icon = Prim(PrimitiveType.Quad, "Icon", b.transform, Vector3.zero, Vector3.one * size, mat);
+            if (icon.GetComponent<Collider>() is { } col) Object.DestroyImmediate(col);
+            label.ForceMeshUpdate();
+            float textHalf = label.textBounds.extents.x * label.transform.lossyScale.x / Mathf.Max(1e-6f, b.transform.lossyScale.x);
+            if (textHalf <= 0 || textHalf > buttonWidth / 2) textHalf = buttonWidth * 0.3f;
+            // icon + gap + text, centered on the button
+            float gap = 0.004f, total = size + gap + textHalf * 2, left = -total / 2;
+            icon.transform.localPosition = new Vector3(left + size / 2, 0.0006f, 0);
+            icon.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            var lp = b.transform.InverseTransformPoint(label.transform.position);
+            label.transform.position = b.transform.TransformPoint(new Vector3(left + size + gap + textHalf, lp.y, lp.z));
+            icon.transform.SetParent(b.cap, true); // presses with the cap, like the label
+        }
+
+        // White-on-clear 64 px icons, drawn from shapes so there's no image to license: a house for HOME, an eye for COLOR-BLIND
+        static Texture2D IconTexture(string kind)
+        {
+            const int n = 64;
+            var tex = new Texture2D(n, n, TextureFormat.RGBA32, true, false) { name = "Icon" + kind, wrapMode = TextureWrapMode.Clamp, filterMode = FilterMode.Trilinear };
+            var px = new Color32[n * n];
+            for (int y = 0; y < n; y++)
+                for (int x = 0; x < n; x++)
+                {
+                    float u = (x + 0.5f) / n * 2f - 1f, v = (y + 0.5f) / n * 2f - 1f; // -1..1, v up
+                    float d = kind == "Home" ? HomeShape(u, v) : EyeShape(u, v);        // signed distance, < 0 inside
+                    byte a = (byte)Mathf.RoundToInt(Mathf.Clamp01(0.5f - d * n / 2f) * 255f);
+                    px[y * n + x] = new Color32(255, 255, 255, a);
+                }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            return SaveAsset(tex, $"Icon{kind}.asset");
+        }
+
+        static float Box2(float u, float v, float cx, float cy, float hx, float hy) => Mathf.Max(Mathf.Abs(u - cx) - hx, Mathf.Abs(v - cy) - hy);
+
+        // A roof (a triangle) over a square body, with a door cut out
+        static float HomeShape(float u, float v)
+        {
+            // Triangle: apex (0, 0.9), base corners (+-0.92, 0.1)
+            float roof = Mathf.Max(-(v - 0.1f), (0.87f * Mathf.Abs(u) + v - 0.9f) / 1.325f);
+            float body = Box2(u, v, 0, -0.42f, 0.62f, 0.48f);
+            float door = Box2(u, v, 0, -0.62f, 0.17f, 0.3f);
+            return Mathf.Max(Mathf.Min(roof, body), -door);
+        }
+
+        // An almond (two circles crossing) with a round pupil cut through it
+        static float EyeShape(float u, float v)
+        {
+            float r = 1.15f, off = 0.62f;
+            float lens = Mathf.Max(Mathf.Sqrt(u * u + (v - off) * (v - off)) - r, Mathf.Sqrt(u * u + (v + off) * (v + off)) - r);
+            float ring = Mathf.Abs(Mathf.Sqrt(u * u + v * v) - 0.3f) - 0.06f;
+            float pupil = Mathf.Sqrt(u * u + v * v) - 0.18f;
+            float hole = Mathf.Sqrt(u * u + v * v) - 0.42f;
+            return Mathf.Min(Mathf.Max(lens, -hole), Mathf.Min(ring, pupil));
+        }
+
         static Transform Corner(Transform panel, Vector3 topRight)
         {
             var go = new GameObject("Corner");
@@ -938,9 +1021,11 @@ namespace DJMaster.EditorTools
             }
             s.home = Btn("system.home", -W + 0.04f, Style.TabButtonWidth, out var homeLabel);
             homeLabel.text = "HOME";
+            AddIcon(s.home, homeLabel, "Home", Style.TabButtonWidth);
             s.colorBlind = Btn("system.colorblind", -0.07f, 0.124f, out s.colorBlindLabel);
             s.colorBlind.onColor = new Color(1f, 0.85f, 0.3f); // not one of the board's color families, so color-blind mode leaves it alone
             s.colorBlindLabel.text = "COLOR-BLIND: OFF";
+            AddIcon(s.colorBlind, s.colorBlindLabel, "Eye", 0.124f);
             return s;
         }
 
@@ -950,14 +1035,15 @@ namespace DJMaster.EditorTools
             go.transform.SetParent(board, false);
             go.transform.localPosition = new Vector3(-0.33f, 0.14f, 0.02f);
             go.transform.localRotation = Quaternion.Euler(10, -45, 0);
-            Box("Back", go.transform, new Vector3(0, 0, 0.004f), new Vector3(0.13f, 0.27f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
+            PanelGlass(go.transform, "BoothGlass", new Vector3(0, 0, 0.004f), new Vector2(0.13f, 0.27f), Style.BoothPanelTint);
             Text("Heading", go.transform, new Vector3(0, 0.125f, 0), 0.0014f, TextAnchor.UpperCenter, Style.HeadingColor).text = "SCENE";
             var faceUser = Quaternion.Euler(-90, 0, 0);
             PokeButton Btn(string id, string label, float y, float w = 0.1f, float x = 0)
             {
-                var b = MakeButton(id, label, go.transform, new Vector3(x, y, -0.004f), new Vector2(w, 0.034f), Unlit("Cap", Color.gray), new Color(1f, 0.3f, 0.75f),
-                    out _, faceUser, 0.0012f, Color.white);
-                b.offColor = new Color(0.15f, 0.15f, 0.22f);
+                var b = MakeButton(id, label, go.transform, new Vector3(x, y, -0.004f), new Vector2(w, 0.034f), ButtonGlass(), new Color(1f, 0.3f, 0.75f),
+                    out _, faceUser, Style.Tab, Color.white);
+                b.offColor = Style.ButtonTint;
+                b.transform.Find("Bezel").GetComponent<Renderer>().enabled = false;
                 return b;
             }
             room = Btn("scene.room", "MY ROOM", 0.085f);

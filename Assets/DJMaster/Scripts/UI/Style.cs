@@ -44,6 +44,10 @@ namespace DJMaster
         public static readonly Color RowRim = new(0.85f, 0.7f, 1f, 0.9f);
         public static readonly Color RowLit = new(0.62f, 0.28f, 1f, 0.92f);
         public const float RowSheen = 0.3f;
+        public static readonly Color BoothPanelTint = new(0.03f, 0.02f, 0.06f, 0.85f); // panels in the booth: more solid, so text reads over the room
+        public static readonly Color ButtonTint = new(0.15f, 0.15f, 0.24f, 0.7f);    // glass buttons on the booth panels
+        public const float PanelRadius = 14f, RowRadius = 6f;                       // rounded corners, in pixels
+        public const float ShadowAlpha = 0.55f;                                     // the soft shadow behind a panel
         public const float EdgeWidth = 0.004f;                                      // the bright strip along a panel's top
         public static readonly Color TabBack = new(0.06f, 0.06f, 0.09f);            // the tabs above a panel
         public static readonly Color TabButton = new(0.2f, 0.2f, 0.28f);

@@ -25,6 +25,7 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
+    - _RadiusPixels: 6
     - _RimPixels: 1.5
     - _Sheen: 0.3
     m_Colors:
