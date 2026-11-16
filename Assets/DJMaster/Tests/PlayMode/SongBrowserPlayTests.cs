@@ -25,6 +25,9 @@ namespace DJMaster.Tests
         [TearDown]
         public void Cleanup() => Pointers.Remove(finger);
 
+        // A spot next to a control, with the offset in real metres like a real fingertip (the board is drawn scaled)
+        static Vector3 AtMetres(Transform t, Vector3 m) => t.TransformPoint(new Vector3(m.x / t.lossyScale.x, m.y / t.lossyScale.y, m.z / t.lossyScale.z));
+
         static IEnumerator WaitFor(System.Func<bool> cond, float seconds)
         {
             float t = 0;
@@ -34,13 +37,13 @@ namespace DJMaster.Tests
         // Touch the knob and slide away from you by `metres`.
         IEnumerator Turn(Knob knob, float metres)
         {
-            Vector3 At(float z) => knob.transform.TransformPoint(new Vector3(0, 0.005f, z));
+            Vector3 At(float z) => AtMetres(knob.transform, new Vector3(0, 0.005f, z));
             finger.DirectPress = false;
             finger.Active = true;
             finger.Position = At(0);
             yield return null; yield return null;
             for (int i = 1; i <= 10; i++) { finger.Position = At(metres * i / 10f); yield return null; }
-            finger.Position = knob.transform.TransformPoint(new Vector3(0, 0.08f, 0));
+            finger.Position = AtMetres(knob.transform, new Vector3(0, 0.08f, 0));
             yield return null;
             finger.Active = false;
             yield return null;
@@ -48,13 +51,14 @@ namespace DJMaster.Tests
 
         IEnumerator Poke(PokeButton b)
         {
+            yield return new WaitForSeconds(0.3f); // button debounce
             finger.DirectPress = false;
             finger.Active = true;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, 0.015f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, 0.015f, 0));
             yield return null; yield return null;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, -0.01f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, -0.01f, 0));
             yield return null; yield return null;
-            finger.Position = b.transform.TransformPoint(new Vector3(0, 0.03f, 0));
+            finger.Position = AtMetres(b.transform, new Vector3(0, 0.03f, 0));
             yield return null;
             finger.Active = false;
             yield return null;
