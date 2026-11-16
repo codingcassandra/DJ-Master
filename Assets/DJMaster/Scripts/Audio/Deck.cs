@@ -48,6 +48,18 @@ namespace DJMaster
         float jogBend;   // set every frame the jog wheel is touched
         int lastWholeBeat = int.MinValue; // none yet (beats before a lead-in are negative)
 
+        void OnEnable() => TrackLibrary.UserTracksChanged += FollowTrack;
+        void OnDisable() => TrackLibrary.UserTracksChanged -= FollowTrack;
+
+        // Your songs were rescanned: keep playing ours at its new place, or let it go if the file's gone
+        void FollowTrack(System.Func<int, int> newIndex)
+        {
+            if (TrackIndex < 0) return;
+            int n = newIndex(TrackIndex);
+            if (n < 0) { Unload(); Problem = "That song left your music folder."; }
+            else TrackIndex = n;
+        }
+
         void Awake()
         {
             Source = GetComponent<AudioSource>();

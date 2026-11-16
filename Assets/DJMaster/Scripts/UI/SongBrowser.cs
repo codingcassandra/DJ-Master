@@ -64,16 +64,19 @@ namespace DJMaster
                 };
             }
             if (sortButton != null) sortButton.Pressed += () => SetSort((BrowseSort)(((int)Sort + 1) % 4));
-            MyMusic.Changed += OnMyMusicChanged;
+            TrackLibrary.UserTracksChanged += OnTracksChanged;
         }
 
-        void OnDestroy() => MyMusic.Changed -= OnMyMusicChanged;
+        void OnDestroy() => TrackLibrary.UserTracksChanged -= OnTracksChanged;
 
         // A rescan changed your songs: redo the list, keeping the highlighted song if it's still there
-        void OnMyMusicChanged()
+        void OnTracksChanged(Func<int, int> newIndex)
         {
             if (order == null) return;
-            SetSort(Sort);
+            int keep = Selected >= 0 ? newIndex(Selected) : -1;
+            order = SortedOrder(Sort);
+            if (keep >= 0 && Array.IndexOf(order, keep) >= 0) Select(keep);
+            else { Cursor = 0; Top = 0; lastSelected = -2; ScrollToCursor(); }
             lastDrawn = null;
         }
 

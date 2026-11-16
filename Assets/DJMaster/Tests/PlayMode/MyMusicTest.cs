@@ -120,6 +120,18 @@ namespace DJMaster.Tests
             int again = Enumerable.Range(TrackLibrary.BuiltInCount, TrackLibrary.Tracks.Length - TrackLibrary.BuiltInCount)
                 .First(i => TrackLibrary.Tracks[i].title == "Test Groove");
             Assert.AreEqual(128f, TrackLibrary.Tracks[again].bpm, 1f);
+            yield return null;
+            Assert.IsTrue(A.IsLoaded && A.IsPlaying, "a rescan doesn't stop the song that's playing");
+            Assert.AreEqual("Test Groove", A.Track.title);
+
+            // Take the file away: the deck lets go of it, with a message, and nothing breaks
+            A.Pause();
+            File.Delete(Path.Combine(folder, Good));
+            MyMusic.Scan();
+            yield return null;
+            Assert.IsFalse(A.HasTrack);
+            StringAssert.Contains("left your music folder", A.Problem);
+            Assert.AreEqual(1, MyMusic.Count);
         }
 
         [UnityTest]

@@ -64,20 +64,53 @@ namespace DJMaster
         // Why a song couldn't load, or null
         public static string LoadError(int index) => errors.TryGetValue(index, out var e) ? e : null;
 
-        // Replaces the songs you added with this list (from a folder scan). The built-in songs keep their place and grids
+        // Fires after your songs change, with where each old index went (-1: the file's gone). Decks and the browser
+        // follow their songs to the new place
+        public static event Action<Func<int, int>> UserTracksChanged;
+
+        // Replaces the songs you added with this list (from a folder scan). The built-in songs keep their place and grids;
+        // a song that's still there keeps its loaded audio and beat, one that's gone is let go
         public static void SetUserTracks(IList<TrackInfo> songs)
         {
-            for (int i = BuiltInCount; i < Tracks.Length; i++)
-            {
-                if (clips.TryGetValue(i, out var c) && c != null) UnityEngine.Object.Destroy(c);
-                clips.Remove(i);
-                if (userLoads.TryGetValue(i, out var r)) r.Dispose();
-                userLoads.Remove(i); userDetects.Remove(i); userPending.Remove(i); errors.Remove(i);
-            }
+            var old = Tracks;
             var all = new TrackInfo[BuiltInCount + songs.Count];
-            Array.Copy(Tracks, all, BuiltInCount);
-            for (int i = 0; i < songs.Count; i++) all[BuiltInCount + i] = songs[i];
+            Array.Copy(old, all, BuiltInCount);
+            var newIndexOfPath = new Dictionary<string, int>();
+            for (int i = 0; i < songs.Count; i++)
+            {
+                all[BuiltInCount + i] = songs[i];
+                newIndexOfPath[songs[i].path] = BuiltInCount + i;
+            }
+            var map = new Dictionary<int, int>();
+            for (int i = BuiltInCount; i < old.Length; i++)
+                map[i] = newIndexOfPath.TryGetValue(old[i].path, out int n) ? n : -1;
+
+            // Move what we know about each song along with it
+            var oldClips = new Dictionary<int, AudioClip>();
+            foreach (var kv in map) if (clips.TryGetValue(kv.Key, out var c)) { oldClips[kv.Key] = c; clips.Remove(kv.Key); }
+            var oldPending = new Dictionary<int, AudioClip>(userPending);
+            foreach (var kv in userLoads) kv.Value.Dispose();
+            userLoads.Clear(); userDetects.Clear(); userPending.Clear();
+            var oldErrors = new Dictionary<int, string>(errors);
+            foreach (var kv in map) errors.Remove(kv.Key);
+            foreach (var kv in map)
+            {
+                int n = kv.Value;
+                if (n >= 0)
+                {
+                    all[n].bpm = old[kv.Key].bpm;
+                    all[n].firstBeat = old[kv.Key].firstBeat;
+                    if (oldClips.TryGetValue(kv.Key, out var c)) clips[n] = c;
+                    if (oldErrors.TryGetValue(kv.Key, out var e)) errors[n] = e;
+                }
+                else
+                {
+                    if (oldClips.TryGetValue(kv.Key, out var c) && c != null) UnityEngine.Object.Destroy(c);
+                }
+                if (oldPending.TryGetValue(kv.Key, out var p) && p != null) UnityEngine.Object.Destroy(p); // half loaded: starts again
+            }
             Tracks = all;
+            UserTracksChanged?.Invoke(i => i < BuiltInCount ? i : map.TryGetValue(i, out int n) ? n : -1);
         }
 
         public static AudioType AudioTypeOf(string path) => System.IO.Path.GetExtension(path).ToLowerInvariant() switch
