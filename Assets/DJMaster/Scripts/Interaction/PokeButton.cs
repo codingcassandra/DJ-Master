@@ -14,14 +14,20 @@ namespace DJMaster
         public Renderer capRenderer;
         public Color offColor = new Color(0.12f, 0.12f, 0.14f);
         public Color onColor = new Color(0.1f, 0.9f, 0.5f);
+        [Tooltip("How much of onColor the cap shows when it's off (ColorSafeView keeps it when it swaps colors).")]
+        public float offTint = 0.3f;
         public float cooldown = 0.25f;
+        [Tooltip("LED rim around the cap: dim in the button's color, full when lit, flashing on a press.")]
+        public Renderer rim;
+        [Tooltip("Additive halo under the button, only on while it flashes from a press.")]
+        public Renderer halo;
 
         public bool Lit { get; set; }
         public event Action Pressed;
 
         Pointer armedBy, pressedBy;
         float lastPress = -10f;
-        float capOffset;
+        float capOffset, flash;
         Vector3 capRest;
         MaterialPropertyBlock block;
 
@@ -74,6 +80,7 @@ namespace DJMaster
                         lastPress = Time.time;
                         depth = pressDepth;
                         Sfx.Click();
+                        flash = 1f;
                         Pressed?.Invoke();
                         break;
                     }
@@ -90,17 +97,44 @@ namespace DJMaster
             Mathf.Abs(lp.x) < size.x * 0.5f + margin && Mathf.Abs(lp.z) < size.y * 0.5f + margin && lp.y < hoverHeight;
 
         // Lets the lessons and the PlayMode tests press a button without a hand.
-        public void SimulatePress() => Pressed?.Invoke();
+        public void SimulatePress() { flash = 1f; Pressed?.Invoke(); }
 
         protected override void LateUpdate()
         {
             base.LateUpdate();
-            if (capRenderer == null) return;
+            flash = Mathf.MoveTowards(flash, 0f, Time.deltaTime / 0.35f);
+            // How hard it shines from the press: full while held, then fading out after the finger lifts
+            float shine = pressedBy != null ? 1f : flash * flash;
+            var bright = Color.Lerp(onColor, Color.white, 0.55f);
             block ??= new MaterialPropertyBlock();
-            var c = Lit ? onColor : offColor;
-            if (pressedBy != null) c = Color.Lerp(c, Color.white, 0.4f);
-            block.SetColor("_Color", c);
-            capRenderer.SetPropertyBlock(block);
+            if (capRenderer != null)
+            {
+                var c = Lit ? onColor : offColor;
+                c = Color.Lerp(c, bright, shine * 0.8f);
+                block.SetColor("_Color", c);
+                // Rubber pads (a lit material) glow from inside in their color; unlit caps just ignore this
+                block.SetColor("_EmissionColor", c * (Lit || shine > 0 ? 0.85f : 0.08f));
+                capRenderer.SetPropertyBlock(block);
+            }
+            if (rim != null)
+            {
+                var r = Lit ? onColor : onColor * 0.32f;
+                r = Color.Lerp(r, bright, shine);
+                r.a = 1f;
+                block.SetColor("_Color", r);
+                rim.SetPropertyBlock(block);
+            }
+            if (halo != null)
+            {
+                halo.enabled = shine > 0.01f;
+                if (halo.enabled)
+                {
+                    var h = onColor * (0.75f * shine);
+                    h.a = 1f;
+                    block.SetColor("_Color", h);
+                    halo.SetPropertyBlock(block);
+                }
+            }
         }
     }
 }

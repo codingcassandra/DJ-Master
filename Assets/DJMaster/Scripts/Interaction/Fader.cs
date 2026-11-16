@@ -17,7 +17,15 @@ namespace DJMaster
         [Tooltip("Cap travel per unit of finger travel. Below 1 gives fine control, e.g. for matching tempo.")]
         public float dragRatio = 1f;
 
+        [Tooltip("The white line on the cap. It lights up in the fader's color while you hold it.")]
+        public Renderer capLine;
+        [Tooltip("Additive glow around the cap, on while you hold it.")]
+        public Renderer capHalo;
+
         public event Action<float> Changed;
+
+        MaterialPropertyBlock lineBlock;
+        float hold;
 
         Pointer holder;
         float lastAxis;
@@ -73,6 +81,34 @@ namespace DJMaster
 
             if (cap != null)
                 cap.localPosition = horizontal ? new Vector3(CapPos, cap.localPosition.y, 0) : new Vector3(0, cap.localPosition.y, CapPos);
+        }
+
+        protected override void LateUpdate()
+        {
+            base.LateUpdate();
+            // On the moment you grab it, then fading out after you let go
+            hold = holder != null ? 1f : Mathf.MoveTowards(hold, 0f, Time.deltaTime / 0.3f);
+            var family = BoardColors.FamilyOf(id);
+            var c = family == BoardColors.Family.None ? Color.white : BoardColors.Of(family);
+            lineBlock ??= new MaterialPropertyBlock();
+            if (capLine != null)
+            {
+                var l = Color.Lerp(new Color(0.85f, 0.85f, 0.85f), Color.Lerp(c, Color.white, 0.3f), hold);
+                l.a = 1f;
+                lineBlock.SetColor("_Color", l);
+                capLine.SetPropertyBlock(lineBlock);
+            }
+            if (capHalo != null)
+            {
+                capHalo.enabled = hold > 0.01f;
+                if (capHalo.enabled)
+                {
+                    var h = c * (0.7f * hold);
+                    h.a = 1f;
+                    lineBlock.SetColor("_Color", h);
+                    capHalo.SetPropertyBlock(lineBlock);
+                }
+            }
         }
 
         public void SetValue(float v)

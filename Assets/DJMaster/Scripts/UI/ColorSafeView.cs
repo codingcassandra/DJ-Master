@@ -37,7 +37,18 @@ namespace DJMaster
             foreach (var c in GetComponentsInChildren<DJControl>(true))
             {
                 if (c.glow != null) skip.Add(c.glow);
-                if (c is PokeButton pb && pb.capRenderer != null) skip.Add(pb.capRenderer);
+                if (c is PokeButton pb)
+                {
+                    if (pb.capRenderer != null) skip.Add(pb.capRenderer);
+                    if (pb.rim != null) skip.Add(pb.rim);
+                    if (pb.halo != null) skip.Add(pb.halo);
+                }
+                if (c is Knob k && k.ledRing != null) skip.Add(k.ledRing);
+                if (c is Fader f)
+                {
+                    if (f.capLine != null) skip.Add(f.capLine);
+                    if (f.capHalo != null) skip.Add(f.capHalo);
+                }
             }
             foreach (var d in GetComponentsInChildren<DeckDisplay>(true))
             {
@@ -98,7 +109,7 @@ namespace DJMaster
                 if (!safe) { b.button.onColor = b.on; b.button.offColor = b.off; continue; }
                 var on = Recolor(b.family, b.brightness, b.on.a);
                 b.button.onColor = on;
-                b.button.offColor = Color.Lerp(new Color(0.1f, 0.1f, 0.11f), on, 0.3f); // same dim tint the scene uses
+                b.button.offColor = Color.Lerp(new Color(0.1f, 0.1f, 0.11f), on, b.button.offTint); // same dim tint the scene uses
             }
 
             block ??= new MaterialPropertyBlock();

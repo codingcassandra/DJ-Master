@@ -10,7 +10,8 @@ namespace DJMaster
         public ChannelStrip strip;
         public Renderer[] lights = new Renderer[8]; // bottom to top
 
-        static readonly Color Off = new Color(0.06f, 0.06f, 0.07f);
+        // An unlit LED still shows a hint of its color through the lens, like on real gear
+        static Color Off(int i) => LightColor(i) * 0.14f + new Color(0.02f, 0.02f, 0.022f);
         MaterialPropertyBlock block;
         int lastLit = -1;
         bool lastSafe;
@@ -35,7 +36,7 @@ namespace DJMaster
             for (int i = 0; i < lights.Length; i++)
             {
                 if (lights[i] == null) continue;
-                block.SetColor("_Color", i < lit ? LightColor(i) : Off);
+                block.SetColor("_Color", i < lit ? LightColor(i) : Off(i));
                 lights[i].SetPropertyBlock(block);
             }
         }

@@ -13,10 +13,17 @@ namespace DJMaster
         public float defaultValue = 0.5f;
         [Tooltip("Metres of finger travel for a full sweep.")]
         public float throw01 = 0.07f;
+        [Tooltip("LED ring around the knob (DJMaster/LedRing). Lit in the knob's color family, so color-blind mode recolors it too.")]
+        public Renderer ledRing;
+        [Tooltip("Light the ring out from the default value (EQ, FILTER, GAIN) instead of from the left end.")]
+        public bool bipolar = true;
 
         public event Action<float> Changed;
 
         Pointer holder;
+        MaterialPropertyBlock ringBlock;
+        float ringValue = -1f;
+        Color ringColor;
         Vector3 lastLocal;
         float touchStart, valueAtTouch;
         float lastTapEnd = -10f;
@@ -69,6 +76,22 @@ namespace DJMaster
             }
 
             if (indicator != null) indicator.localRotation = Quaternion.Euler(0, Mathf.Lerp(-135f, 135f, value), 0);
+        }
+
+        protected override void LateUpdate()
+        {
+            base.LateUpdate();
+            if (ledRing == null) return;
+            var c = BoardColors.Of(BoardColors.FamilyOf(id));
+            if (c.a == 0) c = Color.white; // not color coded
+            if (Touched) c = Color.Lerp(c, Color.white, 0.25f); // a touch brighter while your finger is on it
+            if (Mathf.Approximately(ringValue, value) && c == ringColor) return;
+            ringValue = value; ringColor = c;
+            ringBlock ??= new MaterialPropertyBlock();
+            ringBlock.SetColor("_LedColor", c);
+            ringBlock.SetFloat("_Value", value);
+            ringBlock.SetFloat("_From", bipolar ? defaultValue : 0f);
+            ledRing.SetPropertyBlock(ringBlock);
         }
 
         // Editor mouse wheel support.

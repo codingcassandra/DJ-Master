@@ -35,6 +35,46 @@ namespace DJMaster
             return m;
         }
 
+        // A unit box (-0.5..0.5) with its top edges chamfered, so light catches a bright edge like machined gear.
+        // The bevel is in the box's own units per axis, so pass (metres / size) to get the same bevel on a stretched box.
+        // UVs: the top face runs 0..1 across x and z, so a brushed texture runs left to right.
+        public static Mesh BeveledBox(float bevelX, float bevelY, float bevelZ)
+        {
+            var verts = new System.Collections.Generic.List<Vector3>();
+            var uvs = new System.Collections.Generic.List<Vector2>();
+            var tris = new System.Collections.Generic.List<int>();
+            void Quad(Vector3 a, Vector3 b, Vector3 c, Vector3 d) // corners clockwise seen from outside
+            {
+                int v = verts.Count;
+                verts.AddRange(new[] { a, b, c, d });
+                uvs.AddRange(new[] { new Vector2(a.x + 0.5f, a.z + 0.5f), new Vector2(b.x + 0.5f, b.z + 0.5f), new Vector2(c.x + 0.5f, c.z + 0.5f), new Vector2(d.x + 0.5f, d.z + 0.5f) });
+                tris.AddRange(new[] { v, v + 1, v + 2, v, v + 2, v + 3 });
+            }
+            float h = 0.5f, sx = h - bevelX, sz = h - bevelZ, sy = h - bevelY;
+            // Top
+            Quad(new Vector3(-sx, h, -sz), new Vector3(-sx, h, sz), new Vector3(sx, h, sz), new Vector3(sx, h, -sz));
+            // Chamfers: front (-z), back (+z), left (-x), right (+x)
+            Quad(new Vector3(-h, sy, -h), new Vector3(-sx, h, -sz), new Vector3(sx, h, -sz), new Vector3(h, sy, -h));
+            Quad(new Vector3(h, sy, h), new Vector3(sx, h, sz), new Vector3(-sx, h, sz), new Vector3(-h, sy, h));
+            Quad(new Vector3(-h, sy, h), new Vector3(-sx, h, sz), new Vector3(-sx, h, -sz), new Vector3(-h, sy, -h));
+            Quad(new Vector3(h, sy, -h), new Vector3(sx, h, -sz), new Vector3(sx, h, sz), new Vector3(h, sy, h));
+            // Sides
+            Quad(new Vector3(-h, -h, -h), new Vector3(-h, sy, -h), new Vector3(h, sy, -h), new Vector3(h, -h, -h));
+            Quad(new Vector3(h, -h, h), new Vector3(h, sy, h), new Vector3(-h, sy, h), new Vector3(-h, -h, h));
+            Quad(new Vector3(-h, -h, h), new Vector3(-h, sy, h), new Vector3(-h, sy, -h), new Vector3(-h, -h, -h));
+            Quad(new Vector3(h, -h, -h), new Vector3(h, sy, -h), new Vector3(h, sy, h), new Vector3(h, -h, h));
+            // Bottom
+            Quad(new Vector3(-h, -h, h), new Vector3(-h, -h, -h), new Vector3(h, -h, -h), new Vector3(h, -h, h));
+            var m = new Mesh { name = "BeveledBox" };
+            m.SetVertices(verts);
+            m.SetUVs(0, uvs);
+            m.SetTriangles(tris, 0);
+            m.RecalculateNormals();
+            m.RecalculateTangents();
+            m.RecalculateBounds();
+            return m;
+        }
+
         // A unit-radius UV sphere (low poly), for heads, hands and hair.
         public static Mesh Sphere(int segments = 12, int rings = 8)
         {
