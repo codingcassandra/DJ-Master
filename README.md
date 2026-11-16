@@ -3,15 +3,24 @@
 Learn to DJ with just your hands. A mixed reality DJ school for Meta Quest.
 
 A full two-deck DJ controller appears on your real desk: big jog wheels, round CUE and PLAY buttons, hot cue and sampler pads,
-tempo faders, and a mixer with EQs, filters, channel faders and a crossfader.
-It starts on its own black start screen with a purple menu: pick a mode, then where to play, then step into the booth.
+tempo faders, a mixer with GAIN, EQs, filters, level meters, channel faders and a crossfader, and three screens: a scrolling
+waveform on each deck and a song browser in the middle. It looks like club gear at night: brushed metal, rubber pads with LED
+rims, LED rings on every knob, and buttons that flash when you hit them.
+
+It starts on its own start screen: pick who's playing, a mode, your level, then where to play, and step into the booth.
 
 | Mode | What you do |
 |---|---|
-| **Learn** | Three short guided lessons: 1 First Mix (the color code and your first beatmix), 2 Fade & Cut (the DJ loop, no beatmatching needed), 3 Sync, Loops & FX. |
+| **Learn** | Four short guided lessons: 1 First Mix (drop the bass, the color code and your first beatmix), 2 Fade & Cut (the DJ loop, gain, no beatmatching needed), 3 Sync, Loops & FX, 4 Next Song (picking what's next by tempo and key). |
 | **Build a set** | Choose 2-5 songs from a crate of 16 (8 game tracks and 8 free CC0 songs) and the transition into each one, then perform the set live with a step-by-step checklist. Every transition is graded and recorded, and the set gets a critique. |
 | **Freestyle** | Just play. No timer, no rules. |
+| **Daily** | A new challenge set every day. Pass it days in a row to build a streak, and 3 days unlocks a bonus song. |
 | **DJ Vocab** | A list of 24 DJ words (BPM, phrase, cue, bass swap, train wreck...) with what each one means, and a QUIZ ME button for a 10-question multiple-choice quiz. Your best score is saved. |
+
+**Levels:** BEGINNER (easy timing, quick hints), INTERMEDIATE (SYNC, the live checklist and the phrase countdown),
+ADVANCED (no SYNC, no checklist, no countdown: beatmatch by ear) and SOLO (just DJ, no rules, no score).
+
+**Players:** up to 4 people can share one headset. Each keeps their own lessons, scores, streak, level and saved set.
 
 | Venue | |
 |---|---|
@@ -31,9 +40,17 @@ No controllers needed. Every interaction is a fingertip poke, slide or spin.
 
 ![board](Docs/board.png)
 
-| Start screen | Build a set (FREE MUSIC tab) |
+| Deck screens: waveform, BPM, key, time left, phrase countdown | Song browser |
 |---|---|
-| ![menu](Docs/menu.png) | ![build](Docs/build.png) |
+| ![screens](Docs/screens.png) | ![browser](Docs/browser.png) |
+
+| Start screen | Who's playing? |
+|---|---|
+| ![menu](Docs/menu.png) | ![players](Docs/players.png) |
+
+| Pick your level | Build a set (FREE MUSIC tab) |
+|---|---|
+| ![level](Docs/level.png) | ![build](Docs/build.png) |
 
 | DJ Vocab | Vocab quiz |
 |---|---|
@@ -64,26 +81,41 @@ The lessons follow the techniques chapter of Digital DJ Tips' free *Rock The Dan
 (the basic DJ workflow, the three elements of a beatmix, the five basic transitions, sync, hot cues and loops,
 EQ, filters and effects, and recording and critiquing your sets), rebuilt as hands-on steps.
 
-**Lesson 1: First Mix** (20 steps, about 7 minutes). The control you need next pulses gold, and a hint appears if you're stuck.
+**Lesson 1: First Mix** (21 steps, about 7 minutes). The control you need next pulses gold, and a hint appears if you're stuck.
 
 | # | Skill | What you do |
 |---|---|---|
-| 1-4 | Color code | Touch something blue, pink, yellow and orange |
-| 5-7 | Decks and faders | Press PLAY, raise the channel fader, crossfade to Deck A |
-| 8 | Feel the beat | Tap the TAP pad on four kicks in a row |
-| 9 | Phrasing | Tap exactly on a 4-bar line (bar 1, 5, 9, 13) |
-| 10-12 | Cueing | LOAD Deck B, preview it in the headphones (PHONES), press PLAY |
-| 13 | Beatmatch: tempo | Ride Deck B's TEMPO fader until both BPMs match |
-| 14 | Beatmatch: phase | Nudge Deck B's jog wheel until the SYNC light turns green |
-| 15-18 | The blend | Cut the bass, bring Deck B in, swap the basslines, finish the transition |
-| 19-20 | Effects | Filter sweep and the air horn |
+| 1 | The drop | Music is already playing with the bass cut. Turn LOW back up and the crowd goes off, all inside the first minute |
+| 2-5 | Color code | Touch something blue, pink, yellow and orange |
+| 6-8 | Decks and faders | Press PLAY, raise the channel fader, crossfade to Deck A |
+| 9 | Feel the beat | Tap the TAP pad on four kicks in a row |
+| 10 | Phrasing | Tap exactly on a 4-bar line (bar 1, 5, 9, 13) |
+| 11-13 | Cueing | LOAD Deck B, preview it in the headphones (PHONES), press PLAY |
+| 14 | Beatmatch: tempo | Ride Deck B's TEMPO fader until both BPMs match |
+| 15 | Beatmatch: phase | Nudge Deck B's jog wheel until the SYNC light turns green |
+| 16-19 | The blend | Cut the bass, bring Deck B in, swap the basslines, finish the transition |
+| 20-21 | Effects | Filter sweep and the air horn |
 
-**Lesson 2: Fade & Cut** (13 steps, about 4 minutes): the DJ loop (load, preview in PHONES, cue, bring in, stop the old
-song), then a **fade** (a clear dip, about 10 seconds of fading, the new song dropped on a phrase; it tells you if you fade too fast)
+**Lesson 2: Fade & Cut** (14 steps, about 4 minutes): the DJ loop (load, preview in PHONES, set the GAIN so both songs
+hit the same level on the meters, cue, bring in, stop the old song), then a **fade** (a clear dip, about 10 seconds of fading, the new song dropped on a phrase; it tells you if you fade too fast)
 and a **cut** (hot cue to bar 1, then PLAY and crossfader together on a phrase line, with no overlap).
 
 **Lesson 3: Sync, Loops & FX** (11 steps, about 5 minutes): tap tempo (it shows the BPM you tap), SYNC, a
 **single-phrase beatmix** held for 8 bars, a 4-bar **loop**, and an **echo out**, ending with "less is more".
+
+**Lesson 4: Next Song** (8 steps, about 5 minutes): sort the browser by BPM and find a song close enough to beatmix, sort
+by KEY and find one that also fits on the Camelot wheel, hear a clashing pick beat-matched in your headphones, then LOAD
+your pick, SYNC it, hear how it sits, and mix it in for a cheer.
+
+## The board
+
+| Part | What it shows |
+|---|---|
+| **Deck screens** | A three-band waveform (lows warm, mids green, highs blue) scrolling under a center playhead, with beat, bar and phrase lines from the song's beatgrid. Big BPM and tempo, the Camelot key, time left, the bar and section, and a countdown to the next phrase. |
+| **Song browser** | The middle screen. Turn BROWSE to scroll, SORT by crate, BPM or key, and LOAD puts the highlighted song on a deck. Against the song that's playing, BPM and key show green when they mix, yellow when they need a fade or cut, red when they clash. It won't load over a deck the crowd can hear. |
+| **LEDs** | Every knob has a ring that fills with its value (from the center for GAIN, EQ and FILTER). The level meters are segmented green, yellow, red. Pads have an LED rim in their color that lights when they're on and flashes on a press, and a fader cap's line lights up while you hold it. |
+
+Color-blind mode recolors all of it, waveform included.
 
 ## Build a set
 
@@ -156,7 +188,8 @@ The platters turn once per bar with their white marker pointing forward on beat 
 
 - **Hands-first:** everything works with hands alone. Nothing needs a controller.
 - **Seated, airplane-seat friendly:** the board snaps in front of you at desk height, with every control inside arm's reach. RECENTER and height buttons are always available.
-- **Bus-stop test:** cold start lands you on the menu with tracks preloading. One lesson is about 7 minutes and a 3-song set about 3. Taking the headset off or opening the system menu pauses audio and time, and the game resumes where you left off.
+- **First minute:** Lesson 1 starts with music already playing, and the first cheer comes as soon as you bring the bass back in.
+- **Bus-stop test:** cold start lands you on the menu with tracks preloading. One lesson is 4 to 7 minutes and a 3-song set about 3. Taking the headset off or opening the system menu pauses audio and time, and the game resumes where you left off.
 - **Original, not a wrapper:** the eight game tracks are synthesized at runtime by `TrackSynth` (house, techno and disco loops, arranged in DJ phrases). The eight FREE MUSIC songs are real tracks their artists released as **CC0 (public domain)** on OpenGameArt.org, each cut to a 16-bar loop that starts exactly on beat 1 and credited in `Assets/DJMaster/Resources/Music/CREDITS.md`. There is no licensed music, no streaming, and no third-party services.
 
 ## Run it in the editor (no headset)
@@ -183,8 +216,16 @@ Tip: set the Game view to **Play Maximized** so small text is easy to read.
 
 ## Tests
 
-- **EditMode (35):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap), synth loop length/levels/kick timing, text wrap with color tags, tap tempo, sync math, set lists (add, undo, save/load, tempo-gap advice), set stars, the color-blind palette and shapes, and the DJ vocab list and quiz clues.
-- **PlayMode (18):** loads the real scene and drives it with a simulated fingertip. Covers poking PLAY (and *not* triggering it from the side), slow pokes pressing once, fader drags, the fine-geared tempo fader, knobs ignoring tracking blips, venue switching, the finger staying free after poking through the menu, menu > venue > color quiz, a full Learn run from step 1 to "LESSON COMPLETE", full runs of lessons 2 and 3, building and performing a set with a perfect phrase mix and quick cut, a set with a perfect fade and echo out that checks the recordings and LISTEN BACK, crossfader wiggling scoring only once, the color-blind toggle, the DJ Vocab list and a full quiz, every free song loading exactly on the beat grid, and the FREE MUSIC tab adding songs to a set.
+- **EditMode (108):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap, gain and meter zones),
+  synth loop length, levels and kick timing, beat detection, key and tempo matching (Camelot wheel), the song browser's sorting,
+  the waveform analysis, phrase countdown text, skill level rules, players and their separate saves, the daily challenge and
+  streak, set lists, desk placement and reach, the color-blind palette and shapes, and the DJ vocab list and quiz.
+- **PlayMode (35):** loads the real scene and drives it with a simulated fingertip. Covers pokes, slow pokes, fader drags,
+  knobs, venue switching, HOME and BACK from every screen, the color-blind toggle, gain and meters, the deck screens'
+  waveform and phrase countdown, LED rings, press flashes and fader glows, the song browser, full runs of all four lessons
+  (including music within 10 seconds and a cheer within a minute in Lesson 1), building and performing sets (phrase mix,
+  quick cut, fade, echo out) with LISTEN BACK, the daily challenge, beatgrids for your own songs, picking players and skill levels,
+  and the room scan timing. The tests run muted.
 
 Run them from **Window > General > Test Runner**.
 
@@ -193,19 +234,24 @@ Run them from **Window > General > Test Runner**.
 ```
 Assets/DJMaster/
   Scripts/Audio/        TrackSynth (procedural music), TrackLibrary, Deck (hot cues, loops), ChannelStrip (EQ/filter/echo DSP),
-                        Mixer, MixRecorder (listen back), Sfx, DJMath
+                        Mixer, MixRecorder (listen back), Sfx, DJMath, MixMatch (key + tempo matching), BeatDetector +
+                        BeatGridStore (beatgrids for your own songs), Waveform (three-band waveforms for the deck screens)
   Scripts/Interaction/  Pointer, HandPointerSource (index fingertip), MousePointerSource, PokeButton, Fader, Knob, JogWheel
   Scripts/Game/         GameDirector (menus and modes), LessonDirector (Learn), SetList + SetPerformer (Build a set / live show),
-                        MixJudge (crowd energy + score), DJBoard
+                        MixJudge (crowd energy + score), DJBoard, Players, Skill + SkillLevel (levels), DailyChallenge,
+                        GridEditor
   Scripts/UI/           BoardColors + ColorSafeView (the color code, color-blind mode), StartMenu, VocabPanel + DJVocab,
-                        DeckDisplay, SyncMeter, InstructionPanel, SetBuilderPanel (all text is TextMeshPro)
-  Scripts/World/        EnvironmentManager (passthrough/club/festival), SeatedAnchor, LightShow, MeshKit,
+                        DeckDisplay, SongBrowser, LevelMeter, PhraseCue, SyncMeter, InstructionPanel, SetBuilderPanel,
+                        SystemButtons (HOME / COLOR-BLIND), MenuBackdrop (all text is TextMeshPro)
+  Scripts/World/        EnvironmentManager (passthrough/club/festival), SeatedAnchor, DeskSnap + DeskPlacement (board on
+                        your real desk), LightShow, MeshKit,
                         Crowd (GPU-instanced dancers with two-bone arms and legs, per-person looks)
   Resources/Music/      8 CC0 songs as beat-aligned 16-bar loops, plus CREDITS.md
-  Shaders/              Additive + Glow (single-pass stereo safe), CrowdInstanced (per-person colors)
+  Shaders/              Additive + Glow (single-pass stereo safe), CrowdInstanced (per-person colors),
+                        LedRing (knob LEDs), Waveform (deck screens)
   Editor/SceneBuilder.cs  builds the entire scene from primitives
   Editor/               SceneAutoRebuild (rebuilds a stale scene on Play), MusicImport (sample-accurate audio import),
-                        GameViewSharpness (full-resolution Game view)
+                        GameViewSharpness (full-resolution Game view), DJMasterSubmission (competition checks + APK build)
 ```
 
 Built with the Meta XR Core SDK v207 (OVRCameraRig, OVRHand/OVRSkeleton with OpenXR hand skeletons, OVRPassthroughLayer).

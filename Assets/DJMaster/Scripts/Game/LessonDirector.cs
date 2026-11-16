@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    // Learn mode: three short guided lessons, each one control at a time and well under 10 minutes.
+    // Learn mode: four short guided lessons, each one control at a time and well under 10 minutes.
     //   1 FIRST MIX       the color code, the beat, phrases, and the three parts of a beatmix: tempo, beats, phrase
     //   2 FADE & CUT      the DJ loop, plus two transitions that need no beatmatching
     //   3 SYNC LOOPS FX   tap tempo, SYNC, a one-phrase beatmix, loops, and an echo out ("less is more")

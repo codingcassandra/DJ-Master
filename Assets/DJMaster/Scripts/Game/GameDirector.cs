@@ -197,7 +197,7 @@ namespace DJMaster
         {
             switch (m)
             {
-                case GameMode.Learn: return "Three short lessons: your first mix, fades and cuts, then sync, loops and effects.";
+                case GameMode.Learn: return "Four short lessons: your first mix, fades and cuts, sync, loops and effects, then picking the next song.";
                 case GameMode.Build:
                     int best = Players.BestSet;
                     return "Pick songs and transitions, then perform them live for a crowd." + (best > 0 ? $"  Best live set: {best} pts" : "");

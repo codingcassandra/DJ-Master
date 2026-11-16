@@ -1346,12 +1346,6 @@ namespace DJMaster.EditorTools
             menu.gameObject.SetActive(false); // rendered on its own below
             Vector3 eye = world.TransformPoint(new Vector3(0, 1.24f, 0));
             Object.FindAnyObjectByType<SetBuilderPanel>().gameObject.SetActive(false); // only shown in Build mode
-            foreach (var mode in new[] { EnvMode.Room, EnvMode.Club, EnvMode.Festival })
-            {
-                SetPreviewMode(env, mode);
-                RenderPreview($"Preview_{mode}.png", eye, new Vector3(28, 0, 0), 90f, mode != EnvMode.Room);
-                RenderPreview($"Preview_{mode}_Crowd.png", eye, new Vector3(2, 0, 0), 90f, mode != EnvMode.Room);
-            }
             SetPreviewMode(env, EnvMode.Room);
             // The HOME / COLOR-BLIND tab, mounted the way GameDirector does at runtime, with the button tint PokeButton gives it
             var system = Object.FindAnyObjectByType<SystemButtons>();
@@ -1458,6 +1452,14 @@ namespace DJMaster.EditorTools
             RenderPreview("Preview_Browser.png", bt.TransformPoint(new Vector3(0, 0, -0.3f)), bt.eulerAngles, 30f, false);
             RenderPreview("Preview_Screens.png", world.TransformPoint(new Vector3(0, 1.1f, 0.12f)), new Vector3(28, 0, 0), 40f, false);
             RenderPreview("Preview_Mixer.png", world.TransformPoint(new Vector3(0, 1.08f, 0.22f)), new Vector3(46, 0, 0), 40f, false);
+            // The venues, with the board lit up mid-mix like above
+            foreach (var mode in new[] { EnvMode.Room, EnvMode.Club, EnvMode.Festival })
+            {
+                SetPreviewMode(env, mode);
+                RenderPreview($"Preview_{mode}.png", eye, new Vector3(28, 0, 0), 90f, mode != EnvMode.Room);
+                RenderPreview($"Preview_{mode}_Crowd.png", eye, new Vector3(2, 0, 0), 90f, mode != EnvMode.Room);
+            }
+            SetPreviewMode(env, EnvMode.Room);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
             // The start screen and Build mode, filled in the way they look at runtime.
