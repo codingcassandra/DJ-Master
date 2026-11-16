@@ -40,7 +40,9 @@ namespace DJMaster
         public static void Click() => Play(instance?.click, 0.6f, ui: true);
         public static void Success() => Play(instance?.success, 0.7f, ui: true);
         public static void Fail() => Play(instance?.fail, 0.6f, ui: true);
-        public static void Cheer(float volume = 1f) => Play(instance?.cheer, volume, ui: false);
+        // Fires on every crowd cheer, so tests can time how soon the first payoff comes
+        public static event System.Action Cheered;
+        public static void Cheer(float volume = 1f) { Cheered?.Invoke(); Play(instance?.cheer, volume, ui: false); }
         public static void AirHorn() => Play(instance?.horn, 0.8f, ui: false);
         public static void Siren() => Play(instance?.siren, 0.7f, ui: false);
         public static void Zap() => Play(instance?.zap, 0.7f, ui: false);

@@ -25,6 +25,45 @@ namespace DJMaster.Tests
             Assert.IsTrue(cond(), "timed out waiting for: " + what);
         }
 
+        // QA: the first music used to come 60-90 s in and the first cheer after 5 minutes. Now: music within 10 s of
+        // stepping into the booth and a cheer within a minute, for a player who takes a while to find the LOW knob
+        [UnityTest]
+        public IEnumerator Lesson1_MusicWithin10Seconds_CheerWithinAMinute()
+        {
+            var lessons = Object.FindAnyObjectByType<LessonDirector>();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var menu = Object.FindAnyObjectByType<StartMenu>();
+            var A = board.A.deck;
+            float firstCheer = -1f;
+            System.Action onCheer = () => { if (firstCheer < 0) firstCheer = Time.realtimeSinceStartup; };
+            Sfx.Cheered += onCheer;
+            try
+            {
+                menu.buttons[0].SimulatePress(); // LEARN
+                menu.buttons[1].SimulatePress(); // INTERMEDIATE
+                menu.buttons[1].SimulatePress(); // CLUB
+                menu.buttons[0].SimulatePress(); // lesson 1
+                float start = Time.realtimeSinceStartup;
+                yield return WaitFor(() => lessons.Running, 5f, "lesson start");
+
+                // Playing out loud: the deck runs, its fader is up and the crossfader gives it to the room
+                yield return WaitFor(() => A.IsPlaying && A.Strip.Level > 0.01f, 10f, "music in the room");
+                Assert.Less(Time.realtimeSinceStartup - start, 10f, "music within 10 seconds");
+                Assert.Greater(board.A.volume.value, 0.9f);
+                Assert.Less(board.crossfader.value, 0.1f);
+                Assert.Less(board.A.low.value, 0.1f, "the bass waits for you");
+                Assert.AreEqual(-1f, firstCheer, "no cheer until you've done something");
+
+                yield return new WaitForSeconds(5f); // finding the knob
+                board.A.low.SetValue(0.6f);
+                yield return WaitFor(() => firstCheer > 0, 3f, "cheer");
+                Assert.Less(firstCheer - start, 60f, "first cheer within a minute");
+                yield return WaitFor(() => lessons.StepIndex == 1, 4f, "on to the color quiz");
+                StringAssert.StartsWith("Colors", lessons.Current.title);
+            }
+            finally { Sfx.Cheered -= onCheer; }
+        }
+
         [UnityTest]
         [Timeout(180000)]
         public IEnumerator CompleteDJSchool()
@@ -46,6 +85,11 @@ namespace DJMaster.Tests
                 step++;
                 yield return WaitFor(() => lessons.StepIndex == step || lessons.Finished, 6f, $"step {step} ({lessons.Current?.title})");
             }
+
+            // The first win: the music's already on with the bass out, bring it back in for a cheer
+            Assert.AreEqual("Drop the bass!", lessons.Current.title);
+            yield return WaitFor(() => A.IsPlaying, 10f, "music playing");
+            board.A.low.SetValue(0.5f); yield return Next();
 
             // The color code quiz.
             board.A.mid.SimulateTouch(); yield return Next();

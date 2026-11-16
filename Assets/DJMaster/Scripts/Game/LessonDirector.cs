@@ -28,6 +28,7 @@ namespace DJMaster
             public string[] answers;  // color quiz: the controls the hint points at (any control of the color counts)
             public string color;      // color quiz: the color being asked for
             public Action tick;       // per-frame logic for steps that judge timing
+            public float cheer;       // > 0: the crowd cheers this loud when the step is done, with a light show drop
         }
 
         public bool Running { get; private set; }
@@ -82,7 +83,16 @@ namespace DJMaster
             steps = lessons[LessonIndex];
             board.ResetControls();
             A.Load(0);  // Neon Tides, 128 BPM house
-            if (LessonIndex == 0) B.Unload();
+            if (LessonIndex == 0)
+            {
+                // The music is already going when you sit down, with the bass held back: the first thing you do is
+                // bring it in and hear the crowd go off. The color quiz comes after that first win
+                B.Unload();
+                A.Play();
+                board.A.volume.SetValue(1f);
+                board.crossfader.SetValue(0f);
+                board.A.low.SetValue(0f);
+            }
             else
             {
                 // Lessons 2 and 3 start mid-set: a song already playing to the room.
@@ -165,6 +175,7 @@ namespace DJMaster
             if (done && heldFor >= s.hold)
             {
                 Sfx.Success();
+                if (s.cheer > 0) { Sfx.Cheer(s.cheer); BeatBus.FireDrop(); }
                 Feedback = s.praise;
                 praiseTimer = 1.6f;
                 board.ClearHighlights();
@@ -243,6 +254,18 @@ namespace DJMaster
                 orange = BoardColors.Orange("ORANGE"), yellow = BoardColors.Yellow("YELLOW"), red = BoardColors.Red("RED");
             string deckA = BoardColors.Blue("Deck A"), deckB = BoardColors.Pink("Deck B");
 
+            // ---- The first win: drop the bass ----
+            steps.Add(new Step
+            {
+                title = "Drop the bass!",
+                text = $"You're the DJ, and the crowd is waiting for the drop. The bass is turned all the way down. Grab {deckA}'s {blue} LOW knob and turn it up, away from you, to bring the bass back in!",
+                hint = "LOW is the fourth knob down on the left side of the mixer. Rest your fingertip on it and slide away from you.",
+                highlight = new[] { "A.low" },
+                done = () => A.IsPlaying && board.A.low.value > 0.45f,
+                praise = "THAT'S THE DROP! Hear them go!",
+                cheer = 1f,
+            });
+
             // ---- The color code ----
             void Quiz(string title, string text, string color, string hint, params string[] answers) => steps.Add(new Step
             {
@@ -270,7 +293,7 @@ namespace DJMaster
             steps.Add(new Step
             {
                 title = "Welcome to the booth",
-                text = $"Now you know the colors. {green} means go! Tap the {green} PLAY button on {deckA} (the {blue} side) to start your first record.",
+                text = $"Now you know the colors. Let's start a record from scratch: {green} means go! Tap the {green} PLAY button on {deckA} (the {blue} side).",
                 hint = "PLAY is the big round button at the front left corner of the board. Poke it with your fingertip.",
                 highlight = new[] { "A.play" },
                 done = () => A.IsPlaying,

@@ -252,15 +252,20 @@ namespace DJMaster.Tests
             Assert.IsTrue(board.gameObject.activeSelf, "the booth appears once you pick a lesson");
             Assert.AreEqual(0, lessons.StepIndex);
 
+            // The first win (drop the bass), then the color quiz
+            board.A.low.SetValue(0.6f);
+            yield return WaitFor(() => lessons.StepIndex == 1, 4f);
+            Assert.AreEqual(1, lessons.StepIndex);
+
             // Wrong color: told what it was, no progress.
             board.B.low.SimulateTouch();
             yield return null;
             StringAssert.Contains("PINK", lessons.Feedback);
-            Assert.AreEqual(0, lessons.StepIndex);
+            Assert.AreEqual(1, lessons.StepIndex);
 
             board.A.sync.SimulateTouch(); // any BLUE control counts, not only the knobs
-            yield return WaitFor(() => lessons.StepIndex == 1, 4f);
-            Assert.AreEqual(1, lessons.StepIndex);
+            yield return WaitFor(() => lessons.StepIndex == 2, 4f);
+            Assert.AreEqual(2, lessons.StepIndex);
         }
 
         [UnityTest]
