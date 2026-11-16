@@ -11,7 +11,8 @@ namespace DJMaster
     public static class Waveform
     {
         public const int ColumnsPerSecond = 80;
-        public const int TextureWidth = 1024; // the columns wrap into rows, so long songs stay inside the GPU's size limit
+        public const int TextureWidth = 1024;
+        public const float MaxSeconds = 6 * 60f; // the columns wrap into rows, so long songs stay inside the GPU's size limit
 
         // Columns per second for a clip at this sample rate, exactly (each column is a whole number of samples)
         public static float ColumnRate(int sampleRate) => sampleRate / (float)Mathf.Max(1, sampleRate / ColumnsPerSecond);
@@ -29,6 +30,7 @@ namespace DJMaster
             if (!pending.TryGetValue(clip, out var task))
             {
                 if (clip.loadState != AudioDataLoadState.Loaded) return null;
+                if (clip.length > MaxSeconds) return null; // a long song of your own: no waveform rather than a big copy in memory
                 var data = new float[clip.samples * clip.channels];
                 if (!clip.GetData(data, 0)) return null; // streamed clips can't hand over their samples
                 int channels = clip.channels, rate = clip.frequency;

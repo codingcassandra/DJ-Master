@@ -19,6 +19,8 @@ namespace DJMaster
         public bool IsLoaded => clip != null;
         public bool IsLoading => HasTrack && clip == null;
         public bool IsPlaying => IsLoaded && (Source.isPlaying || pendingPlay);
+        // Why the last song couldn't load (one of your own files, #22), shown on the deck screen. Cleared by the next LOAD
+        public string Problem { get; private set; }
 
         public float Rate => DJMath.TempoRate(tempoFader);
         public float TempoPercent => (Rate - 1f) * 100f;
@@ -46,6 +48,18 @@ namespace DJMaster
         float jogBend;   // set every frame the jog wheel is touched
         int lastWholeBeat = int.MinValue; // none yet (beats before a lead-in are negative)
 
+        void OnEnable() => TrackLibrary.UserTracksChanged += FollowTrack;
+        void OnDisable() => TrackLibrary.UserTracksChanged -= FollowTrack;
+
+        // Your songs were rescanned: keep playing ours at its new place, or let it go if the file's gone
+        void FollowTrack(System.Func<int, int> newIndex)
+        {
+            if (TrackIndex < 0) return;
+            int n = newIndex(TrackIndex);
+            if (n < 0) { Unload(); Problem = "That song left your music folder."; }
+            else TrackIndex = n;
+        }
+
         void Awake()
         {
             Source = GetComponent<AudioSource>();
@@ -64,6 +78,7 @@ namespace DJMaster
             pendingPlay = false;
             lastWholeBeat = int.MinValue; // none yet (beats before a lead-in are negative)
             Looping = false;
+            Problem = null;
             TrackIndex = ((index % TrackLibrary.Tracks.Length) + TrackLibrary.Tracks.Length) % TrackLibrary.Tracks.Length;
             TrackLibrary.Render(TrackIndex);
             TryFinishLoad();
@@ -80,7 +95,7 @@ namespace DJMaster
 
         public void LoadNext(int otherDeckTrack)
         {
-            int n = TrackLibrary.Tracks.Length;
+            int n = TrackLibrary.BuiltInCount; // your own songs are picked in the browser, not cycled through
             int next = TrackIndex + 1;
             for (int tries = 0; tries < n; tries++, next++)
             {
@@ -93,7 +108,12 @@ namespace DJMaster
         void TryFinishLoad()
         {
             var c = TrackLibrary.TryGetClip(TrackIndex);
-            if (c == null) return;
+            if (c == null)
+            {
+                var error = TrackLibrary.LoadError(TrackIndex);
+                if (error != null) { Unload(); Problem = error; }
+                return;
+            }
             clip = c;
             Source.clip = clip;
             Source.timeSamples = 0;

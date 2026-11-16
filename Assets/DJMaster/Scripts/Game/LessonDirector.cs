@@ -806,7 +806,7 @@ namespace DJMaster
 
         SongBrowser Browser => board.browser;
         TrackInfo Picked(int i) => TrackLibrary.Tracks[i];
-        bool TempoFits(int i) => i != A.TrackIndex && MixMatch.Tempo(A.Track, Picked(i)) == TempoMatch.Green;
+        bool TempoFits(int i) => i >= 0 && i != A.TrackIndex && Picked(i).bpm > 0 && MixMatch.Tempo(A.Track, Picked(i)) == TempoMatch.Green;
         public bool GoodPick(int i) => TempoFits(i) && MixMatch.Keys(A.Track, Picked(i)) is KeyMatch.Perfect or KeyMatch.Good;
 
         void BuildNextSong(List<Step> steps)

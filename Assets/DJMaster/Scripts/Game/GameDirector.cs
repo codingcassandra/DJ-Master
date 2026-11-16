@@ -53,6 +53,7 @@ namespace DJMaster
         void Start()
         {
             TrackLibrary.Prewarm();
+            MyMusic.ScanIfAllowed(); // your own songs (#22), if you've already allowed music access
             BoardColors.LoadSettings();
             board.gameObject.AddComponent<ColorSafeView>().Init(); // the panels and set builder live under the board too
 

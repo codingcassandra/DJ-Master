@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    public enum BrowseSort { Crate, Bpm, Key }
+    public enum BrowseSort { Crate, Bpm, Key, Mine }
 
     // The center screen, like the browser on a real controller. Turn BROWSE to scroll the crate, SORT to order it by
     // BPM or key, then LOAD on a deck puts the highlighted song on that deck. While a song plays out loud, each row's
@@ -30,7 +30,7 @@ namespace DJMaster
         public BrowseSort Sort { get; private set; }
         public IReadOnlyList<int> Order => order;
         public int Cursor { get; private set; }
-        public int Selected => order[Cursor]; // track index of the highlighted row
+        public int Selected => order != null && order.Length > 0 ? order[Cursor] : -1; // track index of the highlighted row, -1 when the list is empty
         public int Rows => titles.Length;
         public int Top { get; private set; }  // first visible row
 
@@ -63,12 +63,27 @@ namespace DJMaster
                     if (s != knobStep) { Move(s - knobStep); knobStep = s; }
                 };
             }
-            if (sortButton != null) sortButton.Pressed += () => SetSort((BrowseSort)(((int)Sort + 1) % 3));
+            if (sortButton != null) sortButton.Pressed += () => SetSort((BrowseSort)(((int)Sort + 1) % 4));
+            TrackLibrary.UserTracksChanged += OnTracksChanged;
+        }
+
+        void OnDestroy() => TrackLibrary.UserTracksChanged -= OnTracksChanged;
+
+        // A rescan changed your songs: redo the list, keeping the highlighted song if it's still there
+        void OnTracksChanged(Func<int, int> newIndex)
+        {
+            if (order == null) return;
+            int keep = Selected >= 0 ? newIndex(Selected) : -1;
+            order = SortedOrder(Sort);
+            if (keep >= 0 && Array.IndexOf(order, keep) >= 0) Select(keep);
+            else { Cursor = 0; Top = 0; lastSelected = -2; ScrollToCursor(); }
+            lastDrawn = null;
         }
 
         public void Move(int rows)
         {
             order ??= SortedOrder(Sort);
+            if (order.Length == 0) return;
             Cursor = Mathf.Clamp(Cursor + rows, 0, order.Length - 1);
             ScrollToCursor();
         }
@@ -85,14 +100,16 @@ namespace DJMaster
         {
             order ??= SortedOrder(Sort);
             int keep = Selected;
+            if (sort == BrowseSort.Mine && sort != Sort) MyMusic.Open(); // asks for music access the first time, then scans
             Sort = sort;
             order = SortedOrder(sort);
-            Select(keep);
+            if (Array.IndexOf(order, keep) >= 0) Select(keep);
+            else { Cursor = 0; Top = 0; ScrollToCursor(); }
         }
 
         void ScrollToCursor()
         {
-            if (Selected != lastSelected) { lastSelected = Selected; SelectionChanged?.Invoke(Selected); }
+            if (Selected != lastSelected) { lastSelected = Selected; if (Selected >= 0) SelectionChanged?.Invoke(Selected); }
             if (Cursor < Top) Top = Cursor;
             else if (Cursor >= Top + Rows) Top = Cursor - Rows + 1;
             Top = Mathf.Clamp(Top, 0, Mathf.Max(0, order.Length - Rows));
@@ -105,6 +122,7 @@ namespace DJMaster
         {
             string name = deck == 0 ? "A" : "B";
             if (LockReason != null) { Say(LockReason, true); return false; }
+            if (Selected < 0) { Say("No songs here yet.", true); return false; }
             if (IsLive(deck)) { Say($"Deck {name} is live! Fade it out first.", true); return false; }
             var t = TrackLibrary.Tracks[Selected];
             board.channels[deck].deck.Load(Selected);
@@ -131,20 +149,23 @@ namespace DJMaster
             var b = board.B.deck;
             string msg = Message;
             int live = LiveTrack;
-            string key = $"{Cursor}|{Top}|{Sort}|{a.TrackIndex}|{b.TrackIndex}|{msg}|{live}";
+            string key = $"{Cursor}|{Top}|{Sort}|{a.TrackIndex}|{b.TrackIndex}|{msg}|{live}|{order.Length}|{MyMusic.Status}";
             if (key == lastDrawn) return;
             lastDrawn = key;
 
             if (header != null)
                 header.text = $"BROWSE   <size=80%>SORT: {SortName(Sort)}{(live >= 0 ? $"   MATCH: {Fit(TrackLibrary.Tracks[live].title, 14)}" : "")}</size>";
-            if (status != null) status.text = msg != "" ? msg : $"{Cursor + 1} / {order.Length}";
+            bool emptyMine = Sort == BrowseSort.Mine && order.Length == 0;
+            if (status != null) status.text = msg != "" ? msg : order.Length == 0 ? "0 / 0" : $"{Cursor + 1} / {order.Length}";
 
             for (int r = 0; r < Rows; r++)
             {
                 int i = Top + r;
                 bool has = i < order.Length;
                 var t = has ? TrackLibrary.Tracks[order[i]] : default;
-                if (titles[r] != null) titles[r].text = has ? $"{Fit(t.title, 18)}\n<size=72%><color=#9AA0B0>{Fit(t.artist, 18)}  -  {t.genre}</color></size>" : "";
+                if (titles[r] != null)
+                    titles[r].text = has ? $"{Fit(t.title, 18)}\n<size=72%><color=#9AA0B0>{(t.IsUser ? "MY MUSIC" : $"{Fit(t.artist, 18)}  -  {t.genre}")}</color></size>"
+                        : emptyMine && r == 0 ? $"<size=80%>{TextUtil.Wrap(MyMusic.Status != "" ? MyMusic.Status : MyMusic.HowTo, 52)}</size>" : "";
                 if (details[r] != null) details[r].text = has ? Details(t, live >= 0 && live != order[i] ? TrackLibrary.Tracks[live] : (TrackInfo?)null) : "";
                 if (tags[r] != null)
                 {
@@ -173,6 +194,7 @@ namespace DJMaster
         // BPM over key. Matched against the live song when there is one: green mixes, yellow needs a fade or cut, red clashes.
         public static string Details(TrackInfo t, TrackInfo? live)
         {
+            if (t.bpm <= 0) return $"<color=#9AA0B0>BPM on LOAD</color>\n<size=72%><color=#9AA0B0>{KeyLabel(t)}</color></size>"; // your songs: the beat is found the first time
             string bpm = $"{t.bpm:0} BPM", keyText = KeyLabel(t);
             if (live is TrackInfo l)
             {
@@ -189,7 +211,7 @@ namespace DJMaster
 
         // ---- Pure helpers, covered by EditMode tests ----
 
-        public static string SortName(BrowseSort s) => s switch { BrowseSort.Bpm => "BPM", BrowseSort.Key => "KEY", _ => "CRATE" };
+        public static string SortName(BrowseSort s) => s switch { BrowseSort.Bpm => "BPM", BrowseSort.Key => "KEY", BrowseSort.Mine => "MY MUSIC", _ => "CRATE" };
 
         // Crate: our songs, then the free ones. BPM: slowest first. Key: around the Camelot wheel, so keys that mix well
         // sit next to each other; songs with no key on file go last (by BPM).
@@ -197,9 +219,10 @@ namespace DJMaster
         {
             var tracks = TrackLibrary.Tracks;
             var list = new List<int>();
-            for (int i = 0; i < tracks.Length; i++) if (Listed(i)) list.Add(i);
+            // MY MUSIC lists only your songs, the other tabs only ours
+            for (int i = 0; i < tracks.Length; i++) if (Listed(i) && TrackLibrary.IsUser(i) == (sort == BrowseSort.Mine)) list.Add(i);
             var idx = list.ToArray();
-            if (sort == BrowseSort.Crate) return idx;
+            if (sort == BrowseSort.Crate || sort == BrowseSort.Mine) return idx;
             Array.Sort(idx, (x, y) =>
             {
                 var a = tracks[x];
