@@ -62,6 +62,7 @@ namespace DJMaster
         public readonly List<Result> Results = new();
         public readonly List<Task> Tasks = new();
         public Task CurrentTask { get; private set; }
+        float taskShownFor;
         public int CurrentTaskIndex => CurrentTask == null ? Tasks.Count : Tasks.IndexOf(CurrentTask);
         public Critique Review { get; private set; } = new();
 
@@ -136,8 +137,12 @@ namespace DJMaster
                 if (!t.complete && t.done()) t.complete = true;
             // Advanced and Solo play without the checklist: no step, no glowing controls, the panel just says NEXT: song + style
             var current = SkillLevels.Rules.checklist ? Tasks.Find(t => !t.complete) : null;
-            if (current != CurrentTask)
+            // A step that's ticked off right away still stays up long enough to read before the next one replaces it (#45)
+            taskShownFor += dt;
+            bool readIt = !Reading.Enabled || CurrentTask == null || !SkillLevels.Rules.checklist || taskShownFor >= Reading.Seconds(CurrentTask.text);
+            if (current != CurrentTask && readIt)
             {
+                taskShownFor = 0;
                 CurrentTask = current;
                 board.ClearHighlights();
                 if (current?.highlight != null)

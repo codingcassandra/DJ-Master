@@ -41,6 +41,11 @@ namespace DJMaster
         public static string DoneKey(int lesson) => lesson == 0 ? "lessonComplete" : $"lesson{lesson + 1}Complete";
         public static bool IsDone(int lesson) => PlayerPrefs.GetInt(Players.Key(DoneKey(lesson)), 0) == 1;
         public Step Current => Running && StepIndex < steps.Count ? steps[StepIndex] : null;
+
+        // A step that's already done the moment it shows (say the fader was already up) is just something to read:
+        // it waits for the NEXT > button instead of flashing past (#45).
+        public bool WaitingForNext { get; private set; }
+        bool firstFrame;
         public string Feedback { get; private set; } = "";
         public bool ShowingPraise => praiseTimer > 0;
         public bool ShowHint => stepTime > SkillLevels.Rules.hintAfter;
@@ -140,6 +145,7 @@ namespace DJMaster
         {
             StepIndex = i;
             heldFor = 0; stepTime = 0;
+            WaitingForNext = false; firstFrame = true;
             tapStreak = 0; filterWentDown = false; hornPressed = false; tapOnLine = false; quizHit = false;
             hotCuePressed = timingOk = heard = sawRepeat = tooFast = false;
             wasPlaying = B.IsPlaying;
@@ -184,17 +190,38 @@ namespace DJMaster
             if (s.answers != null && ShowHint)
                 foreach (var id in s.answers)
                     if (board.Find(id) is { } c) c.Highlighted = true;
+            if (WaitingForNext) return;
             s.tick?.Invoke();
             bool done = s.done();
+            if (firstFrame)
+            {
+                firstFrame = false;
+                if (done && Reading.Enabled && s.answers == null && s.hold <= 0)
+                {
+                    WaitingForNext = true;
+                    Feedback = "Already set! Poke NEXT > when you've read this.";
+                    return;
+                }
+            }
             heldFor = done ? heldFor + Time.deltaTime : 0;
             if (done && heldFor >= s.hold)
             {
                 Sfx.Success();
                 if (s.cheer > 0) { Sfx.Cheer(s.cheer); BeatBus.FireDrop(); }
                 Feedback = s.praise;
-                praiseTimer = 1.6f;
+                // The step's text stays up until you've had time to read it, even when you did it right away
+                praiseTimer = Reading.Enabled ? Mathf.Max(1.6f, Reading.Seconds(s.text) - stepTime) : 1.6f;
                 board.ClearHighlights();
             }
+        }
+
+        // NEXT > on the panel: on to the next step once you've read an info-only one.
+        public void PressNext()
+        {
+            if (!Running || !WaitingForNext) return;
+            WaitingForNext = false;
+            board.ClearHighlights();
+            Next();
         }
 
         void OnTap()
