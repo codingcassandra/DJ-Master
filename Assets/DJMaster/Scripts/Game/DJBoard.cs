@@ -24,6 +24,8 @@ namespace DJMaster
         public PokeButton tap;
         [Tooltip("Deck A's HORN sampler pad, the one the lessons point at.")]
         public PokeButton airHorn;
+        [Tooltip("The center screen. LOAD puts its highlighted song on the deck; without one LOAD just steps to the next song.")]
+        public SongBrowser browser;
 
         public event System.Action HornPressed; // either deck's HORN pad
 
@@ -50,7 +52,11 @@ namespace DJMaster
                 int idx = i;
                 ch.play.Pressed += ch.deck.TogglePlay;
                 ch.cue.Pressed += ch.deck.Cue;
-                ch.load.Pressed += () => ch.deck.LoadNext(channels[1 - idx].deck.TrackIndex);
+                ch.load.Pressed += () =>
+                {
+                    if (browser != null) browser.LoadOnto(idx);
+                    else ch.deck.LoadNext(channels[1 - idx].deck.TrackIndex);
+                };
                 ch.headphones.Pressed += () => mixer.headphoneCue[idx] = !mixer.headphoneCue[idx];
                 for (int k = 0; k < ch.hotCues.Length; k++)
                 {

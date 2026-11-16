@@ -331,7 +331,7 @@ namespace DJMaster
 
                 case GameMode.Freestyle:
                     panel.Show("FREESTYLE",
-                        judge.Warning != "" ? judge.Warning : "No timer, no rules. LOAD songs, mix with any transition, try bass drops (cut the LOW, slam it back on bar 1), LOOPs and ECHO. Remember: less is more.",
+                        judge.Warning != "" ? judge.Warning : "No timer, no rules. Turn BROWSE to pick a song and LOAD it, mix with any transition, try bass drops (cut the LOW, slam it back on bar 1), LOOPs and ECHO. Remember: less is more.",
                         $"Crowd {(int)(BeatBus.Energy * 100)}%{(board.TapBpm > 0 ? $"   Tapped {board.TapBpm:0.0} BPM" : "")}", board.SyncMessage != "" ? board.SyncMessage : judge.Shoutout);
                     break;
             }

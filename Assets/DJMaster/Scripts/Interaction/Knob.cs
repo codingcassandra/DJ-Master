@@ -13,6 +13,8 @@ namespace DJMaster
         public float defaultValue = 0.5f;
         [Tooltip("Metres of finger travel for a full sweep.")]
         public float throw01 = 0.07f;
+        [Tooltip("An endless encoder, like BROWSE: no stops at either end, and no double-tap reset.")]
+        public bool endless;
 
         public event Action<float> Changed;
 
@@ -61,14 +63,14 @@ namespace DJMaster
                     lastLocal = lp;
                     Engage(p);
                     // Double-tap resets to center, the "home" position DJs return EQs to.
-                    if (Time.time - lastTapEnd < 0.35f) { SetValue(defaultValue); lastTapEnd = -10f; }
+                    if (!endless && Time.time - lastTapEnd < 0.35f) { SetValue(defaultValue); lastTapEnd = -10f; }
                     touchStart = Time.time;
                     valueAtTouch = value;
                     break;
                 }
             }
 
-            if (indicator != null) indicator.localRotation = Quaternion.Euler(0, Mathf.Lerp(-135f, 135f, value), 0);
+            if (indicator != null) indicator.localRotation = Quaternion.Euler(0, Mathf.LerpUnclamped(-135f, 135f, value), 0);
         }
 
         // Editor mouse wheel support.
@@ -76,7 +78,7 @@ namespace DJMaster
 
         public void SetValue(float v)
         {
-            v = Mathf.Clamp01(v);
+            if (!endless) v = Mathf.Clamp01(v);
             if (Mathf.Approximately(v, value)) return;
             value = v;
             Changed?.Invoke(value);

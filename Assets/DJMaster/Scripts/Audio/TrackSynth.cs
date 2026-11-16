@@ -31,6 +31,10 @@ namespace DJMaster
 
         // Synthesized tracks know their key; for recordings it isn't shown.
         public string Key => IsRecording ? "" : KeyNames[((root % 12) + 12) % 12] + "m";
+        // Camelot wheel number (1-12) for our minor-key songs, 0 when the key isn't known (recordings).
+        // A minor is 8A, and each step around the wheel is a fifth, so neighbors mix well.
+        public int CamelotNumber => IsRecording ? 0 : (7 * (((root % 12) + 12) % 12) + 4) % 12 + 1;
+        public string Camelot => IsRecording ? "" : CamelotNumber + "A";
         static readonly string[] KeyNames = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
     }
 

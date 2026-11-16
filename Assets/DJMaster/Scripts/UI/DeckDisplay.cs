@@ -27,7 +27,7 @@ namespace DJMaster
             if (deck.TrackIndex != lastTrack || (deck.IsLoading && Time.frameCount % 15 == 0))
             {
                 lastTrack = deck.TrackIndex;
-                title.text = !deck.HasTrack ? "NO TRACK  -  tap LOAD"
+                title.text = !deck.HasTrack ? "NO TRACK  -  pick a song, tap LOAD"
                     : deck.IsLoading ? "LOADING..."
                     : $"{deck.Track.title}\n<size=85%>{deck.Track.artist}   {deck.Track.genre}   {(deck.Track.IsRecording ? deck.Track.license : deck.Track.Key)}</size>";
             }
