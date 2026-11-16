@@ -49,6 +49,7 @@ namespace DJMaster
             yield return DJVocab.QuizBestKey;
             yield return SkillLevels.PrefKey;
             yield return SetBuilderPanel.SetKey;
+            yield return ByEar.PrefKey;
         }
 
         public const string BestSetKey = "bestSet";

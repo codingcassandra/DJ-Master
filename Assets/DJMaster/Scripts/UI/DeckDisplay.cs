@@ -32,7 +32,7 @@ namespace DJMaster
         bool waveReady, waveSafe;
         int lastSecondsLeft = -1;
         int lastBar = -1, lastBeatInBar = -1, lastTrack = -2;
-        bool lastShowCount, lastPlaying;
+        bool lastShowCount, lastPlaying, lastByEar;
         float lastBpm = -1, lastTempo = -99;
 
         void Update()
@@ -50,10 +50,12 @@ namespace DJMaster
 
             float b = Mathf.Round(deck.BPM * 10f) / 10f;
             float t = Mathf.Round(deck.TempoPercent * 10f) / 10f;
-            if (b != lastBpm || t != lastTempo)
+            bool byEar = ByEar.Active;
+            if (b != lastBpm || t != lastTempo || byEar != lastByEar)
             {
-                lastBpm = b; lastTempo = t;
-                bpm.text = deck.HasTrack ? $"{b:0.0} BPM  <size=62.5%>{(t >= 0 ? "+" : "")}{t:0.0}%</size>" : "--- BPM";
+                lastBpm = b; lastTempo = t; lastByEar = byEar;
+                // By ear (#21) the numbers are hidden: you match the tempo with your ears
+                bpm.text = !deck.HasTrack ? "--- BPM" : byEar ? "BY EAR" : $"{b:0.0} BPM  <size=62.5%>{(t >= 0 ? "+" : "")}{t:0.0}%</size>";
             }
 
             int bar = deck.Bar, beatInBar = deck.BeatInBar;

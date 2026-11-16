@@ -29,20 +29,22 @@ namespace DJMaster
             var b = mixer.decks[1];
             bool both = a.IsPlaying && b.IsPlaying;
 
-            float phase = both ? judge.PhaseOffset : 0f;
+            bool byEar = ByEar.Active; // by ear (#21): no needle, no light, no numbers
+            float phase = both && !byEar ? judge.PhaseOffset : 0f;
             needle.localPosition = new Vector3(needleCenter + phase * 2f * halfWidth, needle.localPosition.y, needle.localPosition.z);
 
             // Green when locked, yellow when close, red when far off. Color-blind mode uses the safe colors and
             // puts the same color's shape in front of the word, so the light isn't the only way to tell
             var state = judge.InSync ? BoardColors.Family.Play : Mathf.Abs(judge.BpmDifference) < 0.6f ? BoardColors.Family.Fx : BoardColors.Family.Crowd;
-            Color c = !both ? new Color(0.1f, 0.1f, 0.12f)
+            Color c = !both || byEar ? new Color(0.1f, 0.1f, 0.12f)
                 : BoardColors.ColorSafe ? BoardColors.Of(state)
                 : state == BoardColors.Family.Play ? new Color(0.1f, 1f, 0.4f) : state == BoardColors.Family.Fx ? new Color(1f, 0.75f, 0.1f) : new Color(1f, 0.15f, 0.2f);
             block.SetColor("_Color", c);
             lockLight.SetPropertyBlock(block);
 
             string text;
-            if (!a.HasTrack || !b.HasTrack) text = "SYNC";
+            if (byEar) text = "BY EAR   <size=80%>listen in PHONES</size>";
+            else if (!a.HasTrack || !b.HasTrack) text = "SYNC";
             else
             {
                 float d = Mathf.Round(judge.BpmDifference * 10f) / 10f;

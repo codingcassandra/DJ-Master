@@ -109,7 +109,7 @@ namespace DJMaster
                 ch.loop.Lit = ch.deck.Looping && (ch.deck.Beat % 1.0) < 0.5;
                 ch.echo.Lit = ch.deck.Strip.echo;
                 var other = channels[1 - i].deck;
-                ch.sync.Lit = ch.deck.IsPlaying && other.IsPlaying
+                ch.sync.Lit = !ByEar.Active && ch.deck.IsPlaying && other.IsPlaying
                               && MixJudge.BeatsLocked(ch.deck.BPM - other.BPM, DJMath.PhaseOffset(other.Beat, ch.deck.Beat));
                 for (int k = 0; k < ch.hotCues.Length; k++) ch.hotCues[k].Lit = ch.deck.IsLoaded && ch.deck.Bar / 4 == k; // the phrase you're in
             }
