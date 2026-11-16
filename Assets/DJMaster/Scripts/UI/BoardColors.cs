@@ -24,7 +24,7 @@ namespace DJMaster
 
         // One per Family, same order
         static readonly Color[] Standard = { Color.clear, DeckA, DeckB, Play, Cue, Fx, Crowd };
-        static readonly Color[] Safe =
+        static readonly Color[] SafePalette =
         {
             Color.clear,
             new Color32(0x56, 0xB4, 0xE9, 0xFF), // sky blue
@@ -54,8 +54,11 @@ namespace DJMaster
             if (changed) Changed?.Invoke();
         }
 
+        // A family's color-blind palette color, whichever mode is on
+        public static Color Safe(Family f) => SafePalette[(int)f];
+
         // The color we draw a family in right now
-        public static Color Of(Family f) => (ColorSafe ? Safe : Standard)[(int)f];
+        public static Color Of(Family f) => (ColorSafe ? SafePalette : Standard)[(int)f];
 
         // The shape for a family, like "●" for PLAY
         public static string Shape(Family f) => Shapes[(int)f];
@@ -69,7 +72,7 @@ namespace DJMaster
             {
                 int f = Array.FindIndex(StandardHex, 1, h => string.Equals(h, m.Groups[1].Value, StringComparison.OrdinalIgnoreCase));
                 if (f < 1) return m.Value;
-                return $"<color=#{ColorUtility.ToHtmlStringRGB(Safe[f])}>{m.Groups[2].Value} {Shapes[f]}</color>";
+                return $"<color=#{ColorUtility.ToHtmlStringRGB(SafePalette[f])}>{m.Groups[2].Value} {Shapes[f]}</color>";
             });
         }
 

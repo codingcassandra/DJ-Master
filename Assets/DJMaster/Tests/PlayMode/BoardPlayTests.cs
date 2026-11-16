@@ -423,6 +423,28 @@ namespace DJMaster.Tests
         }
 
         [UnityTest]
+        public IEnumerator LabelsTurnBlackOnLitYellow_InBothColorModes()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var phones = board.B.headphones;
+            var label = phones.Labels[0];
+            foreach (bool safe in new[] { false, true })
+            {
+                BoardColors.SetColorSafe(safe, save: false);
+                board.mixer.headphoneCue[1] = false;
+                yield return null; yield return null;
+                Assert.AreEqual(PokeButton.LightText, label.color, $"white on the dark pad (color-blind {safe})");
+                board.mixer.headphoneCue[1] = true;
+                yield return null; yield return null;
+                Assert.IsTrue(phones.Lit);
+                Assert.AreEqual(PokeButton.DarkText, label.color, $"black on lit yellow (color-blind {safe})");
+            }
+            BoardColors.SetColorSafe(false, save: false);
+            board.mixer.headphoneCue[1] = false;
+        }
+
+        [UnityTest]
         public IEnumerator SlowPokePressesOnce()
         {
             yield return EnterBooth();
