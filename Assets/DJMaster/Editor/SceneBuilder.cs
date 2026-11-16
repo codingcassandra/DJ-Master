@@ -28,7 +28,8 @@ namespace DJMaster.EditorTools
         static Material glowMat, additiveMat, textMat;
         static readonly Color DeckAColor = BoardColors.DeckA;
         static readonly Color DeckBColor = BoardColors.DeckB;
-        static readonly Color LabelColor = new Color(0.75f, 0.78f, 0.85f);
+        static TMP_FontAsset uiFont;
+        static readonly Color LabelColor = Style.TextGrey;
 
         [MenuItem("DJ Master/Build Scene")]
         public static void Build()
@@ -37,6 +38,7 @@ namespace DJMaster.EditorTools
             Directory.CreateDirectory("Assets/Scenes");
             AssetDatabase.Refresh();
 
+            uiFont = FontSetup.Ensure(); // one font everywhere (#32)
             font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             textMat = font.material;
             PlayerSettings.colorSpace = ColorSpace.Linear;
@@ -183,10 +185,10 @@ namespace DJMaster.EditorTools
             bodyMat.SetFloat("_Metallic", 0.35f);
             var plateMat = Metal("BoardPlate", new Color(0.42f, 0.43f, 0.46f), 0.62f, brushed, new Vector2(1, 3));
             var deckPlateMat = Metal("DeckPlate", new Color(0.13f, 0.135f, 0.15f), 0.55f, brushed, new Vector2(2, 2));
-            var trimMat = Metal("EdgeTrim", new Color(0.7f, 0.71f, 0.75f), 0.8f, null, Vector2.one);
+            var trimMat = Metal("EdgeTrim", Style.Metal, 0.8f, null, Vector2.one);
             var slotMat = Unlit("Slot", new Color(0.01f, 0.01f, 0.012f));
             var capMat = Rubber("PadRubber", Color.gray);
-            var screenMat = Unlit("Screen", new Color(0.015f, 0.02f, 0.03f));
+            var screenMat = Unlit("Screen", Style.Screen);
             var white = Unlit("White", new Color(0.95f, 0.95f, 0.95f));
 
             var boardGo = new GameObject("Board");
@@ -537,7 +539,7 @@ namespace DJMaster.EditorTools
             d.beatLights = new Renderer[4];
             for (int i = 0; i < 4; i++)
                 d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.089f + i * 0.014f, -0.0335f, 0), new Vector3(0.011f, 0.004f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>();
-            Box("PhraseBack", go.transform, new Vector3(0, -0.04f, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            Box("PhraseBack", go.transform, new Vector3(0, -0.04f, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit("PhraseBack", Style.Rule));
             var pivot = new GameObject("PhrasePivot").transform;
             pivot.SetParent(go.transform, false);
             pivot.localPosition = new Vector3(-0.095f, -0.04f, -0.0005f);
@@ -565,7 +567,7 @@ namespace DJMaster.EditorTools
             var b = go.AddComponent<SongBrowser>();
             b.header = Text("Header", go.transform, new Vector3(L, 0.0445f, 0), 0.001f, TextAnchor.UpperLeft, LabelColor);
             b.status = Text("Status", go.transform, new Vector3(R, 0.0445f, 0), 0.0009f, TextAnchor.UpperRight, LabelColor);
-            Box("HeaderLine", go.transform, new Vector3(0, 0.0345f, 0), new Vector3(W - 0.01f, 0.0006f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            Box("HeaderLine", go.transform, new Vector3(0, 0.0345f, 0), new Vector3(W - 0.01f, 0.0006f, 0.001f), Unlit("PhraseBack", Style.Rule));
             const int rows = 4;
             b.rowPitch = 0.015f;
             b.titles = new TextMeshPro[rows];
@@ -584,14 +586,14 @@ namespace DJMaster.EditorTools
 
             // SYNC strip
             float sy = -0.0385f;
-            Box("SyncLine", go.transform, new Vector3(0, -0.0305f, 0), new Vector3(W - 0.01f, 0.0006f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            Box("SyncLine", go.transform, new Vector3(0, -0.0305f, 0), new Vector3(W - 0.01f, 0.0006f, 0.001f), Unlit("PhraseBack", Style.Rule));
             var sgo = new GameObject("SyncMeter");
             sgo.transform.SetParent(go.transform, false);
             s = sgo.AddComponent<SyncMeter>();
             Text("Heading", sgo.transform, new Vector3(L, sy, 0), 0.0008f, TextAnchor.MiddleLeft, LabelColor).text = "SYNC";
             s.label = Text("Label", sgo.transform, new Vector3(L + 0.02f, sy, 0), 0.001f, TextAnchor.MiddleLeft, Color.white);
             float tx = 0.055f;
-            Box("Track", sgo.transform, new Vector3(tx, sy, 0), new Vector3(0.1f, 0.005f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+            Box("Track", sgo.transform, new Vector3(tx, sy, 0), new Vector3(0.1f, 0.005f, 0.001f), Unlit("PhraseBack", Style.Rule));
             Box("Center", sgo.transform, new Vector3(tx, sy, -0.0004f), new Vector3(0.0015f, 0.009f, 0.001f), Unlit("White", Color.white));
             s.needle = Box("Needle", sgo.transform, new Vector3(tx, sy, -0.0008f), new Vector3(0.007f, 0.008f, 0.001f), Unlit("Needle", new Color(1f, 0.8f, 0.2f))).transform;
             s.halfWidth = 0.048f;
@@ -619,9 +621,9 @@ namespace DJMaster.EditorTools
             var p = go.AddComponent<InstructionPanel>();
             Box("Back", go.transform, new Vector3(0, 0, 0.004f), new Vector3(0.64f, 0.23f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
             Box("Edge", go.transform, new Vector3(0, 0.115f, 0.003f), new Vector3(0.64f, 0.004f, 0.007f), Unlit("PanelEdge", DeckAColor));
-            p.title = Text("Title", go.transform, new Vector3(-0.3f, 0.103f, 0), 0.0021f, TextAnchor.UpperLeft, new Color(1f, 0.85f, 0.3f));
-            p.body = Text("Body", go.transform, new Vector3(-0.3f, 0.07f, 0), 0.0015f, TextAnchor.UpperLeft, Color.white);
-            p.feedback = Text("Feedback", go.transform, new Vector3(0, -0.04f, 0), 0.0019f, TextAnchor.MiddleCenter, new Color(0.3f, 1f, 0.5f));
+            p.title = Text("Title", go.transform, new Vector3(-0.3f, 0.103f, 0), Style.PanelTitle, TextAnchor.UpperLeft, Style.HeadingColor);
+            p.body = Text("Body", go.transform, new Vector3(-0.3f, 0.07f, 0), Style.Body, TextAnchor.UpperLeft, Color.white);
+            p.feedback = Text("Feedback", go.transform, new Vector3(0, -0.04f, 0), Style.Lead, TextAnchor.MiddleCenter, Style.Good);
             p.status = Text("Status", go.transform, new Vector3(-0.3f, -0.062f, 0), 0.0012f, TextAnchor.MiddleLeft, LabelColor);
             p.wrapChars = 64;
             p.corner = Corner(go.transform, new Vector3(0.21f, 0.117f, 0)); // in from the edge so it's in reach
@@ -655,7 +657,7 @@ namespace DJMaster.EditorTools
 
             Box("Back", t, new Vector3(0, 0, 0.004f), new Vector3(0.64f, 0.31f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
             Box("Edge", t, new Vector3(0, 0.155f, 0.003f), new Vector3(0.64f, 0.004f, 0.007f), Unlit("PanelEdgeB", DeckBColor));
-            Text("Title", t, new Vector3(-0.3f, 0.145f, 0), 0.0021f, TextAnchor.UpperLeft, new Color(1f, 0.85f, 0.3f)).text = "BUILD YOUR SET";
+            Text("Title", t, new Vector3(-0.3f, 0.145f, 0), Style.PanelTitle, TextAnchor.UpperLeft, Style.HeadingColor).text = "BUILD YOUR SET";
             Text("HowTo", t, new Vector3(-0.3f, 0.114f, 0), 0.00125f, TextAnchor.UpperLeft, Color.white).text =
                 "1  Pick a transition style     2  Tap songs to add them in order     3  GO LIVE";
             Text("StyleHeading", t, new Vector3(0.003f, 0.093f, 0), 0.00115f, TextAnchor.UpperLeft, LabelColor).text = "TRANSITION STYLE";
@@ -686,7 +688,7 @@ namespace DJMaster.EditorTools
             }
             p.info = Text("Info", t, new Vector3(0.003f, -0.04f, 0), 0.00105f, TextAnchor.UpperLeft, LabelColor);
             p.setText = Text("SetList", t, new Vector3(0.175f, 0.093f, 0), 0.00135f, TextAnchor.UpperLeft, Color.white);
-            p.status = Text("Status", t, new Vector3(-0.3f, -0.09f, 0), 0.0014f, TextAnchor.MiddleLeft, new Color(0.3f, 1f, 0.5f));
+            p.status = Text("Status", t, new Vector3(-0.3f, -0.09f, 0), 0.0014f, TextAnchor.MiddleLeft, Style.Good);
 
             PokeButton Action(int i, string label, Color on)
             {
@@ -713,36 +715,36 @@ namespace DJMaster.EditorTools
             var t = go.transform;
             var faceUser = Quaternion.Euler(-90, 0, 0);
             var purple = StartMenu.Purple;
-            var menuGlass = Glass("MenuRow", new Color(0.3f, 0.1f, 0.5f, 0.42f), new Color(0.85f, 0.7f, 1f, 0.9f), 0.3f);
+            var menuGlass = Glass("MenuRow", Style.RowTint, Style.RowRim, Style.RowSheen);
 
             // Dark glass, so the slow lights behind it glow through (#40)
-            Box("Back", t, new Vector3(0, -0.015f, 0.004f), new Vector3(0.62f, 0.39f, 0.006f), Glass("MenuGlassBack", new Color(0.03f, 0.008f, 0.06f, 0.5f), new Color(0.66f, 0.3f, 1f, 0.35f), 0.12f));
+            Box("Back", t, new Vector3(0, -0.015f, 0.004f), new Vector3(0.62f, 0.39f, 0.006f), Glass("MenuGlassBack", Style.PanelTint, Style.PanelRim, Style.PanelSheen));
             BuildMenuBackdrop(t);
-            Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            m.title = Text("Title", t, new Vector3(0, 0.165f, 0), UIText.Title, TextAnchor.UpperCenter, purple);
+            Box("EdgeTop", t, new Vector3(0, 0.18f, 0.003f), new Vector3(0.62f, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
+            Box("EdgeBottom", t, new Vector3(0, -0.21f, 0.003f), new Vector3(0.62f, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
+            m.title = Text("Title", t, new Vector3(0, 0.165f, 0), Style.Title, TextAnchor.UpperCenter, purple);
             m.wordmark = BuildWordmark(t);
-            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), UIText.Heading, TextAnchor.UpperCenter, StartMenu.Lavender);
-            m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), UIText.Small, TextAnchor.MiddleCenter, StartMenu.Lavender);
+            m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), Style.Heading, TextAnchor.UpperCenter, StartMenu.Lavender);
+            m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), Style.Small, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
             m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
             // Who's playing, on a tab above the top left corner, mirroring HOME / COLOR-BLIND on the right (#49)
-            const float PW = 0.2f, PH = UIText.TabHeight;
-            m.playerTab = Box("PlayerTab", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, 0.004f), new Vector3(PW, PH, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f)));
-            m.playerButton = MakeButton("menu.player", "", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, -0.004f), new Vector2(PW - 0.014f, UIText.TabButtonHeight), Unlit("Cap", Color.gray), StartMenu.Purple,
-                out m.playerLabel, faceUser, UIText.Tab, Color.white);
+            const float PW = 0.2f, PH = Style.TabHeight;
+            m.playerTab = Box("PlayerTab", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, 0.004f), new Vector3(PW, PH, 0.006f), Unlit("SystemTab", Style.TabBack));
+            m.playerButton = MakeButton("menu.player", "", t, new Vector3(-0.31f + PW / 2, 0.182f + PH / 2, -0.004f), new Vector2(PW - 0.014f, Style.TabButtonHeight), Unlit("Cap", Color.gray), StartMenu.Purple,
+                out m.playerLabel, faceUser, Style.Tab, Color.white);
             m.playerButton.offColor = SystemButtons.OffColor;
             m.playerLabel.text = "PLAYER: DJ  >";
 
             for (int i = 0; i < StartMenu.Rows; i++)
             {
                 float y = 0.05f - i * 0.046f;
-                var b = MakeButton($"menu.{i}", "", t, new Vector3(-0.155f, y, -0.004f), new Vector2(0.22f, 0.04f), menuGlass, new Color(0.62f, 0.28f, 1f, 0.92f),
-                    out m.labels[i], faceUser, UIText.Button, Color.white);
-                b.offColor = new Color(0.3f, 0.1f, 0.5f, 0.42f); // glass rows: see-through until lit
+                var b = MakeButton($"menu.{i}", "", t, new Vector3(-0.155f, y, -0.004f), new Vector2(0.22f, 0.04f), menuGlass, Style.RowLit,
+                    out m.labels[i], faceUser, Style.Button, Color.white);
+                b.offColor = Style.RowTint; // glass rows: see-through until lit
                 b.transform.Find("Bezel").GetComponent<Renderer>().enabled = false; // a black bezel would show through the glass
                 m.buttons[i] = b;
-                m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), UIText.Body, TextAnchor.MiddleLeft, StartMenu.Lavender);
+                m.descriptions[i] = Text($"Description{i}", t, new Vector3(-0.025f, y, 0), Style.Body, TextAnchor.MiddleLeft, StartMenu.Lavender);
             }
 
             return m;
@@ -837,11 +839,11 @@ namespace DJMaster.EditorTools
             const float W = 0.86f, Top = 0.33f, Bottom = -0.33f;
 
             Box("Back", t, new Vector3(0, (Top + Bottom) / 2, 0.004f), new Vector3(W, Top - Bottom, 0.006f), Unlit("MenuBack", new Color(0.035f, 0.01f, 0.06f)));
-            Box("EdgeTop", t, new Vector3(0, Top, 0.003f), new Vector3(W, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            Box("EdgeBottom", t, new Vector3(0, Bottom, 0.003f), new Vector3(W, 0.004f, 0.007f), Unlit("MenuEdge", purple));
-            Text("Title", t, new Vector3(0, Top - 0.015f, 0), UIText.Title, TextAnchor.UpperCenter, purple).text = "DJ VOCAB";
+            Box("EdgeTop", t, new Vector3(0, Top, 0.003f), new Vector3(W, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
+            Box("EdgeBottom", t, new Vector3(0, Bottom, 0.003f), new Vector3(W, Style.EdgeWidth, 0.007f), Unlit("MenuEdge", purple));
+            Text("Title", t, new Vector3(0, Top - 0.015f, 0), Style.Title, TextAnchor.UpperCenter, purple).text = "DJ VOCAB";
 
-            PokeButton Btn(string id, string label, Vector3 pos, Vector2 size, out TextMeshPro text, float labelSize = UIText.Button)
+            PokeButton Btn(string id, string label, Vector3 pos, Vector2 size, out TextMeshPro text, float labelSize = Style.Button)
             {
                 var b = MakeButton(id, label, t, pos + new Vector3(0, 0, -0.004f), size, Unlit("Cap", Color.gray), purple, out text, faceUser, labelSize, Color.white);
                 b.offColor = new Color(0.3f, 0.1f, 0.5f);
@@ -852,7 +854,7 @@ namespace DJMaster.EditorTools
             // Both tabs sit in from the corners: the panel is wide, and its far corners are past arm's reach (ReachTests)
             v.corner = Corner(t, new Vector3(W / 2 - 0.13f, Top + 0.002f, 0));
             v.menuButton = BackTab(t, new Vector3(-W / 2 + 0.15f, Top + 0.002f, 0));
-            v.info = Text("Info", t, new Vector3(0, Top - 0.125f, 0), UIText.Heading, TextAnchor.MiddleCenter, StartMenu.Lavender);
+            v.info = Text("Info", t, new Vector3(0, Top - 0.125f, 0), Style.Heading, TextAnchor.MiddleCenter, StartMenu.Lavender);
 
             // The list: 12 words per column.
             var list = new GameObject("List");
@@ -864,7 +866,7 @@ namespace DJMaster.EditorTools
             for (int i = 0; i < count; i++)
             {
                 int col = i / perColumn, row = i % perColumn;
-                v.entries[i] = Text($"Word{i}", list.transform, new Vector3(-W / 2 + 0.03f + col * (W / 2), listTop - row * step, 0), UIText.Body, TextAnchor.UpperLeft, StartMenu.Lavender);
+                v.entries[i] = Text($"Word{i}", list.transform, new Vector3(-W / 2 + 0.03f + col * (W / 2), listTop - row * step, 0), Style.Body, TextAnchor.UpperLeft, StartMenu.Lavender);
             }
             v.wrapChars = 68;
 
@@ -873,17 +875,17 @@ namespace DJMaster.EditorTools
             quiz.transform.SetParent(t, false);
             v.quizRoot = quiz;
             var q = quiz.transform;
-            v.progress = Text("Progress", q, new Vector3(0, Top - 0.16f, 0), UIText.Heading, TextAnchor.MiddleCenter, purple);
-            v.question = Text("Question", q, new Vector3(0, Top - 0.19f, 0), UIText.Lead, TextAnchor.UpperCenter, Color.white);
+            v.progress = Text("Progress", q, new Vector3(0, Top - 0.16f, 0), Style.Heading, TextAnchor.MiddleCenter, purple);
+            v.question = Text("Question", q, new Vector3(0, Top - 0.19f, 0), Style.Lead, TextAnchor.UpperCenter, Color.white);
             v.questionWrapChars = 40;
             for (int i = 0; i < 4; i++)
             {
                 var pos = new Vector3((i % 2 == 0 ? -1 : 1) * 0.15f, 0.015f - (i / 2) * 0.075f, 0);
                 v.answers[i] = MakeButton($"vocab.answer{i}", "", q, pos + new Vector3(0, 0, -0.004f), new Vector2(0.26f, 0.055f), Unlit("Cap", Color.gray), BoardColors.Play,
-                    out v.answerLabels[i], faceUser, UIText.Button, Color.white);
+                    out v.answerLabels[i], faceUser, Style.Button, Color.white);
                 v.answers[i].offColor = new Color(0.3f, 0.1f, 0.5f);
             }
-            v.feedback = Text("Feedback", q, new Vector3(0, -0.135f, 0), UIText.Heading, TextAnchor.MiddleCenter, Color.white);
+            v.feedback = Text("Feedback", q, new Vector3(0, -0.135f, 0), Style.Heading, TextAnchor.MiddleCenter, Color.white);
             v.next = Btn("vocab.next", "NEXT", new Vector3(0, -0.2f, 0), new Vector2(0.2f, 0.04f), out v.nextLabel);
             v.next.transform.SetParent(q, true);
 
@@ -897,11 +899,11 @@ namespace DJMaster.EditorTools
         // A BACK button on its own tab above a panel's top left corner: built like the HOME button on the HOME / COLOR-BLIND tab
         static PokeButton BackTab(Transform panel, Vector3 topLeft)
         {
-            const float W = UIText.TabButtonWidth + 0.02f, H = UIText.TabHeight;
+            const float W = Style.TabButtonWidth + 0.02f, H = Style.TabHeight;
             var faceUser = Quaternion.Euler(-90, 0, 0);
-            Box("BackTab", panel, topLeft + new Vector3(W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f)));
-            var b = MakeButton("vocab.menu", "BACK", panel, topLeft + new Vector3(W / 2, H / 2, -0.004f), new Vector2(UIText.TabButtonWidth, UIText.TabButtonHeight),
-                Unlit("Cap", Color.gray), Color.white, out _, faceUser, UIText.Tab, Color.white);
+            Box("BackTab", panel, topLeft + new Vector3(W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", Style.TabBack));
+            var b = MakeButton("vocab.menu", "BACK", panel, topLeft + new Vector3(W / 2, H / 2, -0.004f), new Vector2(Style.TabButtonWidth, Style.TabButtonHeight),
+                Unlit("Cap", Color.gray), Color.white, out _, faceUser, Style.Tab, Color.white);
             b.offColor = SystemButtons.OffColor;
             return b;
         }
@@ -922,19 +924,19 @@ namespace DJMaster.EditorTools
             var s = go.AddComponent<SystemButtons>();
             var t = go.transform;
             var faceUser = Quaternion.Euler(-90, 0, 0);
-            const float W = 0.215f, H = UIText.TabHeight;
+            const float W = 0.215f, H = Style.TabHeight;
             // The tab's local origin is the panel's top right corner, so it all sits left of x = 0 and above y = 0
-            s.tab = Box("Tab", t, new Vector3(-W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", new Color(0.06f, 0.06f, 0.09f))).transform;
+            s.tab = Box("Tab", t, new Vector3(-W / 2, H / 2, 0.004f), new Vector3(W, H, 0.006f), Unlit("SystemTab", Style.TabBack)).transform;
             s.fullWidth = W;
             s.shortWidth = 0.14f;
             PokeButton Btn(string id, float x, float w, out TextMeshPro label)
             {
-                var b = MakeButton(id, "", t, new Vector3(x, H / 2, -0.004f), new Vector2(w, UIText.TabButtonHeight), Unlit("Cap", Color.gray), Color.white,
-                    out label, faceUser, UIText.Tab, Color.white);
+                var b = MakeButton(id, "", t, new Vector3(x, H / 2, -0.004f), new Vector2(w, Style.TabButtonHeight), Unlit("Cap", Color.gray), Color.white,
+                    out label, faceUser, Style.Tab, Color.white);
                 b.offColor = SystemButtons.OffColor;
                 return b;
             }
-            s.home = Btn("system.home", -W + 0.04f, UIText.TabButtonWidth, out var homeLabel);
+            s.home = Btn("system.home", -W + 0.04f, Style.TabButtonWidth, out var homeLabel);
             homeLabel.text = "HOME";
             s.colorBlind = Btn("system.colorblind", -0.07f, 0.124f, out s.colorBlindLabel);
             s.colorBlind.onColor = new Color(1f, 0.85f, 0.3f); // not one of the board's color families, so color-blind mode leaves it alone
@@ -949,7 +951,7 @@ namespace DJMaster.EditorTools
             go.transform.localPosition = new Vector3(-0.33f, 0.14f, 0.02f);
             go.transform.localRotation = Quaternion.Euler(10, -45, 0);
             Box("Back", go.transform, new Vector3(0, 0, 0.004f), new Vector3(0.13f, 0.27f, 0.006f), Lit("PanelBack", new Color(0.04f, 0.04f, 0.06f), 0.6f));
-            Text("Heading", go.transform, new Vector3(0, 0.125f, 0), 0.0014f, TextAnchor.UpperCenter, new Color(1f, 0.85f, 0.3f)).text = "SCENE";
+            Text("Heading", go.transform, new Vector3(0, 0.125f, 0), 0.0014f, TextAnchor.UpperCenter, Style.HeadingColor).text = "SCENE";
             var faceUser = Quaternion.Euler(-90, 0, 0);
             PokeButton Btn(string id, string label, float y, float w = 0.1f, float x = 0)
             {
@@ -1789,7 +1791,7 @@ namespace DJMaster.EditorTools
                 TextAnchor.MiddleLeft => TextAlignmentOptions.Left, TextAnchor.MiddleCenter => TextAlignmentOptions.Center, TextAnchor.MiddleRight => TextAlignmentOptions.Right,
                 TextAnchor.LowerLeft => TextAlignmentOptions.BottomLeft, TextAnchor.LowerCenter => TextAlignmentOptions.Bottom, _ => TextAlignmentOptions.BottomRight,
             };
-            tm.font = TMP_Settings.defaultFontAsset;
+            tm.font = uiFont != null ? uiFont : TMP_Settings.defaultFontAsset;
             tm.fontSize = charSize * TmpScale;
             tm.textWrappingMode = TextWrappingModes.NoWrap; // lines are broken by TextUtil.Wrap
             tm.overflowMode = TextOverflowModes.Overflow;

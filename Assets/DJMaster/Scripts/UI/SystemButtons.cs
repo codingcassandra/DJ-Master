@@ -9,7 +9,7 @@ namespace DJMaster
     public class SystemButtons : MonoBehaviour
     {
         // The tab buttons' resting color, shared with the BACK and PLAYER tabs so every tab looks the same
-        public static readonly Color OffColor = new Color(0.2f, 0.2f, 0.28f);
+        public static readonly Color OffColor = Style.TabButton;
 
         public PokeButton home, colorBlind;
         public TextMeshPro colorBlindLabel;

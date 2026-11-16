@@ -8,8 +8,8 @@ namespace DJMaster
     // description beside each button.
     public class StartMenu : MonoBehaviour
     {
-        public static readonly Color Purple = new Color(0.66f, 0.3f, 1f);
-        public static readonly Color Lavender = new Color(0.78f, 0.6f, 1f);
+        public static readonly Color Purple = Style.Purple;
+        public static readonly Color Lavender = Style.Lavender;
 
         public TextMeshPro title, subtitle, footer;
         public const int Rows = 5;
