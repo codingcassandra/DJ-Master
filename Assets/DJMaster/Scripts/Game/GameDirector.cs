@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace DJMaster
 {
-    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid, ChooseLevel, ChoosePlayer }
+    public enum GameMode { Title, ChooseVenue, ChooseLesson, Learn, Build, Live, LiveResults, Freestyle, Vocab, Daily, Grid, ChooseLevel, ChoosePlayer, Greeting }
 
     // Top-level flow: on the black start screen, pick a mode (Learn / Build a set / Freestyle / DJ Vocab / Daily), then your
     // level, then where to play (your room, a club or a festival), then step into the booth. Also wires up the scene and comfort buttons.
@@ -26,6 +26,9 @@ namespace DJMaster
         public PokeButton roomButton, clubButton, festivalButton, recenterButton, raiseButton, lowerButton;
         [Tooltip("HOME and COLOR-BLIND, moved onto whichever panel is showing.")]
         public SystemButtons systemButtons;
+
+        [Tooltip("Say hi when the game starts. The PlayMode tests turn it off so they start on the start menu.")]
+        public static bool GreetOnStart = true;
 
         public GameMode Mode { get; private set; }
         public GameMode ChosenMode { get; private set; } // what starts after the venue is picked
@@ -79,7 +82,8 @@ namespace DJMaster
             // Something to listen to straight away while you look around the menu (loaded first so the menu can start it)
             board.A.deck.Load(0);
             board.B.deck.Load(1);
-            EnterTitle();
+            if (GreetOnStart) EnterGreeting();
+            else EnterTitle();
         }
 
         void OnApplicationPause(bool pause) { appPaused = pause; RefreshPause(); }
@@ -97,7 +101,7 @@ namespace DJMaster
             Time.timeScale = p ? 0f : 1f;
         }
 
-        public bool OnStartScreen => Mode == GameMode.Title || Mode == GameMode.ChoosePlayer || Mode == GameMode.ChooseLevel || Mode == GameMode.ChooseVenue || Mode == GameMode.ChooseLesson || Mode == GameMode.Vocab;
+        public bool OnStartScreen => Mode == GameMode.Title || Mode == GameMode.Greeting || Mode == GameMode.ChoosePlayer || Mode == GameMode.ChooseLevel || Mode == GameMode.ChooseVenue || Mode == GameMode.ChooseLesson || Mode == GameMode.Vocab;
 
         void SetMode(GameMode mode)
         {
@@ -114,7 +118,7 @@ namespace DJMaster
 
             // The same HOME / COLOR-BLIND tab on the corner of whatever is showing. No HOME on the start menu itself
             var corner = mode == GameMode.Vocab ? vocab.corner : menu ? startMenu.corner : building ? builder.corner : panel.corner;
-            systemButtons.MountOn(corner, mode != GameMode.Title);
+            systemButtons.MountOn(corner, mode != GameMode.Title && mode != GameMode.Greeting);
             SetMenuMusic(menu);
         }
 
@@ -166,6 +170,37 @@ namespace DJMaster
             startMenu.buttons[4].Lit = !DailyChallenge.Progress.PassedOn(DailyChallenge.Today); // a new challenge is waiting
         }
 
+        // The hello (#50): "HI, <NAME>!", one thing to do next, then CONTINUE to the start menu or SWITCH PLAYER.
+        // Shown when the game starts and after picking a player. The name is the signed-in or picked player's.
+        void EnterGreeting()
+        {
+            EnterTitle(); // same clean start: decks paused, menu music on
+            SetMode(GameMode.Greeting);
+            startMenu.Show(Greeting(Players.Current.name), TextUtil.Wrap(Suggestion(), 46), "");
+            startMenu.SetButtons(null, null, "CONTINUE", "SWITCH PLAYER");
+            startMenu.HideExtras();
+            startMenu.buttons[2].Lit = true; // the obvious next poke
+        }
+
+        public static string Greeting(string name) => $"HI, {(string.IsNullOrWhiteSpace(name) ? Players.DefaultName : name.Trim()).ToUpperInvariant()}!";
+
+        // One thing to do next: the first lesson for a new player, a daily streak to keep, the next lesson, today's
+        // challenge, then beating your best set.
+        public static string Suggestion()
+        {
+            int today = DailyChallenge.Today;
+            var daily = DailyChallenge.Progress;
+            int streak = daily.StreakOn(today);
+            bool dailyWaiting = !daily.PassedOn(today);
+            if (!LessonDirector.IsDone(0)) return $"New here? Start with LEARN: lesson 1, {LessonDirector.LessonNames[0]}. Music in seconds.";
+            if (dailyWaiting && streak > 0) return $"Keep your {streak}-day streak going: today's DAILY is {DailyChallenge.ForDay(today).Title}.";
+            for (int i = 1; i < LessonDirector.LessonNames.Length; i++)
+                if (!LessonDirector.IsDone(i)) return $"Next up in LEARN: lesson {i + 1}, {LessonDirector.LessonNames[i]}.";
+            if (dailyWaiting) return $"Today's DAILY: {DailyChallenge.ForDay(today).Title}.";
+            int best = Players.BestSet;
+            return best > 0 ? $"Every lesson done! BUILD A SET and beat your best: {best} pts." : "Every lesson done! BUILD A SET and play it live for the crowd.";
+        }
+
         // PICK PLAYER (#49): everyone on this headset, with their progress. Up to 4, then + NEW PLAYER, then BACK.
         void ChoosePlayer()
         {
@@ -187,7 +222,7 @@ namespace DJMaster
             if (i < all.Count) Players.Pick(all[i].id);
             else if (i == all.Count && !Players.Full) Players.Pick(Players.Add());
             else return;
-            EnterTitle();
+            EnterGreeting();
         }
 
         static string ModeName(GameMode m) => m == GameMode.Learn ? "LEARN" : m == GameMode.Build ? "BUILD A SET" : m == GameMode.Daily ? "DAILY CHALLENGE" : "FREESTYLE";
@@ -285,6 +320,10 @@ namespace DJMaster
                     // DJ VOCAB is a menu of its own, not graded and not in a venue, so it skips the level and venue steps
                     if (i == 3) ShowVocab();
                     else ChooseLevel(i == 0 ? GameMode.Learn : i == 1 ? GameMode.Build : i == 2 ? GameMode.Freestyle : GameMode.Daily);
+                    break;
+                case GameMode.Greeting:
+                    if (i == 2) EnterTitle();
+                    else if (i == 3) ChoosePlayer();
                     break;
                 case GameMode.ChoosePlayer:
                     PickPlayerRow(i);

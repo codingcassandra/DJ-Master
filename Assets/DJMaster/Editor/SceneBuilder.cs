@@ -1495,6 +1495,13 @@ namespace DJMaster.EditorTools
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
             menu.buttons[0].capRenderer.SetPropertyBlock(levelLit);
             RenderPreview("Preview_MenuPlayers.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
+            // The hello when the game starts (#50)
+            menu.Show("HI, DJ NOVA!", TextUtil.Wrap("Keep your 2-day streak going: today's DAILY is QUICK CUT: Neon Tides into Sundial.", 46), "");
+            menu.SetButtons(null, null, "CONTINUE", "SWITCH PLAYER");
+            menu.HideExtras();
+            foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(tint);
+            menu.buttons[2].capRenderer.SetPropertyBlock(levelLit);
+            RenderPreview("Preview_Greeting.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(20, 0, 0), 60f, false);
             foreach (var b in menu.buttons) b.capRenderer.SetPropertyBlock(null);
             menu.gameObject.SetActive(false);
             boardGo.SetActive(true);
