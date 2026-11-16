@@ -340,6 +340,78 @@ namespace DJMaster.Tests
         }
 
         [UnityTest]
+        public IEnumerator DeckScreenScrollsTheSongsWaveform_AndShowsKeyAndTimeLeft()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var display = Object.FindObjectsByType<DeckDisplay>().First(d => d.deck == board.A.deck);
+            var deck = board.A.deck;
+            yield return WaitFor(() => deck.IsLoaded, 20f);
+            var block = new MaterialPropertyBlock();
+            yield return WaitFor(() => { display.waveform.GetPropertyBlock(block); return block.GetFloat("_Columns") > 0; }, 10f);
+            Assert.Greater(block.GetFloat("_Columns"), 1000, "a 16-bar song is a few thousand columns");
+            Assert.IsNotNull(block.GetTexture("_WaveTex"));
+            StringAssert.StartsWith("KEY " + MixMatch.Camelot(deck.Track), display.info.text);
+            StringAssert.Contains("-0:", display.info.text);
+
+            float before = block.GetFloat("_Playhead");
+            deck.Play();
+            yield return new WaitForSeconds(0.5f);
+            display.waveform.GetPropertyBlock(block);
+            Assert.Greater(block.GetFloat("_Playhead"), before + 10, "the waveform scrolls with the music");
+            // The beat lines sit on the deck's beatgrid
+            Assert.AreEqual(60f / deck.Track.bpm * Waveform.ColumnRate(TrackSynth.SampleRate), block.GetFloat("_BeatCols"), 0.01f);
+        }
+
+        static void AssertColor(Color expected, Color actual)
+        {
+            for (int i = 0; i < 4; i++) Assert.AreEqual(expected[i], actual[i], 0.01f, $"expected {expected}, got {actual}");
+        }
+
+        [UnityTest]
+        public IEnumerator KnobRingsFollowTheValue_PadsFlash_FadersGlowWhileHeld()
+        {
+            yield return EnterBooth();
+            var board = Object.FindAnyObjectByType<DJBoard>(FindObjectsInactive.Include);
+            var block = new MaterialPropertyBlock();
+
+            var knob = board.A.low;
+            knob.SetValue(0.2f);
+            yield return null;
+            knob.ledRing.GetPropertyBlock(block);
+            Assert.AreEqual(0.2f, block.GetFloat("_Value"), 1e-4f);
+            Assert.AreEqual(0.5f, block.GetFloat("_From"), 1e-4f, "EQ rings light out from the center");
+            AssertColor(BoardColors.Of(BoardColors.Family.DeckA), block.GetColor("_LedColor"));
+
+            var pad = board.A.hotCues[0];
+            Assert.IsNotNull(pad.rim);
+            Assert.IsFalse(pad.halo.enabled);
+            yield return Poke(pad);
+            Assert.IsTrue(pad.halo.enabled, "a press flashes the halo");
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsFalse(pad.halo.enabled, "and it fades out");
+
+            var fader = board.A.volume;
+            Assert.IsFalse(fader.capHalo.enabled);
+            finger.DirectPress = false;
+            finger.Active = true;
+            finger.Position = fader.transform.TransformPoint(new Vector3(0, 0.005f, (fader.value - 0.5f) * fader.length));
+            yield return null; yield return null; yield return null;
+            Assert.IsTrue(fader.Touched);
+            Assert.IsTrue(fader.capHalo.enabled, "the cap glows while you hold it");
+            finger.Active = false;
+            yield return new WaitForSeconds(0.5f);
+            Assert.IsFalse(fader.capHalo.enabled);
+
+            // Color-blind mode recolors the rings too
+            BoardColors.SetColorSafe(true, save: false);
+            yield return null;
+            knob.ledRing.GetPropertyBlock(block);
+            AssertColor(BoardColors.Of(BoardColors.Family.DeckA), block.GetColor("_LedColor"));
+            BoardColors.SetColorSafe(false, save: false);
+        }
+
+        [UnityTest]
         public IEnumerator SlowPokePressesOnce()
         {
             yield return EnterBooth();

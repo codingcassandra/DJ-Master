@@ -172,10 +172,16 @@ namespace DJMaster.EditorTools
         // The mixer runs down the middle: EQ and FILTER knobs, headphone cue, channel faders, crossfader.
         static DJBoard BuildBoard(Transform world, Mixer mixer, Deck deckA, Deck deckB, out DeckDisplay[] displays, out SyncMeter sync)
         {
-            var bodyMat = Lit("BoardBody", new Color(0.075f, 0.075f, 0.08f), 0.35f);
-            var plateMat = Lit("BoardPlate", new Color(0.1f, 0.1f, 0.11f), 0.3f);
+            // "Midnight Chrome": a graphite body, a brushed metal faceplate on the mixer, rubber pads and knobs, metal fader
+            // caps, all catching the board's own reflection probe so the metal shines in every venue (passthrough included)
+            var brushed = BrushedTexture();
+            var bodyMat = Lit("BoardBody", new Color(0.055f, 0.056f, 0.062f), 0.42f);
+            bodyMat.SetFloat("_Metallic", 0.35f);
+            var plateMat = Metal("BoardPlate", new Color(0.42f, 0.43f, 0.46f), 0.62f, brushed, new Vector2(1, 3));
+            var deckPlateMat = Metal("DeckPlate", new Color(0.13f, 0.135f, 0.15f), 0.55f, brushed, new Vector2(2, 2));
+            var trimMat = Metal("EdgeTrim", new Color(0.7f, 0.71f, 0.75f), 0.8f, null, Vector2.one);
             var slotMat = Unlit("Slot", new Color(0.01f, 0.01f, 0.012f));
-            var capMat = Unlit("Cap", Color.gray);
+            var capMat = Rubber("PadRubber", Color.gray);
             var screenMat = Unlit("Screen", new Color(0.015f, 0.02f, 0.03f));
             var white = Unlit("White", new Color(0.95f, 0.95f, 0.95f));
 
@@ -190,8 +196,13 @@ namespace DJMaster.EditorTools
             t.SetParent(boardGo.transform, false);
             t.localScale = Vector3.one * DJBoard.SurfaceScale;
 
-            Box("Body", t, new Vector3(0, -0.026f, 0.0175f), new Vector3(0.78f, 0.05f, 0.465f), bodyMat);
-            Box("MixerPlate", t, new Vector3(0, -0.0005f, 0.0175f), new Vector3(0.24f, 0.002f, 0.455f), plateMat);
+            Beveled("Body", t, new Vector3(0, -0.026f, 0.0175f), new Vector3(0.78f, 0.05f, 0.465f), 0.008f, bodyMat);
+            // Thin bright edge strips along the front and back, where light catches a machined edge
+            Box("TrimFront", t, new Vector3(0, -0.0045f, -0.2155f), new Vector3(0.74f, 0.0015f, 0.0015f), trimMat);
+            Box("TrimBack", t, new Vector3(0, -0.0045f, 0.2505f), new Vector3(0.74f, 0.0015f, 0.0015f), trimMat);
+            Beveled("DeckPlateL", t, new Vector3(-0.255f, -0.0012f, 0.0175f), new Vector3(0.258f, 0.0016f, 0.45f), 0.0008f, deckPlateMat);
+            Beveled("DeckPlateR", t, new Vector3(0.255f, -0.0012f, 0.0175f), new Vector3(0.258f, 0.0016f, 0.45f), 0.0008f, deckPlateMat);
+            Beveled("MixerPlate", t, new Vector3(0, -0.0005f, 0.0175f), new Vector3(0.24f, 0.002f, 0.455f), 0.0012f, plateMat);
             Box("GrooveL", t, new Vector3(-0.121f, 0f, 0.0175f), new Vector3(0.003f, 0.002f, 0.455f), slotMat);
             Box("GrooveR", t, new Vector3(0.121f, 0f, 0.0175f), new Vector3(0.003f, 0.002f, 0.455f), slotMat);
             // Sits just behind the three screens, tilted 30 degrees back to face the player.
@@ -272,7 +283,43 @@ namespace DJMaster.EditorTools
             Label(t, "B", new Vector3(0.065f, 0.001f, -0.175f), 0.0015f, DeckBColor);
 
             sync = MakeSyncMeter(t, new Vector3(0, 0.062f, 0.247f), screenMat);
+
+            foreach (var b in t.GetComponentsInChildren<PokeButton>(true)) AddLeds(b);
+
+            // One probe for the whole board with a made-up studio around it (soft lights above, dark below), so the
+            // metal has something to reflect even in passthrough, where the real room isn't in the scene
+            var probe = new GameObject("BoardReflections").AddComponent<ReflectionProbe>();
+            probe.transform.SetParent(boardGo.transform, false);
+            probe.mode = ReflectionProbeMode.Custom;
+            probe.customBakedTexture = StudioCubemap();
+            probe.size = new Vector3(0.9f, 0.5f, 0.7f);
+            probe.importance = 2;
+            probe.intensity = 1f;
             return board;
+        }
+
+        // The board's buttons get an LED rim in their color (the round ones turn their colored ring into it) and a halo
+        // that flashes when you press them. PokeButton drives both.
+        static void AddLeds(PokeButton b)
+        {
+            var rimMat = Unlit("LedRim", Color.white);
+            // Dark rubber when off, so the lit ones and the LED rims stand out
+            b.offTint = 0.16f;
+            b.offColor = Color.Lerp(new Color(0.1f, 0.1f, 0.11f), b.onColor, b.offTint);
+            var ring = b.transform.Find("Ring");
+            if (ring != null)
+            {
+                ring.GetComponent<Renderer>().sharedMaterial = rimMat;
+                b.rim = ring.GetComponent<Renderer>();
+            }
+            else
+                b.rim = Prim(PrimitiveType.Cube, "Rim", b.transform, new Vector3(0, -0.0078f, 0), new Vector3(b.size.x + 0.0055f, 0.0015f, b.size.y + 0.0055f), rimMat).GetComponent<Renderer>();
+            var bezel = b.transform.Find("Bezel");
+            if (bezel != null) bezel.localScale = new Vector3(b.size.x + 0.009f, bezel.localScale.y, b.size.y + 0.009f);
+            var halo = Prim(PrimitiveType.Quad, "Halo", b.transform, new Vector3(0, -0.0078f, 0), new Vector3(b.size.x * 2.1f, b.size.y * 2.1f, 1), AdditiveVariant("PressHalo", Color.white, 1));
+            halo.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            b.halo = halo.GetComponent<Renderer>();
+            b.halo.enabled = false;
         }
 
         static PokeButton MakeButton(string id, string label, Transform parent, Vector3 pos, Vector2 size, Material capMat, Color onColor, Quaternion? rot = null, bool round = false)
@@ -326,9 +373,13 @@ namespace DJMaster.EditorTools
             cap.SetParent(go.transform, false);
             cap.localPosition = new Vector3(0, 0.007f, 0);
             Vector3 capSize = horizontal ? new Vector3(0.014f, 0.016f, 0.026f) : new Vector3(0.026f, 0.016f, 0.014f);
-            Prim(PrimitiveType.Cube, "CapBody", cap, Vector3.zero, capSize, Lit("FaderCap", new Color(0.12f, 0.12f, 0.13f), 0.5f));
-            Vector3 stripe = horizontal ? new Vector3(0.002f, 0.001f, 0.026f) : new Vector3(0.026f, 0.001f, 0.002f);
-            Prim(PrimitiveType.Cube, "Line", cap, new Vector3(0, 0.0085f, 0), stripe, Unlit("White", Color.white));
+            Beveled("CapBody", cap, Vector3.zero, capSize, 0.002f, Metal("FaderCap", new Color(0.55f, 0.56f, 0.6f), 0.72f, BrushedTexture(), Vector2.one));
+            Vector3 stripe = horizontal ? new Vector3(0.0022f, 0.001f, 0.026f) : new Vector3(0.026f, 0.001f, 0.0022f);
+            f.capLine = Prim(PrimitiveType.Cube, "Line", cap, new Vector3(0, 0.0083f, 0), stripe, Unlit("LedLine", Color.white)).GetComponent<Renderer>();
+            var halo = Prim(PrimitiveType.Quad, "Halo", cap, new Vector3(0, -0.0075f, 0), new Vector3(0.06f, 0.06f, 1), AdditiveVariant("PressHalo", Color.white, 1));
+            halo.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            f.capHalo = halo.GetComponent<Renderer>();
+            f.capHalo.enabled = false;
             f.cap = cap;
             Vector3 glowSize = horizontal ? new Vector3(length + 0.03f, 0.002f, 0.035f) : new Vector3(0.035f, 0.002f, length + 0.03f);
             f.glow = Prim(PrimitiveType.Cube, "Glow", go.transform, new Vector3(0, 0.0005f, 0), glowSize, glowMat).GetComponent<Renderer>();
@@ -362,8 +413,20 @@ namespace DJMaster.EditorTools
             var k = go.AddComponent<Knob>();
             k.id = id;
             k.radius = 0.017f;
-            Prim(PrimitiveType.Cylinder, "Skirt", go.transform, new Vector3(0, -0.019f, 0), new Vector3(0.036f, 0.001f, 0.036f), Unlit($"Ring{ColorUtility.ToHtmlStringRGB(ringColor)}", ringColor * 0.6f));
-            Prim(PrimitiveType.Cylinder, "Body", go.transform, new Vector3(0, -0.01f, 0), new Vector3(0.028f, 0.01f, 0.028f), Lit("KnobBody", new Color(0.1f, 0.1f, 0.11f), 0.5f));
+            // The ring is 270 degrees of LEDs in the knob's color (the Knob lights it), so it also shows the color code
+            var ring = Prim(PrimitiveType.Quad, "LedRing", go.transform, new Vector3(0, -0.0188f, 0), new Vector3(0.041f, 0.041f, 1), LedRingMaterial());
+            ring.transform.localRotation = Quaternion.Euler(90, 0, 0);
+            k.ledRing = ring.GetComponent<Renderer>();
+            Prim(PrimitiveType.Cylinder, "Base", go.transform, new Vector3(0, -0.0192f, 0), new Vector3(0.028f, 0.0003f, 0.028f), Unlit("Slot", new Color(0.01f, 0.01f, 0.012f)));
+            var body = new GameObject("Body");
+            body.transform.SetParent(go.transform, false);
+            body.transform.localPosition = new Vector3(0, -0.019f, 0);
+            body.transform.localScale = new Vector3(0.026f, 0.018f, 0.026f);
+            body.AddComponent<MeshFilter>().sharedMesh = SaveMesh(MeshKit.Prism(28, 0.5f, 0.43f, 1f), "KnobBody");
+            var bodyR = body.AddComponent<MeshRenderer>();
+            bodyR.sharedMaterial = Rubber("KnobRubber", new Color(0.075f, 0.075f, 0.082f));
+            bodyR.shadowCastingMode = ShadowCastingMode.Off;
+            Prim(PrimitiveType.Cylinder, "Top", go.transform, new Vector3(0, -0.0008f, 0), new Vector3(0.018f, 0.0004f, 0.018f), Metal("KnobTop", new Color(0.5f, 0.51f, 0.55f), 0.75f, null, Vector2.one));
             var ind = new GameObject("Indicator").transform;
             ind.SetParent(go.transform, false);
             Prim(PrimitiveType.Cube, "Line", ind, new Vector3(0, 0.0003f, 0.008f), new Vector3(0.003f, 0.001f, 0.012f), white);
@@ -381,20 +444,30 @@ namespace DJMaster.EditorTools
             go.transform.localPosition = pos;
             var j = go.AddComponent<JogWheel>();
             j.id = id; j.deck = deck; j.radius = 0.085f;
-            var black = Lit("Platter", new Color(0.03f, 0.03f, 0.035f), 0.75f);
+            var black = Lit("Platter", new Color(0.03f, 0.03f, 0.035f), 0.8f);
             Prim(PrimitiveType.Cylinder, "Well", go.transform, new Vector3(0, -0.0115f, 0), new Vector3(0.198f, 0.0005f, 0.198f), Unlit("Slot", new Color(0.01f, 0.01f, 0.012f)));
-            Prim(PrimitiveType.Cylinder, "OuterRing", go.transform, new Vector3(0, -0.009f, 0), new Vector3(0.19f, 0.003f, 0.19f), Lit("JogRing", new Color(0.16f, 0.16f, 0.17f), 0.25f));
+            Prim(PrimitiveType.Cylinder, "OuterRing", go.transform, new Vector3(0, -0.009f, 0), new Vector3(0.19f, 0.003f, 0.19f), Metal("JogRing", new Color(0.5f, 0.51f, 0.55f), 0.7f, null, Vector2.one));
             for (int k = 0; k < 48; k++) // grip ridges
             {
-                var ridge = Prim(PrimitiveType.Cube, "Ridge", go.transform, Vector3.zero, new Vector3(0.0015f, 0.001f, 0.012f), Lit("Ridge", new Color(0.09f, 0.09f, 0.1f), 0.2f));
+                var ridge = Prim(PrimitiveType.Cube, "Ridge", go.transform, Vector3.zero, new Vector3(0.0015f, 0.001f, 0.012f), Metal("Ridge", new Color(0.3f, 0.31f, 0.34f), 0.5f, null, Vector2.one));
                 ridge.transform.localRotation = Quaternion.Euler(0, k * 7.5f, 0);
                 ridge.transform.localPosition = ridge.transform.localRotation * new Vector3(0, -0.0055f, 0.087f);
             }
             var platter = new GameObject("Platter").transform;
             platter.SetParent(go.transform, false);
             Prim(PrimitiveType.Cylinder, "Disc", platter, new Vector3(0, -0.004f, 0), new Vector3(0.16f, 0.004f, 0.16f), black);
+            // Fine grooves across the platter, like a record
+            var groove = Lit("Groove", new Color(0.075f, 0.075f, 0.085f), 0.85f);
+            for (int g = 0; g < 4; g++)
+            {
+                float d = 0.152f - g * 0.014f;
+                float y = -0.00015f + 0.00004f * g; // each ring a hair above the last so they don't flicker
+                Prim(PrimitiveType.Cylinder, "Groove", platter, new Vector3(0, y, 0), new Vector3(d, 0.0001f, d), groove);
+                Prim(PrimitiveType.Cylinder, "GrooveGap", platter, new Vector3(0, y + 0.00002f, 0), new Vector3(d - 0.004f, 0.0001f, d - 0.004f), black);
+            }
             Prim(PrimitiveType.Cylinder, "ColorRing", platter, new Vector3(0, 0.0001f, 0), new Vector3(0.088f, 0.0003f, 0.088f), Unlit($"Ring{ColorUtility.ToHtmlStringRGB(color)}", color));
-            Prim(PrimitiveType.Cylinder, "Center", platter, new Vector3(0, 0.0003f, 0), new Vector3(0.078f, 0.0003f, 0.078f), black);
+            // The center cap glows softly in the deck's color (ColorSafeView recolors it in color-blind mode)
+            Prim(PrimitiveType.Cylinder, "Center", platter, new Vector3(0, 0.0003f, 0), new Vector3(0.078f, 0.0003f, 0.078f), Unlit($"JogCap{ColorUtility.ToHtmlStringRGB(color)}", color * 0.28f));
             Prim(PrimitiveType.Cube, "Marker", platter, new Vector3(0, 0.0006f, 0.052f), new Vector3(0.006f, 0.001f, 0.06f), white);
             Prim(PrimitiveType.Cylinder, "Hub", platter, new Vector3(0, 0.0006f, 0), new Vector3(0.016f, 0.0005f, 0.016f), Lit("Metal", new Color(0.55f, 0.56f, 0.6f), 0.8f));
             j.platter = platter;
@@ -412,23 +485,31 @@ namespace DJMaster.EditorTools
             var d = go.AddComponent<DeckDisplay>();
             d.deck = deck;
             Box("Screen", go.transform, new Vector3(0, 0, 0.002f), new Vector3(0.205f, 0.088f, 0.002f), screenMat);
-            d.title = Text("Title", go.transform, new Vector3(-0.095f, 0.041f, 0), 0.0014f, TextAnchor.UpperLeft, Color.white);
-            d.bpm = Text("BPM", go.transform, new Vector3(-0.095f, 0.0f, 0), 0.0019f, TextAnchor.MiddleLeft, color);
-            d.position = Text("Position", go.transform, new Vector3(-0.095f, -0.021f, 0), 0.0014f, TextAnchor.MiddleLeft, LabelColor);
-            d.countdown = Text("Countdown", go.transform, new Vector3(0.087f, -0.0335f, 0), 0.0016f, TextAnchor.MiddleRight, LabelColor); // beside the beat lights
+            // Top: track (title, then artist, genre and key) on the left, big BPM and tempo on the right with the Camelot
+            // key and time left under it
+            d.title = Text("Title", go.transform, new Vector3(-0.095f, 0.0415f, 0), 0.0013f, TextAnchor.UpperLeft, Color.white);
+            d.bpm = Text("BPM", go.transform, new Vector3(0.095f, 0.0415f, 0), 0.0018f, TextAnchor.UpperRight, color);
+            d.info = Text("Info", go.transform, new Vector3(0.095f, 0.0285f, 0), 0.0011f, TextAnchor.UpperRight, LabelColor);
+            // Middle: the scrolling waveform, playhead in the center, beat / bar / phrase lines from the beatgrid
+            var wave = Prim(PrimitiveType.Quad, "Waveform", go.transform, new Vector3(-0.0045f, 0.001f, 0.0005f), new Vector3(0.186f, 0.036f, 1), MaterialAsset("Waveform", "DJMaster/Waveform"));
+            d.waveform = wave.GetComponent<Renderer>();
+            // Bottom: bar and section on the left, the phrase countdown on the right, then beat lights and phrase progress
+            d.position = Text("Position", go.transform, new Vector3(-0.095f, -0.0245f, 0), 0.0012f, TextAnchor.MiddleLeft, LabelColor);
+            d.countdown = Text("Countdown", go.transform, new Vector3(0.095f, -0.0245f, 0), 0.0013f, TextAnchor.MiddleRight, LabelColor);
             d.beatLights = new Renderer[4];
             for (int i = 0; i < 4; i++)
-                d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.089f + i * 0.014f, -0.034f, 0), new Vector3(0.011f, 0.006f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>(); // narrow, to leave room for the countdown
-            Box("PhraseBack", go.transform, new Vector3(0, -0.041f, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
+                d.beatLights[i] = Box($"Beat{i}", go.transform, new Vector3(-0.089f + i * 0.014f, -0.0335f, 0), new Vector3(0.011f, 0.004f, 0.001f), Unlit("BeatLight", Color.gray)).GetComponent<Renderer>();
+            Box("PhraseBack", go.transform, new Vector3(0, -0.04f, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit("PhraseBack", new Color(0.08f, 0.08f, 0.1f)));
             var pivot = new GameObject("PhrasePivot").transform;
             pivot.SetParent(go.transform, false);
-            pivot.localPosition = new Vector3(-0.095f, -0.041f, -0.0005f);
+            pivot.localPosition = new Vector3(-0.095f, -0.04f, -0.0005f);
             Box("Fill", pivot, new Vector3(0.095f, 0, 0), new Vector3(0.19f, 0.003f, 0.001f), Unlit($"Phrase{p}", color));
             d.phraseFill = pivot;
+            // The channel level, a thin bar beside the waveform
             var lvl = new GameObject("LevelPivot").transform;
             lvl.SetParent(go.transform, false);
-            lvl.localPosition = new Vector3(0.094f, -0.03f, -0.0005f);
-            d.levelFill = Box("Level", lvl, new Vector3(0, 0.03f, 0), new Vector3(0.006f, 0.06f, 0.001f), Unlit("Level", Color.green)).GetComponent<Renderer>();
+            lvl.localPosition = new Vector3(0.0955f, -0.017f, -0.0005f);
+            d.levelFill = Box("Level", lvl, new Vector3(0, 0.018f, 0), new Vector3(0.004f, 0.036f, 0.001f), Unlit("Level", Color.green)).GetComponent<Renderer>();
             d.levelPivot = lvl;
             return d;
         }
@@ -1175,13 +1256,81 @@ namespace DJMaster.EditorTools
                 d.title.text = isA ? "Neon Tides\n<size=85%>Lumen Kid   House   Am</size>" : "Low Orbit\n<size=85%>Ferro   Techno   Em</size>";
                 d.bpm.text = "128.0 BPM  <size=62.5%>+0.0%</size>";
                 d.position.text = isA ? "BAR 11/16   GROOVE" : "BAR  4/16   DROP";
+                if (d.info != null) d.info.text = isA ? "KEY 8A   -0:12" : "KEY 9A   -0:26";
                 if (d.countdown != null)
                 {
                     d.countdown.text = isA ? "BREAKDOWN: 3 BEATS" : "PHRASE IN 3 BARS"; // the longest it gets, and the usual
                     d.countdown.color = isA ? d.headsUpColor : d.countColor;
                 }
             }
+            // Waveforms from two real renders, partway in, and the LEDs the way they look mid-mix
+            foreach (var d in Object.FindObjectsByType<DeckDisplay>())
+            {
+                int track = d.deck.deckName == "A" ? 0 : 1;
+                var info = TrackLibrary.Tracks[track];
+                var cols = Waveform.Analyze(TrackSynth.Render(info), 2, TrackSynth.SampleRate);
+                var tex = new Texture2D(Waveform.TextureWidth, (cols.Length + Waveform.TextureWidth - 1) / Waveform.TextureWidth, TextureFormat.RGBA32, false, true) { filterMode = FilterMode.Point };
+                var px = new Color32[tex.width * tex.height];
+                System.Array.Copy(cols, px, cols.Length);
+                tex.SetPixels32(px);
+                tex.Apply();
+                float rate = Waveform.ColumnRate(TrackSynth.SampleRate);
+                var wb = new MaterialPropertyBlock();
+                wb.SetTexture("_WaveTex", tex);
+                wb.SetVector("_TexSize", new Vector4(tex.width, tex.height, 0, 0));
+                wb.SetFloat("_Columns", cols.Length);
+                wb.SetFloat("_Playhead", (track == 0 ? 10.6f : 3.4f) * 4 * 60f / info.bpm * rate); // bar 11 / bar 4
+                wb.SetFloat("_Window", d.waveSeconds * rate);
+                wb.SetFloat("_BeatCols", 60f / info.bpm * rate);
+                wb.SetFloat("_FirstBeatCol", info.firstBeat * rate);
+                d.waveform.SetPropertyBlock(wb);
+            }
+            var previewBoard = Object.FindAnyObjectByType<DJBoard>();
+            foreach (var k in previewBoard.GetComponentsInChildren<Knob>())
+            {
+                var kb = new MaterialPropertyBlock();
+                var kc = BoardColors.Of(BoardColors.FamilyOf(k.id));
+                kb.SetColor("_LedColor", kc.a == 0 ? Color.white : kc);
+                kb.SetFloat("_Value", k.id.EndsWith("low") ? 0.2f : k.id.EndsWith("filter") ? 0.75f : k.id.EndsWith("gain") ? 0.6f : 0.5f);
+                kb.SetFloat("_From", 0.5f);
+                k.ledRing.SetPropertyBlock(kb);
+            }
+            foreach (var b in previewBoard.GetComponentsInChildren<PokeButton>())
+            {
+                if (b.rim == null) continue;
+                bool lit = b.id.EndsWith(".play") || b.id == "A.sync"; // what PokeButton shows: playing, and a SYNC press
+                var bb = new MaterialPropertyBlock();
+                bb.SetColor("_Color", lit ? b.onColor : b.offColor);
+                bb.SetColor("_EmissionColor", (lit ? b.onColor : b.offColor) * (lit ? 0.85f : 0.08f));
+                b.capRenderer.SetPropertyBlock(bb);
+                var rb = new MaterialPropertyBlock();
+                rb.SetColor("_Color", lit ? b.onColor : b.onColor * 0.32f);
+                b.rim.SetPropertyBlock(rb);
+                if (b.id == "A.sync")
+                {
+                    b.halo.enabled = true;
+                    var hb = new MaterialPropertyBlock();
+                    hb.SetColor("_Color", b.onColor * 0.6f);
+                    b.halo.SetPropertyBlock(hb);
+                }
+            }
+            var held = previewBoard.A.volume; // a channel fader being held
+            held.capHalo.enabled = true;
+            var fb = new MaterialPropertyBlock();
+            fb.SetColor("_Color", BoardColors.DeckA * 0.7f);
+            held.capHalo.SetPropertyBlock(fb);
+            fb.SetColor("_Color", Color.Lerp(BoardColors.DeckA, Color.white, 0.3f));
+            held.capLine.SetPropertyBlock(fb);
+            foreach (var m in previewBoard.GetComponentsInChildren<LevelMeter>())
+                for (int i = 0; i < m.lights.Length; i++)
+                {
+                    var mb = new MaterialPropertyBlock();
+                    mb.SetColor("_Color", i < 6 ? LevelMeter.LightColor(i) : LevelMeter.LightColor(i) * 0.14f + new Color(0.02f, 0.02f, 0.022f));
+                    m.lights[i].SetPropertyBlock(mb);
+                }
             RenderPreview("Preview_Board.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
+            RenderPreview("Preview_Screens.png", world.TransformPoint(new Vector3(0, 1.1f, 0.12f)), new Vector3(28, 0, 0), 40f, false);
+            RenderPreview("Preview_Mixer.png", world.TransformPoint(new Vector3(0, 1.08f, 0.22f)), new Vector3(46, 0, 0), 40f, false);
             RenderPreview("Preview_Panel.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
 
             // The start screen and Build mode, filled in the way they look at runtime.
@@ -1397,6 +1546,128 @@ namespace DJMaster.EditorTools
             m.color = color;
             m.SetFloat("_Glossiness", smoothness);
             return m;
+        }
+
+        // Metal for the Standard shader: shiny, and reflecting the board's probe. tex is an optional brushed grain
+        static Material Metal(string name, Color color, float smoothness, Texture2D tex, Vector2 tiling)
+        {
+            var m = Lit(name, color, smoothness);
+            m.SetFloat("_Metallic", 0.9f);
+            m.mainTexture = tex;
+            m.mainTextureScale = tiling;
+            return m;
+        }
+
+        // Soft-touch rubber, with emission on so a pad can glow in its color (PokeButton sets _EmissionColor)
+        static Material Rubber(string name, Color color)
+        {
+            var m = Lit(name, color, 0.18f);
+            m.SetFloat("_Metallic", 0f);
+            m.EnableKeyword("_EMISSION");
+            m.SetColor("_EmissionColor", Color.black);
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
+            return m;
+        }
+
+        static Material LedRingMaterial()
+        {
+            var m = MaterialAsset("LedRing", "DJMaster/LedRing");
+            m.SetFloat("_Segments", 15);
+            m.SetFloat("_Inner", 0.7f);
+            return m;
+        }
+
+        // A brushed metal grain: fine streaks running along x, tiled. Made here so there's no image file to license
+        static Texture2D BrushedTexture()
+        {
+            const int w = 256, h = 256;
+            var tex = new Texture2D(w, h, TextureFormat.RGBA32, true, false) { name = "Brushed", wrapMode = TextureWrapMode.Repeat, filterMode = FilterMode.Trilinear, anisoLevel = 4 };
+            var rng = new System.Random(7);
+            var row = new float[h];
+            for (int y = 0; y < h; y++) row[y] = (float)rng.NextDouble();
+            var px = new Color32[w * h];
+            for (int y = 0; y < h; y++)
+                for (int x = 0; x < w; x++)
+                {
+                    // Each row is a streak, a little lighter or darker, with a slow wobble along it
+                    float v = 0.8f + 0.12f * (row[y] - 0.5f) * 2f + 0.05f * Mathf.Sin((x + row[y] * 400f) * 0.05f) * row[(y + 37) % h];
+                    byte b = (byte)Mathf.Clamp(Mathf.RoundToInt(v * 255f), 0, 255);
+                    px[y * w + x] = new Color32(b, b, b, 255);
+                }
+            tex.SetPixels32(px);
+            tex.Apply(true);
+            return SaveAsset(tex, "Brushed.asset");
+        }
+
+        // The made-up studio the board's metal reflects: a dark room with a long soft light overhead and a dim one
+        // behind the player, so every metal edge gets a highlight
+        static Cubemap StudioCubemap()
+        {
+            const int size = 64;
+            var cube = new Cubemap(size, TextureFormat.RGBA32, true) { name = "BoardStudio" };
+            var faces = new[] { CubemapFace.PositiveX, CubemapFace.NegativeX, CubemapFace.PositiveY, CubemapFace.NegativeY, CubemapFace.PositiveZ, CubemapFace.NegativeZ };
+            var px = new Color[size * size];
+            foreach (var face in faces)
+            {
+                for (int y = 0; y < size; y++)
+                    for (int x = 0; x < size; x++)
+                    {
+                        float u = (x + 0.5f) / size * 2 - 1, v = (y + 0.5f) / size * 2 - 1;
+                        Vector3 d = face switch
+                        {
+                            CubemapFace.PositiveX => new Vector3(1, -v, -u),
+                            CubemapFace.NegativeX => new Vector3(-1, -v, u),
+                            CubemapFace.PositiveY => new Vector3(u, 1, v),
+                            CubemapFace.NegativeY => new Vector3(u, -1, -v),
+                            CubemapFace.PositiveZ => new Vector3(u, -v, 1),
+                            _ => new Vector3(-u, -v, -1),
+                        };
+                        d.Normalize();
+                        float up = Mathf.Clamp01(d.y);
+                        float c = Mathf.Lerp(0.035f, 0.16f, Mathf.SmoothStep(-0.2f, 0.6f, d.y)); // dark floor, dim ceiling
+                        // A long softbox overhead, running left to right
+                        c += 0.85f * Mathf.SmoothStep(0.75f, 0.92f, up) * Mathf.SmoothStep(0.35f, 0.15f, Mathf.Abs(d.z - 0.15f));
+                        // A dimmer strip behind the player, low, for the front edges
+                        c += 0.35f * Mathf.SmoothStep(0.2f, 0.05f, Mathf.Abs(d.y - 0.25f)) * Mathf.SmoothStep(-0.6f, -0.85f, d.z);
+                        // A hint of the brand purple from the side
+                        var col = new Color(c, c, c * 1.04f) + new Color(0.06f, 0.02f, 0.1f) * Mathf.SmoothStep(0.5f, 0.95f, Mathf.Abs(d.x)) * up;
+                        col.a = 1;
+                        px[y * size + x] = col;
+                    }
+                cube.SetPixels(px, face);
+            }
+            cube.Apply(true);
+            return SaveAsset(cube, "BoardStudio.asset");
+        }
+
+        // Saves a generated asset, updating the existing one in place so materials keep pointing at it
+        static T SaveAsset<T>(T obj, string file) where T : Object
+        {
+            string path = $"{GeneratedDir}/{file}";
+            var existing = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (existing != null)
+            {
+                EditorUtility.CopySerialized(obj, existing);
+                return existing;
+            }
+            AssetDatabase.CreateAsset(obj, path);
+            return obj;
+        }
+
+        // A box with chamfered top edges (bevel in metres, the same on every side)
+        static GameObject Beveled(string name, Transform parent, Vector3 pos, Vector3 size, float bevel, Material mat)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent, false);
+            go.transform.localPosition = pos;
+            go.transform.localScale = size;
+            string key = $"Bevel_{size.x * 1000:0.#}x{size.y * 1000:0.#}x{size.z * 1000:0.#}_{bevel * 1000:0.#}";
+            go.AddComponent<MeshFilter>().sharedMesh = SaveMesh(MeshKit.BeveledBox(bevel / size.x, Mathf.Min(0.45f, bevel / size.y), bevel / size.z), key);
+            var r = go.AddComponent<MeshRenderer>();
+            r.sharedMaterial = mat;
+            r.shadowCastingMode = ShadowCastingMode.Off;
+            r.receiveShadows = false;
+            return go;
         }
 
         static Material Unlit(string name, Color color)
