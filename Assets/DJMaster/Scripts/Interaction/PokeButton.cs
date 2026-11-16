@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using UnityEngine;
 
 namespace DJMaster
@@ -30,6 +31,8 @@ namespace DJMaster
         float capOffset, flash;
         Vector3 capRest;
         MaterialPropertyBlock block;
+        TMP_Text[] labels;
+        Color lastLabel = Color.clear;
 
         void Awake()
         {
@@ -96,6 +99,52 @@ namespace DJMaster
         bool Inside(Vector3 lp, float margin) =>
             Mathf.Abs(lp.x) < size.x * 0.5f + margin && Mathf.Abs(lp.z) < size.y * 0.5f + margin && lp.y < hoverHeight;
 
+        // ---- Readable labels (#43) ----
+        // Every label is black or white, whichever stands out more against the cap's color right now: black on yellow,
+        // light green or light blue, white on dark caps. Worked out from brightness, so it holds for every color family,
+        // lit or not, pressed, and in color-blind mode.
+
+        public static readonly Color DarkText = new Color(0.02f, 0.02f, 0.02f);
+        public static readonly Color LightText = new Color(0.97f, 0.97f, 0.97f);
+
+        // WCAG relative luminance of an sRGB color (what the color picker shows)
+        public static float Luminance(Color c)
+        {
+            static float Lin(float v) => v <= 0.04045f ? v / 12.92f : Mathf.Pow((v + 0.055f) / 1.055f, 2.4f);
+            return 0.2126f * Lin(Mathf.Clamp01(c.r)) + 0.7152f * Lin(Mathf.Clamp01(c.g)) + 0.0722f * Lin(Mathf.Clamp01(c.b));
+        }
+
+        // WCAG contrast ratio, 1 to 21. 4.5 is the bar for normal text
+        public static float Contrast(Color a, Color b)
+        {
+            float la = Luminance(a), lb = Luminance(b);
+            return (Mathf.Max(la, lb) + 0.05f) / (Mathf.Min(la, lb) + 0.05f);
+        }
+
+        // What a see-through cap looks like over the dark panel behind it
+        public static Color Seen(Color cap)
+        {
+            var c = Color.Lerp(new Color(0.04f, 0.04f, 0.05f), cap, Mathf.Clamp01(cap.a));
+            c.a = 1f;
+            return c;
+        }
+
+        public static Color LabelColorFor(Color cap)
+        {
+            var seen = Seen(cap);
+            return Contrast(DarkText, seen) >= Contrast(LightText, seen) ? DarkText : LightText;
+        }
+
+        // The labels printed on the cap (they ride down with it)
+        public TMP_Text[] Labels => labels ??= cap != null ? cap.GetComponentsInChildren<TMP_Text>(true) : GetComponentsInChildren<TMP_Text>(true);
+
+        public void SetLabelColor(Color c)
+        {
+            if (c == lastLabel && Application.isPlaying) return;
+            lastLabel = c;
+            foreach (var l in Labels) if (l != null) l.color = c;
+        }
+
         // Lets the lessons and the PlayMode tests press a button without a hand.
         public void SimulatePress() { flash = 1f; Pressed?.Invoke(); }
 
@@ -115,6 +164,7 @@ namespace DJMaster
                 // Rubber pads (a lit material) glow from inside in their color; unlit caps just ignore this
                 block.SetColor("_EmissionColor", c * (Lit || shine > 0 ? 0.85f : 0.08f));
                 capRenderer.SetPropertyBlock(block);
+                SetLabelColor(LabelColorFor(c));
             }
             if (rim != null)
             {

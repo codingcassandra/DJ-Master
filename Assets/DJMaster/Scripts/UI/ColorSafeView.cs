@@ -92,6 +92,20 @@ namespace DJMaster
             }
         }
 
+        // A color coded button's colors in color-blind mode: the safe color at the same brightness, and the same dim
+        // tint of it when off. False when the button isn't color coded (it keeps its colors)
+        public static bool SafeButtonColors(Color on, float offTint, out Color safeOn, out Color safeOff)
+        {
+            safeOn = on; safeOff = Color.clear;
+            var f = BoardColors.FamilyOf(on, out float k);
+            if (f == BoardColors.Family.None) return false;
+            var c = BoardColors.Safe(f) * k;
+            c.a = on.a;
+            safeOn = c;
+            safeOff = Color.Lerp(new Color(0.1f, 0.1f, 0.11f), safeOn, offTint);
+            return true;
+        }
+
         static Color Recolor(BoardColors.Family f, float brightness, float alpha)
         {
             var c = BoardColors.Of(f) * brightness;

@@ -1407,6 +1407,8 @@ namespace DJMaster.EditorTools
                 kb.SetFloat("_From", 0.5f);
                 k.ledRing.SetPropertyBlock(kb);
             }
+            void TintButtons()
+            {
             foreach (var b in previewBoard.GetComponentsInChildren<PokeButton>())
             {
                 if (b.rim == null) continue;
@@ -1426,6 +1428,8 @@ namespace DJMaster.EditorTools
                     b.halo.SetPropertyBlock(hb);
                 }
             }
+            }
+            TintButtons();
             var held = previewBoard.A.volume; // a channel fader being held
             held.capHalo.enabled = true;
             var fb = new MaterialPropertyBlock();
@@ -1452,6 +1456,26 @@ namespace DJMaster.EditorTools
             RenderPreview("Preview_Browser.png", bt.TransformPoint(new Vector3(0, 0, -0.3f)), bt.eulerAngles, 30f, false);
             RenderPreview("Preview_Screens.png", world.TransformPoint(new Vector3(0, 1.1f, 0.12f)), new Vector3(28, 0, 0), 40f, false);
             RenderPreview("Preview_Mixer.png", world.TransformPoint(new Vector3(0, 1.08f, 0.22f)), new Vector3(46, 0, 0), 40f, false);
+            // The same in color-blind mode, so both palettes get checked (labels, pads, rims, rings)
+            var safeView = previewBoard.gameObject.AddComponent<ColorSafeView>();
+            safeView.Init();
+            BoardColors.SetColorSafe(true, save: false);
+            TintButtons();
+            foreach (var k in previewBoard.GetComponentsInChildren<Knob>())
+            {
+                if (k.ledRing == null) continue;
+                var kb = new MaterialPropertyBlock();
+                k.ledRing.GetPropertyBlock(kb);
+                var kc = BoardColors.Of(BoardColors.FamilyOf(k.id));
+                kb.SetColor("_LedColor", kc.a == 0 ? Color.white : kc);
+                k.ledRing.SetPropertyBlock(kb);
+            }
+            RenderPreview("Preview_Board_ColorBlind.png", world.TransformPoint(new Vector3(0, 1.24f, 0.02f)), new Vector3(42, 0, 0), 62f, false);
+            RenderPreview("Preview_Pads_ColorBlind.png", world.TransformPoint(new Vector3(-0.2f, 1.02f, 0.2f)), new Vector3(52, 0, 0), 40f, false);
+            BoardColors.SetColorSafe(false, save: false);
+            Object.DestroyImmediate(safeView);
+            TintButtons();
+            RenderPreview("Preview_Pads.png", world.TransformPoint(new Vector3(-0.2f, 1.02f, 0.2f)), new Vector3(52, 0, 0), 40f, false);
             // The venues, with the board lit up mid-mix like above
             foreach (var mode in new[] { EnvMode.Room, EnvMode.Club, EnvMode.Festival })
             {
@@ -1591,6 +1615,15 @@ namespace DJMaster.EditorTools
 
         static void RenderPreview(string file, Vector3 pos, Vector3 euler, float fov, bool skybox, int width = 1280, int height = 800)
         {
+            // Labels the way PokeButton colors them at runtime: black or white against the cap color it's showing
+            var capBlock = new MaterialPropertyBlock();
+            foreach (var b in Object.FindObjectsByType<PokeButton>())
+            {
+                if (b.capRenderer == null) continue;
+                b.capRenderer.GetPropertyBlock(capBlock);
+                var cap = capBlock.isEmpty || !capBlock.HasColor("_Color") ? b.capRenderer.sharedMaterial.color : capBlock.GetColor("_Color");
+                b.SetLabelColor(PokeButton.LabelColorFor(cap));
+            }
             var go = new GameObject("PreviewCam");
             var cam = go.AddComponent<Camera>();
             go.transform.SetPositionAndRotation(pos, Quaternion.Euler(euler));
