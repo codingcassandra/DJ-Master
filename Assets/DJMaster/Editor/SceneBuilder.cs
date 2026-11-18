@@ -727,7 +727,8 @@ namespace DJMaster.EditorTools
             m.title = Text("Title", t, new Vector3(0, 0.165f, 0), Style.Title, TextAnchor.UpperCenter, purple);
             m.wordmark = BuildWordmark(t);
             m.subtitle = Text("Subtitle", t, new Vector3(0, 0.118f, 0), Style.Heading, TextAnchor.UpperCenter, StartMenu.Lavender);
-            m.footer = Text("Footer", t, new Vector3(0, -0.188f, 0), Style.Small, TextAnchor.MiddleCenter, StartMenu.Lavender);
+            // Centered between the last row (BACK ends at -0.154) and the bottom edge (-0.21), so two lines clear both (#55)
+            m.footer = Text("Footer", t, new Vector3(0, -0.181f, 0), Style.Small, TextAnchor.MiddleCenter, StartMenu.Lavender);
             m.wrapChars = 34;
             m.corner = Corner(t, new Vector3(0.31f, 0.182f, 0));
             // Who's playing, on a tab above the top left corner, mirroring HOME / COLOR-BLIND on the right (#49)
@@ -1645,6 +1646,17 @@ namespace DJMaster.EditorTools
 
             // The start screen and Build mode, filled in the way they look at runtime.
             var panel = Object.FindAnyObjectByType<InstructionPanel>();
+
+            // The end of a set (#55): the results use the full width, the score sits with the stars
+            panel.Show("SET COMPLETE!",
+                $"Blend: {BoardColors.Green("PERFECT")}. 12 bars together, right on the phrase.\n" +
+                $"Bass Swap: {BoardColors.Yellow("GOOD")}. Swap the LOW on a phrase line, bar 1, 5, 9 or 13.\n" +
+                $"Cut: {BoardColors.Red("ROUGH")}. Cut on a phrase line so the new song lands on its first beat.\n" +
+                "LISTEN BACK: beats in sync 84% of mix time, 0 s of clashing, 0 s of silence.\n" +
+                "PRACTISE NEXT: Cut: hit PLAY right on bar 1, 5, 9 or 13 and slam the crossfader across.",
+                "", GameDirector.ResultLine(2, 340, 410), wide: true);
+            panel.SetActions("HOME", "LISTEN BACK", "EDIT SET", "PLAY AGAIN");
+            RenderPreview("Preview_Results.png", world.TransformPoint(new Vector3(0, 1.24f, 0.0f)), new Vector3(8, 0, 0), 60f, false);
             var builder = Object.FindAnyObjectByType<SetBuilderPanel>(FindObjectsInactive.Include);
             menu.gameObject.SetActive(true);
             var boardGo = Object.FindAnyObjectByType<DJBoard>().gameObject;

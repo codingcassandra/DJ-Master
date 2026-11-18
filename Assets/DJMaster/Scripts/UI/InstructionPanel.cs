@@ -10,14 +10,18 @@ namespace DJMaster
         public PokeButton[] actionButtons = new PokeButton[4];
         public TextMeshPro[] actionLabels = new TextMeshPro[4];
         public int wrapChars = 52;
+        [Tooltip("Line length for screens with lots of short facts, like the set results: about the full width of the glass.")]
+        public int wideWrapChars = 100;
         [Tooltip("Where the HOME and COLOR-BLIND tab sits while this panel is showing.")]
         public Transform corner;
 
         string lastBody, lastTitle, lastStatus, lastFeedback;
-        bool lastColorSafe;
+        bool lastColorSafe, lastWide;
 
-        public void Show(string titleText, string bodyText, string statusText = "", string feedbackText = "")
+        public void Show(string titleText, string bodyText, string statusText = "", string feedbackText = "", bool wide = false)
         {
+            if (wide != lastWide) { lastWide = wide; lastBody = lastStatus = null; }
+            int chars = wide ? wideWrapChars : wrapChars;
             // Color-blind mode changes how the text looks, so we redraw everything when it's turned on or off
             if (lastColorSafe != BoardColors.ColorSafe)
             {
@@ -25,8 +29,8 @@ namespace DJMaster
                 lastTitle = lastBody = lastStatus = lastFeedback = null;
             }
             if (titleText != lastTitle) { title.text = BoardColors.Display(titleText); lastTitle = titleText; }
-            if (bodyText != lastBody) { body.text = TextUtil.Wrap(BoardColors.Display(bodyText), wrapChars); lastBody = bodyText; }
-            if (statusText != lastStatus) { status.text = TextUtil.Wrap(BoardColors.Display(statusText), wrapChars + 8); lastStatus = statusText; }
+            if (bodyText != lastBody) { body.text = TextUtil.Wrap(BoardColors.Display(bodyText), chars); lastBody = bodyText; }
+            if (statusText != lastStatus) { status.text = TextUtil.Wrap(BoardColors.Display(statusText), chars + 8); lastStatus = statusText; }
             if (feedbackText != lastFeedback) { feedback.text = BoardColors.Display(feedbackText); lastFeedback = feedbackText; }
         }
 

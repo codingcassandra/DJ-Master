@@ -17,6 +17,11 @@ namespace DJMaster.EditorTools
         const string BoldTtf = "Assets/DJMaster/Fonts/Inter-Bold.ttf";
         const string BoldPath = "Assets/DJMaster/Fonts/Inter Bold SDF.asset";
         const string FallbackPath = "Assets/TextMesh Pro/Resources/Fonts & Materials/LiberationSans SDF.asset";
+        // The color-blind shapes, baked from LiberationSans into their own small static atlas (#55). LiberationSans SDF
+        // doesn't have them, it only reached them through its dynamic fallback, which writes glyphs at runtime
+        const string ShapesTtf = "Assets/TextMesh Pro/Fonts/LiberationSans.ttf";
+        const string ShapesPath = "Assets/DJMaster/Fonts/Shapes SDF.asset";
+        public const string ShapeCharacters = "◄►●■♦♥";
 
         // ASCII, Latin-1 and the few symbols the game prints
         static string Characters()
@@ -33,6 +38,7 @@ namespace DJMaster.EditorTools
         {
             AssetDatabase.DeleteAsset(Style.FontPath);
             AssetDatabase.DeleteAsset(BoldPath);
+            AssetDatabase.DeleteAsset(ShapesPath);
             Ensure();
         }
 
@@ -44,6 +50,8 @@ namespace DJMaster.EditorTools
                 var bold = Make(BoldTtf, BoldPath, "Inter Bold SDF", null);
                 regular = Make(RegularTtf, Style.FontPath, "Inter SDF", bold);
             }
+            EnsureShapes(regular);
+            EnsureShapes(AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(BoldPath));
             var settings = new SerializedObject(TMP_Settings.instance);
             var prop = settings.FindProperty("m_defaultFontAsset");
             if (prop != null && prop.objectReferenceValue != regular)
@@ -56,14 +64,30 @@ namespace DJMaster.EditorTools
             return regular;
         }
 
-        static TMP_FontAsset Make(string ttfPath, string path, string name, TMP_FontAsset bold)
+        // Puts the shapes atlas first in a font's fallbacks, making it if needed
+        static void EnsureShapes(TMP_FontAsset font)
+        {
+            if (font == null) return;
+            var shapes = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(ShapesPath);
+            if (shapes == null) shapes = Bake(ShapesTtf, ShapesPath, "Shapes SDF", ShapeCharacters, 256);
+            var list = font.fallbackFontAssetTable ?? new List<TMP_FontAsset>();
+            if (list.Count > 0 && list[0] == shapes) return;
+            list.Remove(shapes);
+            list.Insert(0, shapes);
+            font.fallbackFontAssetTable = list;
+            EditorUtility.SetDirty(font);
+            AssetDatabase.SaveAssets();
+        }
+
+        // A static font asset holding just these characters, saved with its atlas and material
+        static TMP_FontAsset Bake(string ttfPath, string path, string name, string characters, int atlasSize)
         {
             var ttf = AssetDatabase.LoadAssetAtPath<Font>(ttfPath);
             if (ttf == null) throw new System.Exception("Font file missing: " + ttfPath);
-            var asset = TMP_FontAsset.CreateFontAsset(ttf, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024, AtlasPopulationMode.Dynamic, true);
+            var asset = TMP_FontAsset.CreateFontAsset(ttf, 90, 9, GlyphRenderMode.SDFAA, atlasSize, atlasSize, AtlasPopulationMode.Dynamic, true);
             asset.name = name;
-            asset.TryAddCharacters(Characters(), out string missing);
-            if (!string.IsNullOrEmpty(missing)) Debug.Log($"[DJMaster] {name} has no glyph for: {missing} (LiberationSans covers them)");
+            asset.TryAddCharacters(characters, out string missing);
+            if (!string.IsNullOrEmpty(missing)) Debug.Log($"[DJMaster] {name} has no glyph for: {missing} (the fallbacks cover them)");
             asset.atlasPopulationMode = AtlasPopulationMode.Static;
 
             AssetDatabase.CreateAsset(asset, path);
@@ -71,7 +95,14 @@ namespace DJMaster.EditorTools
             AssetDatabase.AddObjectToAsset(asset.atlasTextures[0], asset);
             asset.material.name = name + " Material";
             AssetDatabase.AddObjectToAsset(asset.material, asset);
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssets();
+            return asset;
+        }
 
+        static TMP_FontAsset Make(string ttfPath, string path, string name, TMP_FontAsset bold)
+        {
+            var asset = Bake(ttfPath, path, name, Characters(), 1024);
             var fallback = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(FallbackPath);
             if (fallback != null) asset.fallbackFontAssetTable = new List<TMP_FontAsset> { fallback };
             if (bold != null)

@@ -200,6 +200,10 @@ namespace DJMaster
             ? $"<color=#FFD24D>{stars} / 3 STARS</color>"
             : "<color=#9AA0B0>0 / 3 STARS</color>";
 
+        // Stars, then the score and the best, on one line under the results
+        public static string ResultLine(int stars, float score, int best) =>
+            $"{StarLine(stars)}<color=#9AA0B0>   |   </color>SCORE {score:0}<color=#9AA0B0>   BEST {best}</color>";
+
         public static string Greeting(string name) => $"HI, {(string.IsNullOrWhiteSpace(name) ? Players.DefaultName : name.Trim()).ToUpperInvariant()}!";
 
         // One thing to do next: the first lesson for a new player, a daily streak to keep, the next lesson, today's
@@ -599,9 +603,10 @@ namespace DJMaster
                     sb.Append($"PRACTISE NEXT: {c.practise}");
                     if (dailyRun) sb.Insert(0, DailyResult(results));
                     bool listening = recorder.Replaying;
+                    // The score sits with the stars, as part of the result (#55)
                     panel.Show(dailyRun ? "DAILY CHALLENGE" : "SET COMPLETE!", sb.ToString(),
-                        listening ? replaying : $"Score {lastScore:0}   Best {Players.BestSet} pts",
-                        StarLine(stars));
+                        listening ? replaying : "",
+                        ResultLine(stars, lastScore, Players.BestSet), wide: true);
                     break;
 
                 case GameMode.Freestyle:

@@ -61,7 +61,7 @@ namespace DJMaster.Tests
             Assert.AreEqual(GameDirector.Greeting(Players.Current.name), menu.title.text);
             StringAssert.StartsWith("HI, ", menu.title.text);
             Assert.IsNotEmpty(menu.subtitle.text, "one suggestion for what's next");
-            Assert.AreEqual(GameDirector.Suggestion(), menu.subtitle.text.Replace("\n", " "));
+            Assert.AreEqual(GameDirector.Suggestion(), menu.subtitle.text.Replace("\n", " ").Replace(TextUtil.Glue, ' '));
             Assert.AreEqual("CONTINUE", menu.labels[2].text);
             Assert.AreEqual("SWITCH PLAYER", menu.labels[3].text);
             Assert.IsFalse(menu.buttons[0].gameObject.activeSelf || menu.buttons[1].gameObject.activeSelf || menu.buttons[4].gameObject.activeSelf);

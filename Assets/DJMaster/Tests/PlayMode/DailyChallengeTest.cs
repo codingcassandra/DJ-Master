@@ -37,8 +37,10 @@ namespace DJMaster.Tests
 
         static bool OnPhraseLine(Deck d)
         {
+            // The game counts about 0.15 bar either side as on the line. The test acts in the first 0.08 bar
+            // (about 150 ms), wide enough that a busy Mac dropping frames can't skip over it (#52)
             double bar = d.Beat / TrackSynth.BeatsPerBar;
-            return bar % 1.0 < 0.03 && (int)bar % 4 == 0;
+            return bar % 1.0 < 0.08 && (int)bar % 4 == 0;
         }
 
         [UnityTest]
@@ -59,7 +61,7 @@ namespace DJMaster.Tests
             menu.buttons[4].SimulatePress(); // DAILY
             // Today's challenge moved off the start menu onto the level screen (#47)
             Assert.AreEqual(GameMode.ChooseLevel, game.Mode);
-            StringAssert.Contains("QUICK CUT: Neon Tides into Sundial", menu.footer.text.Replace("\n", " "));
+            StringAssert.Contains("QUICK CUT: Neon Tides into Sundial", menu.footer.text.Replace("\n", " ").Replace(TextUtil.Glue, ' '));
             StringAssert.DoesNotContain("Streak", menu.footer.text);
             menu.buttons[1].SimulatePress(); // INTERMEDIATE
             menu.buttons[1].SimulatePress(); // CLUB
@@ -72,7 +74,7 @@ namespace DJMaster.Tests
 
             // The cut: on a phrase line, PLAY the new song and slam the crossfader across
             B.volume.SetValue(1f);
-            yield return WaitFor(() => OnPhraseLine(A.deck), 10f, "phrase line");
+            yield return WaitFor(() => OnPhraseLine(A.deck), 20f, "phrase line");
             B.play.SimulatePress();
             board.crossfader.SetValue(1f);
             yield return WaitFor(() => performer.SongIndex == 1, 3f, "cut complete");
@@ -84,13 +86,13 @@ namespace DJMaster.Tests
             Assert.AreEqual((int)SetPerformer.Grade.Perfect, DailyChallenge.Progress.BestGradeOn(DailyChallenge.Today));
             Assert.IsFalse(panel.actionButtons[2].gameObject.activeSelf, "no EDIT SET for the daily challenge");
             yield return null;
-            StringAssert.Contains("Passed! Streak: 1 day in a row", panel.body.text.Replace("\n", " "));
+            StringAssert.Contains("Passed! Streak: 1 day in a row", panel.body.text.Replace("\n", " ").Replace(TextUtil.Glue, ' '));
 
             system.home.SimulatePress();
             Assert.AreEqual(GameMode.Title, game.Mode);
             Assert.IsFalse(menu.buttons[4].Lit, "done for today");
             menu.buttons[4].SimulatePress(); // DAILY: the streak and best grade show on the next screen
-            string info = menu.footer.text.Replace("\n", " ");
+            string info = menu.footer.text.Replace("\n", " ").Replace(TextUtil.Glue, ' ');
             StringAssert.Contains("Streak: 1 day in a row", info);
             StringAssert.Contains("Your best: PERFECT", info);
         }

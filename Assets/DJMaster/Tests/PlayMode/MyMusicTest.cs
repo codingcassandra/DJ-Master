@@ -146,8 +146,8 @@ namespace DJMaster.Tests
             yield return null;
             Assert.AreEqual(0, browser.Order.Count);
             Assert.AreEqual(-1, browser.Selected);
-            StringAssert.Contains("Copy MP3, OGG or WAV", browser.titles[0].text.Replace("\n", " "));
-            StringAssert.Contains("rights", browser.titles[0].text.Replace("\n", " "));
+            StringAssert.Contains("Copy MP3, OGG or WAV", browser.titles[0].text.Replace("\n", " ").Replace(TextUtil.Glue, ' '));
+            StringAssert.Contains("rights", browser.titles[0].text.Replace("\n", " ").Replace(TextUtil.Glue, ' '));
             Assert.IsFalse(browser.LoadOnto(0), "nothing to load");
             browser.Move(1); // turning BROWSE on an empty list is fine
             browser.SetSort(BrowseSort.Crate);

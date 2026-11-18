@@ -75,7 +75,7 @@ namespace DJMaster.Tests
             Assert.IsTrue(drill.HasResult);
             Assert.AreNotEqual(ByEar.Grade.Perfect, drill.LastGrade);
             yield return null;
-            StringAssert.Contains("BPM off by", panel.body.text.Replace("\n", " "));
+            StringAssert.Contains("BPM off by", panel.body.text.Replace("\n", " ").Replace(TextUtil.Glue, ' '));
 
             // Match it the way the fader and jog wheel would
             board.B.tempo.SetValue(DJMath.TempoFaderFor(A.BPM / B.Track.bpm));
