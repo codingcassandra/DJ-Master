@@ -40,8 +40,10 @@ namespace DJMaster.Tests
 
         static bool OnPhraseLine(Deck d)
         {
+            // The game counts about 0.15 bar either side as on the line. The test acts in the first 0.08 bar
+            // (about 150 ms), wide enough that a busy Mac dropping frames can't skip over it (#52)
             double bar = d.Beat / TrackSynth.BeatsPerBar;
-            return bar % 1.0 < 0.03 && (int)bar % 4 == 0;
+            return bar % 1.0 < 0.08 && (int)bar % 4 == 0;
         }
 
         IEnumerator StartLesson(int lesson)
@@ -90,7 +92,7 @@ namespace DJMaster.Tests
             for (float t = 0; t < 7f; t += Time.deltaTime) { A.volume.SetValue(Mathf.Lerp(0.65f, 0.1f, t / 7f)); yield return null; }
             yield return Next();
 
-            yield return WaitFor(() => OnPhraseLine(A.deck), 10f, "phrase line on A");
+            yield return WaitFor(() => OnPhraseLine(A.deck), 20f, "phrase line on A");
             B.play.SimulatePress(); yield return Next();
             A.volume.SetValue(0f); A.play.SimulatePress(); yield return Next();
 
@@ -98,7 +100,7 @@ namespace DJMaster.Tests
             board.crossfader.SetValue(1f); A.volume.SetValue(1f); yield return Next();
             A.hotCues[0].SimulatePress(); yield return Next();
 
-            yield return WaitFor(() => OnPhraseLine(B.deck), 10f, "phrase line on B");
+            yield return WaitFor(() => OnPhraseLine(B.deck), 20f, "phrase line on B");
             A.play.SimulatePress(); board.crossfader.SetValue(0f); yield return Next();
             B.play.SimulatePress();
             yield return WaitFor(() => lessons.Finished, 6f, "lesson finished");
@@ -112,9 +114,13 @@ namespace DJMaster.Tests
             yield return StartLesson(2);
             var A = board.A; var B = board.B;
 
+            // Tap on the first frame of each new beat. Waiting for a 14 ms window skipped beats when frames
+            // dropped, and one skipped beat makes the taps too uneven to read (#52)
+            double lastBeat = System.Math.Floor(A.deck.Beat);
             for (int i = 0; i < 5; i++)
             {
-                yield return WaitFor(() => A.deck.Beat % 1.0 < 0.03, 3f, "beat");
+                yield return WaitFor(() => System.Math.Floor(A.deck.Beat) > lastBeat, 3f, "beat");
+                lastBeat = System.Math.Floor(A.deck.Beat);
                 board.tap.SimulatePress();
                 yield return new WaitForSeconds(0.2f);
             }

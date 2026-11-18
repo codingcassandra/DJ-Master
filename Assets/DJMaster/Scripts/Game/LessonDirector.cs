@@ -766,13 +766,15 @@ namespace DJMaster
                 title = "Let it repeat",
                 text = $"Watch the bar counter jump back. Once the phrase has repeated, press {BoardColors.Orange("LOOP")} again so the song carries on. Use loops for moments: too many make a set boring.",
                 highlight = new[] { "B.loop" },
+                // The deck keeps its repeat count after LOOP is released (it resets when a loop starts), so a release
+                // right after the repeat counts even if this step didn't get a frame in between (#52)
                 tick = () =>
                 {
-                    if (B.Looping && B.LoopRepeats >= 1) sawRepeat = true;
+                    if (B.LoopRepeats >= 1) sawRepeat = true;
                     if (!B.Looping && !sawRepeat) Feedback = "Wait for it to repeat once first. Press LOOP again.";
                     else if (sawRepeat && B.Looping) Feedback = "It repeated! Now press LOOP to release it.";
                 },
-                done = () => sawRepeat && !B.Looping,
+                done = () => !B.Looping && B.LoopRepeats >= 1,
             });
             steps.Add(new Step
             {

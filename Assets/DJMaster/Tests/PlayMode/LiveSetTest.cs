@@ -38,11 +38,13 @@ namespace DJMaster.Tests
         // Just after bar 1, 5, 9 or 13 starts.
         static bool OnPhraseLine(Deck d)
         {
+            // The game counts about 0.15 bar either side as on the line. The test acts in the first 0.08 bar
+            // (about 150 ms), wide enough that a busy Mac dropping frames can't skip over it (#52)
             double bar = d.Beat / TrackSynth.BeatsPerBar;
-            return bar % 1.0 < 0.03 && (int)bar % 4 == 0;
+            return bar % 1.0 < 0.08 && (int)bar % 4 == 0;
         }
 
-        static bool OnBarLine(Deck d) => d.Beat / TrackSynth.BeatsPerBar % 1.0 < 0.03;
+        static bool OnBarLine(Deck d) => d.Beat / TrackSynth.BeatsPerBar % 1.0 < 0.08;
 
         [UnityTest]
         [Timeout(120000)]
@@ -87,7 +89,7 @@ namespace DJMaster.Tests
             yield return null;
             LineUp(A.deck, B.deck);
             B.volume.SetValue(1f);
-            yield return WaitFor(() => OnPhraseLine(A.deck), 10f, "phrase line");
+            yield return WaitFor(() => OnPhraseLine(A.deck), 20f, "phrase line");
             board.crossfader.SetValue(0.5f);                                  // bring it in on the phrase
             yield return new WaitForSeconds(9f);                              // about 5 bars together
             board.crossfader.SetValue(1f);
@@ -101,7 +103,7 @@ namespace DJMaster.Tests
             A.volume.SetValue(1f);
             yield return null;
             // Wait until just after a bar line on song 2, then PLAY and slam the crossfader together.
-            yield return WaitFor(() => OnPhraseLine(B.deck), 10f, "phrase line");
+            yield return WaitFor(() => OnPhraseLine(B.deck), 20f, "phrase line");
             A.play.SimulatePress();
             board.crossfader.SetValue(0f);
             yield return WaitFor(() => performer.SongIndex == 2, 3f, "cut complete");
@@ -148,7 +150,7 @@ namespace DJMaster.Tests
                 A.volume.SetValue(Mathf.Lerp(0.65f, 0.1f, t / 10f));
                 yield return null;
             }
-            yield return WaitFor(() => OnPhraseLine(A.deck), 10f, "phrase line");
+            yield return WaitFor(() => OnPhraseLine(A.deck), 20f, "phrase line");
             B.play.SimulatePress();
             yield return WaitFor(() => performer.SongIndex == 1, 3f, "fade complete");
             Assert.AreEqual(SetPerformer.Grade.Perfect, performer.Results[0].grade, performer.Results[0].note);
@@ -157,7 +159,7 @@ namespace DJMaster.Tests
             yield return WaitFor(() => A.deck.IsLoaded && A.deck.TrackIndex == 5, 10f, "song 3 loaded");
             A.volume.SetValue(1f);
             B.echo.SimulatePress();
-            yield return WaitFor(() => OnPhraseLine(B.deck), 10f, "phrase line");
+            yield return WaitFor(() => OnPhraseLine(B.deck), 20f, "phrase line");
             B.volume.SetValue(0f);
             yield return new WaitForSeconds(0.5f);
             yield return WaitFor(() => OnBarLine(B.deck), 3f, "next bar");
