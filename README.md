@@ -192,6 +192,26 @@ The platters turn once per bar with their white marker pointing forward on beat 
 - **Bus-stop test:** cold start lands you on the menu with tracks preloading. One lesson is 4 to 7 minutes and a 3-song set about 3. Taking the headset off or opening the system menu pauses audio and time, and the game resumes where you left off.
 - **Original, not a wrapper:** the eight game tracks are synthesized at runtime by `TrackSynth` (house, techno and disco loops, arranged in DJ phrases). The eight FREE MUSIC songs are real tracks their artists released as **CC0 (public domain)** on OpenGameArt.org, each cut to a 16-bar loop that starts exactly on beat 1 and credited in `Assets/DJMaster/Resources/Music/CREDITS.md`. There is no licensed music, no streaming, and no third-party services.
 
+## Run it in the Meta XR Simulator (no headset)
+
+Needs the Meta XR Simulator app (macOS, Apple silicon) in /Applications.
+
+```
+./run-sim.sh build   # build the macOS player and launch it in the simulator
+./run-sim.sh         # launch the last build again
+```
+
+- In the simulator, set **Left input** and **Right input** to **Hand**.
+- Your **right hand follows the mouse**: its fingertip sits on the cursor. Click to press, and click-and-drag to move faders.
+- `touch Logs/recenter` puts you back at the seated DJ spot.
+- All of this lives in `Assets/DJMaster/Scripts/SimulatorSupport.cs`. It only exists in a Mac player and only switches on when the simulator is the OpenXR runtime, so the Quest build never sees it.
+- `Tools/simwin.swift` tracks the simulator window so the hand lines up with the cursor. It assumes the simulator's settings panel is open.
+- Turning on the simulator's "XR Simulator runtime enabled" toggle makes it the Mac's system-wide OpenXR runtime. Turn it off when you're done, or batch test runs will start the simulator too.
+
+## Build the Competition APK from the command line
+
+`./build-apk.sh` asks for the keystore and key passwords (they aren't shown or saved). It then runs the submission checks, bumps the version code and builds `Builds/DJMaster-<version>-<code>.apk`, signed with `~/Keys/djmaster-release.keystore` (alias `djmaster`). Edit the path at the top of the script if your keystore lives somewhere else.
+
 ## Run it in the editor (no headset)
 
 1. Open the project in **Unity 6000.6.4f1** and open `Assets/Scenes/DJMaster.unity`.
