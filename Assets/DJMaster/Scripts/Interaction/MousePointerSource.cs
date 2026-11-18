@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.XR;
 
 namespace DJMaster
@@ -45,18 +46,24 @@ namespace DJMaster
 
         void LateUpdate()
         {
-            if (XRActive || cam == null) { pointer.Active = false; return; }
+            // Input System only (#53): the old Input class makes Android builds stop on the 'Both' dialog
+            var mouse = Mouse.current;
+            if (XRActive || cam == null || mouse == null) { pointer.Active = false; return; }
 
-            if (Input.GetMouseButton(1) && lookPivot != null)
+            if (mouse.rightButton.isPressed && lookPivot != null)
             {
-                yaw += Input.GetAxis("Mouse X") * 3f;
-                pitch = Mathf.Clamp(pitch - Input.GetAxis("Mouse Y") * 3f, -80f, 80f);
+                // The old "Mouse X/Y" axes were pixels * 0.1, keep the same feel
+                var delta = mouse.delta.ReadValue() * 0.1f;
+                yaw += delta.x * 3f;
+                pitch = Mathf.Clamp(pitch - delta.y * 3f, -80f, 80f);
                 lookPivot.localRotation = Quaternion.Euler(pitch, yaw, 0);
             }
 
-            var ray = cam.ScreenPointToRay(Input.mousePosition);
+            var ray = cam.ScreenPointToRay(mouse.position.ReadValue());
 
-            float scroll = Input.mouseScrollDelta.y;
+            // The wheel's units differ by platform (120 a notch on Windows, a few on a Mac), so one step per frame it moves
+            float wheel = mouse.scroll.ReadValue().y;
+            float scroll = wheel == 0 ? 0f : Mathf.Sign(wheel);
             if (scroll != 0)
             {
                 if (Physics.Raycast(ray, out var wheelHit, 3f) && wheelHit.collider.GetComponentInParent<Knob>() is { } knob)
@@ -65,13 +72,13 @@ namespace DJMaster
                     cam.fieldOfView = Mathf.Clamp(cam.fieldOfView - scroll * 3f, zoomRange.x, zoomRange.y);
             }
 
-            if (Input.GetMouseButtonDown(0) && Physics.Raycast(ray, out var hit, 3f))
+            if (mouse.leftButton.wasPressedThisFrame && Physics.Raycast(ray, out var hit, 3f))
             {
                 dragging = true;
                 dragNormal = hit.normal;
                 dragPlane = new Plane(hit.normal, hit.point);
             }
-            if (!Input.GetMouseButton(0)) dragging = false;
+            if (!mouse.leftButton.isPressed) dragging = false;
 
             pointer.DirectPress = true;
             pointer.Active = dragging;

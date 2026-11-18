@@ -4,7 +4,8 @@
     "Oculus.VR",
     "Oculus.Platform",
     "Unity.TextMeshPro",
-    "meta.xr.mrutilitykit"
+    "meta.xr.mrutilitykit",
+    "Unity.InputSystem"
   ],
   "autoReferenced": true,
   "versionDefines": [
