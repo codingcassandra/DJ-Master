@@ -276,7 +276,7 @@ namespace DJMaster
         {
             float lag = TapLag;
             if (Debug.isDebugBuild) Debug.Log($"Tap {DJMath.PhaseOffset(Math.Round(A.Beat), A.Beat) * 60000f / Mathf.Max(60f, A.BPM):0} ms from the beat (lag {lag * 1000f:0} ms)");
-            if (IsOnBeat(A.Beat, A.BPM, lag)) { tapStreak++; Feedback = new string('*', tapStreak) + "  on beat!"; }
+            if (IsOnBeat(A.Beat, A.BPM, lag)) { tapStreak++; Feedback = tapStreak > 1 ? $"On beat! {tapStreak} in a row" : "On beat!"; }
             else { tapStreak = 0; Feedback = "Off the beat. Listen for the kick drum and try again."; Sfx.Fail(); }
         }
 

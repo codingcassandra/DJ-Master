@@ -195,6 +195,11 @@ namespace DJMaster
             startMenu.buttons[2].Lit = true; // the obvious next poke
         }
 
+        // The set's rating in gold, so it reads like a result and not a placeholder
+        public static string StarLine(int stars) => stars > 0
+            ? $"<color=#FFD24D>{stars} / 3 STARS</color>"
+            : "<color=#9AA0B0>0 / 3 STARS</color>";
+
         public static string Greeting(string name) => $"HI, {(string.IsNullOrWhiteSpace(name) ? Players.DefaultName : name.Trim()).ToUpperInvariant()}!";
 
         // One thing to do next: the first lesson for a new player, a daily streak to keep, the next lesson, today's
@@ -596,7 +601,7 @@ namespace DJMaster
                     bool listening = recorder.Replaying;
                     panel.Show(dailyRun ? "DAILY CHALLENGE" : "SET COMPLETE!", sb.ToString(),
                         listening ? replaying : $"Score {lastScore:0}   Best {Players.BestSet} pts",
-                        new string('*', stars) + new string('-', 3 - stars));
+                        StarLine(stars));
                     break;
 
                 case GameMode.Freestyle:

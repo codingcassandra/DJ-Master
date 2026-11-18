@@ -29,7 +29,7 @@ namespace DJMaster.EditorTools
         static readonly Color DeckAColor = BoardColors.DeckA;
         static readonly Color DeckBColor = BoardColors.DeckB;
         static TMP_FontAsset uiFont;
-        static readonly Color LabelColor = Style.TextGrey;
+        static readonly Color LabelColor = new(0.86f, 0.88f, 0.94f); // a bit brighter than TextGrey so the small board labels read on the dark metal
 
         [MenuItem("DJ Master/Build Scene")]
         public static void Build()
@@ -236,8 +236,8 @@ namespace DJMaster.EditorTools
                 ch.play = MakeButton($"{p}.play", "PLAY", t, new Vector3(ox - 0.08f, 0.01f, -0.15f), new Vector2(0.038f, 0.038f), capMat, BoardColors.Play, round: true);
 
                 // Performance pads: hot cues on top, samplers below.
-                Label(t, "HOT CUE", new Vector3(ox + 0.0185f, 0.001f, -0.0505f), 0.00085f, LabelColor);
-                Label(t, "SAMPLER", new Vector3(ox + 0.0185f, 0.001f, -0.1125f), 0.00085f, LabelColor);
+                Label(t, "HOT CUE", new Vector3(ox + 0.0185f, 0.001f, -0.0505f), 0.001f, LabelColor);
+                Label(t, "SAMPLER", new Vector3(ox + 0.0185f, 0.001f, -0.1125f), 0.001f, LabelColor);
                 string[] cueBars = { "1", "5", "9", "13" };
                 for (int k = 0; k < 4; k++)
                 {
@@ -266,11 +266,11 @@ namespace DJMaster.EditorTools
                 ch.mid = MakeKnob($"{p}.mid", t, new Vector3(mx, 0.02f, 0.125f), capMat, white, color);
                 ch.low = MakeKnob($"{p}.low", t, new Vector3(mx, 0.02f, 0.085f), capMat, white, color);
                 ch.filter = MakeKnob($"{p}.filter", t, new Vector3(mx, 0.02f, 0.045f), capMat, white, BoardColors.Fx);
-                Label(t, "GAIN", new Vector3(labelX, 0.001f, 0.205f), 0.0009f, LabelColor);
-                Label(t, "HI", new Vector3(labelX, 0.001f, 0.165f), 0.001f, LabelColor);
-                Label(t, "MID", new Vector3(labelX, 0.001f, 0.125f), 0.001f, LabelColor);
-                Label(t, "LOW", new Vector3(labelX, 0.001f, 0.085f), 0.001f, LabelColor);
-                Label(t, "FILTER", new Vector3(labelX, 0.001f, 0.045f), 0.0009f, LabelColor);
+                Label(t, "GAIN", new Vector3(labelX, 0.001f, 0.205f), 0.00105f, LabelColor);
+                Label(t, "HI", new Vector3(labelX, 0.001f, 0.165f), 0.0012f, LabelColor);
+                Label(t, "MID", new Vector3(labelX, 0.001f, 0.125f), 0.0012f, LabelColor);
+                Label(t, "LOW", new Vector3(labelX, 0.001f, 0.085f), 0.0012f, LabelColor);
+                Label(t, "FILTER", new Vector3(labelX, 0.001f, 0.045f), 0.00105f, LabelColor);
                 ch.headphones = MakeButton($"{p}.headphones", p, t, new Vector3(side * 0.018f, 0.008f, 0.16f), new Vector2(0.029f, 0.029f), capMat, BoardColors.Fx);
                 ch.echo = MakeButton($"{p}.echo", "ECHO", t, new Vector3(mx, 0.008f, 0.011f), new Vector2(0.03f, 0.029f), capMat, BoardColors.Fx);
                 MakeLevelMeter($"{p}.meter", t, new Vector3(side * 0.03f, 0f, -0.075f), deck.GetComponent<ChannelStrip>());
