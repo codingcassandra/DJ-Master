@@ -204,6 +204,13 @@ Pressing Play rebuilds the scene first if `SceneBuilder` has changed since the s
 view's *Low Resolution Aspect Ratios* so text stays sharp. To rebuild by hand: **DJ Master > Build Scene**.
 Tip: set the Game view to **Play Maximized** so small text is easy to read.
 
+**First open of a fresh clone:** the Meta SDK can compile before the Input System and OpenXR packages finish importing,
+which shows about 1800 errors. Nothing is wrong with the project. Quit Unity, delete `Library/ScriptAssemblies` and
+`Library/Bee`, then open it again.
+
+Input is **Input System only** (Project Settings > Player > Active Input Handling), so Android builds don't stop on the
+"Active Input Handling is set to Both" dialog. The editor mouse mode reads `Mouse.current`.
+
 ## Build to Quest
 
 1. **Unity Hub > Installs > 6000.6.4f1 > Add modules > Android Build Support** (include OpenJDK and Android SDK & NDK).
@@ -214,17 +221,22 @@ Tip: set the Game view to **Play Maximized** so small text is easy to read.
 
 **Sharp rendering:** nothing to set by hand. 4x MSAA is in Quality settings, and the board's textures are mipmapped with anisotropic filtering. On the headset, `RenderQuality` starts at 1.2x eye resolution with dynamic foveation capped at Low, then steps down 0.1 at a time (never below 1.0x) if the frame rate stays under the display rate (72 Hz) for a few seconds. The log line `[DJMaster] Eye resolution ...` shows where it settled. There are no post effects. To check the frame rate, run OVR Metrics Tool in MY ROOM, CLUB and FESTIVAL with the full crowd.
 
-**Meta sign-in (entitlement check + the player's name):** in the Meta Developer Dashboard, open the app, copy its **App ID**, then in Unity open **Meta > Platform > Edit Settings** and paste it into **Meta Quest/2/Pro**. On the Quest the game then checks the store entitlement at startup (it quits if that fails, as the store requires) and greets the signed-in user by name. With no App ID, in the editor or offline, it plays on as the local player.
+**Meta sign-in (entitlement check + the player's name):** in the Meta Developer Dashboard, open the app, copy its **App ID**, then in Unity open **Window > Meta > Platform > Edit Settings** (older SDKs had it under **Meta > Platform**) and paste it into **Meta Quest/2/Pro**. On the Quest the game then checks the store entitlement at startup (it quits if that fails, as the store requires) and greets the signed-in user by name. With no App ID, in the editor or offline, it plays on as the local player.
+
+**Don't commit your machine's settings:** setting up the release keystore and linking Unity Cloud write your keystore
+path (`AndroidKeystoreName`) and the cloud project ids (`cloudProjectId`, `projectName`, `organizationId`) into
+`ProjectSettings/ProjectSettings.asset`. Unstage those lines before committing (`git add -p ProjectSettings/ProjectSettings.asset`),
+and keep the keystore and its passwords out of the repo.
 
 **For the competition:** upload the APK to a release channel named **Competition** in the Meta Developer Dashboard and create an Invite URL for the judges.
 
 ## Tests
 
-- **EditMode (108):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap, gain and meter zones),
+- **EditMode (123):** mixer math (constant-power crossfader, EQ curve, tempo range, phase wrap, gain and meter zones),
   synth loop length, levels and kick timing, beat detection, key and tempo matching (Camelot wheel), the song browser's sorting,
   the waveform analysis, phrase countdown text, skill level rules, players and their separate saves, the daily challenge and
-  streak, set lists, desk placement and reach, the color-blind palette and shapes, and the DJ vocab list and quiz.
-- **PlayMode (35):** loads the real scene and drives it with a simulated fingertip. Covers pokes, slow pokes, fader drags,
+  streak, set lists, desk placement and reach, the color-blind palette and shapes (and that the font has a glyph for each), text wrapping, and the DJ vocab list and quiz.
+- **PlayMode (43):** loads the real scene and drives it with a simulated fingertip. Covers pokes, slow pokes, fader drags,
   knobs, venue switching, HOME and BACK from every screen, the color-blind toggle, gain and meters, the deck screens'
   waveform and phrase countdown, LED rings, press flashes and fader glows, the song browser, full runs of all four lessons
   (including music within 10 seconds and a cheer within a minute in Lesson 1), building and performing sets (phrase mix,
