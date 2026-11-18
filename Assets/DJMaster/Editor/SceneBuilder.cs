@@ -648,7 +648,8 @@ namespace DJMaster.EditorTools
         {
             var go = new GameObject("SetBuilderPanel");
             go.transform.SetParent(board, false);
-            go.transform.localPosition = new Vector3(0, 0.225f, 0.19f);
+            // Tall panel: high enough that its bottom row clears the deck screens from the seat
+            go.transform.localPosition = new Vector3(0, 0.255f, 0.19f);
             go.transform.localRotation = Quaternion.Euler(20, 0, 0);
             var p = go.AddComponent<SetBuilderPanel>();
             p.preview = preview;
